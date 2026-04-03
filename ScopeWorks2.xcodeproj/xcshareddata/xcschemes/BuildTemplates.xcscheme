@@ -54,7 +54,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "&quot;Kaleidoscope templates&quot;"
+            argument = "&quot;/Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/Kaleidoscope_templates&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

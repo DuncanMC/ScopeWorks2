@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>106</string>
+					<string>118</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>105</string>
+					<string>117</string>
 					<key>Timestamp</key>
-					<string>796847271.89319</string>
+					<string>796933484.66387</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -48,6 +48,72 @@
 			</dict>
 			<key>title</key>
 			<string>TextField("Polygon sides"</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>BuildTemplates/BuildTemplates.swift</string>
+					</dict>
+				</dict>
+				<key>type</key>
+				<string>DVTDocumentLocation</string>
+			</dict>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>20</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>19</string>
+					<key>Timestamp</key>
+					<string>796917129.629699</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>BuildTemplates/BuildTemplates.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    func polygonElements() -&gt; [ScopeElement] {
+</string>
+				<key>leading</key>
+				<string>struct BuildTemplates: AsyncParsableCommand {
+    
+</string>
+				<key>trailing</key>
+				<string>        let elements: [ScopeElement] = [
+            //Element 0
+            ScopeElement(
+</string>
+			</dict>
+			<key>title</key>
+			<string>polygonElements</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>

@@ -14,8 +14,8 @@ public enum ElementType: Int, Codable {
 struct ScopeElement: Codable {
     let type: ElementType
     let center: CGPoint
-    let radius: CGFloat
-    let startAngle: Float
+    var radius: CGFloat
+    var startAngle: Float
 
     enum CodingKeys: String, CodingKey {
         case type, centerX, centerY, radius, startAngle
@@ -48,11 +48,27 @@ struct ScopeElement: Codable {
     }
 }
 
-struct ScopeTemplate: Codable {
+struct ScopeTemplate: Codable, CustomStringConvertible {
     let index: Int
     let name: String
-    let description: String
+    let displayDescription: String
+    var sideCount: Int
     let elements: [ScopeElement]
+    let isCircular: Bool
     let modifiedDate: Date
-    let isPolygonType: Bool
+
+    var description: String {
+        return """
+        ScopeTemplate(
+            index: \(self.index),
+            name: \(self.name),
+            description: \"\(self.displayDescription)\",
+            sideCount: \(self.index),
+            isCircular: \(self.isCircular),
+            modifiedDate: \(self.modifiedDate)
+        
+            contains \(elements.count) elements
+        )
+        """
+    }
 }

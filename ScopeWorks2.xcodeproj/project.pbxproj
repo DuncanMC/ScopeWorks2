@@ -43,6 +43,9 @@
 			exceptions = (
 				AEBC86A62F7F0B30002EFFBB /* Exceptions for "ScopeWorks2" folder in "BuildTemplates" target */,
 			);
+			explicitFolders = (
+				Shared/Kaleidoscope_templates,
+			);
 			path = ScopeWorks2;
 			sourceTree = "<group>";
 		};

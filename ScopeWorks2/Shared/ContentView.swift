@@ -23,6 +23,8 @@ class ScopeState: ObservableObject {
     @Published var trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] //TODO
 
+    @Published var selectedScopeType: Int = 0
+
     @Published var showOutlines: Bool = false
     @Published var useBlackBackground: Bool = false
     @Published var flipAlternates: Bool = true
@@ -39,6 +41,10 @@ class ScopeViewModel: ObservableObject {
     var scopeState: ScopeState
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
+        let scopeTemplates = ScopeWorks2App.scopeTemplates
+        for aTemplate in scopeTemplates {
+            print(aTemplate)
+        }
     }
     
     func changeAnimationState() {
@@ -101,6 +107,12 @@ struct ContentView: View {
                     #if os(iOS)
                         PhotoPickerView(scopeState: scopeState)
                     #endif
+                    
+                    ScopeTypePicker(title: "Kaledioscope Type", options: ScopeWorks2App.scopeTemplateNames, selection: $scopeState.selectedScopeType )
+                        .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
+                            print("selectedScopeType = \(newValue)")
+                        }
+
                     
                     LabeledContent(content: {
                         TextField("",
