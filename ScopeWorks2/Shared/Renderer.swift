@@ -245,12 +245,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         //        descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0.0, green: 0, blue: 0, alpha: 1.0)
         
         // Draw six equilateral triangles forming the hexagon
-        let radius: Float = 1
-        for i in 0..<6 {
-            let angle = Float(i) * (.pi / 3)
+        let radius: Float = 0.99
+        for i in 0..<scopeState.polygonSides {
+            let angle = Float(i) *  2  * (.pi / Float(scopeState.polygonSides))
             let cosA = cos(angle)
             let sinA = sin(angle)
-            let nextA = Float(i+1) * (.pi / 3)
+            let nextA = Float(i+1) * 2 *  (.pi / Float(scopeState.polygonSides))
             let cosB = cos(nextA)
             let sinB = sin(nextA)
             let point2x = radius * cosA

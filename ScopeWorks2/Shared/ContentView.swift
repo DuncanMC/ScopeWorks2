@@ -28,13 +28,14 @@ class ScopeState: ObservableObject {
     @Published var flipAlternates: Bool = true
     @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
+    @Published var polygonSides = 6
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
 
 }
 
-class ScopeManager: ObservableObject {
+class ScopeViewModel: ObservableObject {
     var scopeState: ScopeState
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
@@ -49,8 +50,26 @@ class ScopeManager: ObservableObject {
 
 struct ContentView: View {
     
+    static let numberFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.maximumFractionDigits = 0
+        formatter.numberStyle = .none
+        formatter.paddingCharacter = " "
+        formatter.paddingPosition = .afterPrefix
+        formatter.minimum = 4
+        formatter.maximum = 100
+        return formatter
+    }()
+    
+    @FocusState private var isFocused
+    @State private var selection: TextSelection?
+    @State private var site = ""
+
+
+    @State var polygonSidesString = ""
+    
     @StateObject var scopeState = ScopeState()
-    @StateObject var scopeManager = ScopeManager(scopeState: ScopeState())
+    @StateObject var scopeViewModel = ScopeViewModel(scopeState: ScopeState())
     
     var toggleAlignment: Alignment {
     #if os(macOS)
@@ -68,48 +87,97 @@ struct ContentView: View {
     #endif
     var body: some View {
         VStack {
-            HStack(spacing: 20) {
-                Spacer()
-                #if os(iOS)
-                    PhotoPickerView(scopeState: scopeState)
-                        .padding(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
-                #endif
-                
-                Toggle(isOn: $scopeState.showOutlines) {
-                    Text("Show outlines")
-                                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                }
-                Toggle(isOn: $scopeState.useBlackBackground) {
-                    Text("Use black background")
-                                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                }
-                Toggle(isOn: $scopeState.flipAlternates) {
-                    Text("Flip alternates")
-                                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                }
-                Toggle(isOn: $scopeState.drawWithReflection) {
-                    Text("Draw with reflection")
-                                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                }
-                Toggle(isOn: $scopeState.animate) {
-                    Text("Animate")
-                                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                }
-                .onChange(of: scopeState.animate) {
-                    scopeManager.changeAnimationState()
-                }
-
-                Spacer()
-
-            }
-//            .padding(EdgeInsets(top: 20, leading: 10, bottom: 0, trailing: 10))
             ScopeViewRepresentable(scopeState: scopeState)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .aspectRatio(1.0, contentMode: .fit)
                 .background(Color.white)
-                .onChange(of: scopeState.showOutlines) {
-                    print("showOutlines = \($scopeState.showOutlines)")
+                .onChange(of: scopeState.showOutlines) { oldValue, newValue in
+                    print("showOutlines = \(newValue)")
                 }
+            Spacer()
+            ScrollView(.horizontal) {
+                HStack(alignment: .center,spacing: 20) {
+                    Spacer()
+                    #if os(iOS)
+                        PhotoPickerView(scopeState: scopeState)
+                    #endif
+                    
+                    LabeledContent(content: {
+                        TextField("",
+                                  text: $polygonSidesString,
+                                  onEditingChanged: { isEditing in
+                            print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
+                        },
+                                  onCommit: {
+                            print("In onCommit, $polygonSidesString = \(polygonSidesString)")
+                            guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
+                                Task { @MainActor in
+                                    self.polygonSidesString = "\(scopeState.polygonSides)"
+                                }
+                                return
+                            }
+                            scopeState.polygonSides = value.intValue
+                            isFocused = false
+                        }
+                        )
+                            .textFieldStyle(.roundedBorder)
+                            .frame(minWidth: 30, maxWidth: 50)
+                            .focused($isFocused)
+                            .onChange(of: isFocused) {
+                                if isFocused {
+                                    #if os(iOS)
+                                    Task { @MainActor in
+                                        UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                                    }
+                                    #elseif os(macOS)
+                                    Task { @MainActor in
+                                        NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+                                    }
+                                    #endif
+                                    selection = .init(range: site.startIndex..<site.endIndex)
+                                }
+                            }
+                            .onAppear() {
+                                polygonSidesString = "\(scopeState.polygonSides)"
+                            }
+                    },
+                                   label: {
+                        Text("Polygon sides")
+                        
+                    })
+                    .padding()
+
+                    Toggle(isOn: $scopeState.showOutlines) {
+                        Text("Show outlines")
+                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                    }
+                    Toggle(isOn: $scopeState.useBlackBackground) {
+                        Text("Use black background")
+                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                    }
+                    Toggle(isOn: $scopeState.flipAlternates) {
+                        Text("Flip alternates")
+                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                    }
+                    Toggle(isOn: $scopeState.drawWithReflection) {
+                        Text("Draw with reflection")
+                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                    }
+                    Toggle(isOn: $scopeState.animate) {
+                        Text("Animate")
+                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                    }
+                    .onChange(of: scopeState.animate) { oldValue, newValue in
+                        scopeViewModel.changeAnimationState()
+                    }
+                    Button("Reverse animation") {
+                        scopeState.rotationSpeed *= -1
+                        scopeState.movementSpeed *= -1
+                    }
+                    Spacer()
+                }
+            }
+//            .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
         }
     }
 }

@@ -6,14 +6,49 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AEBC86992F7EF7A1002EFFBB /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = AEBC86982F7EF7A1002EFFBB /* ArgumentParser */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AEBC868E2F7EF726002EFFBB /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		AEB49CE52F6B2D1700CD5690 /* ScopeWorks2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScopeWorks2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AEBC86902F7EF726002EFFBB /* BuildTemplates */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildTemplates; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AEBC86A62F7F0B30002EFFBB /* Exceptions for "ScopeWorks2" folder in "BuildTemplates" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/ScopeTemplate.swift,
+			);
+			target = AEBC868F2F7EF726002EFFBB /* BuildTemplates */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AEB49CE72F6B2D1700CD5690 /* ScopeWorks2 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AEBC86A62F7F0B30002EFFBB /* Exceptions for "ScopeWorks2" folder in "BuildTemplates" target */,
+			);
 			path = ScopeWorks2;
+			sourceTree = "<group>";
+		};
+		AEBC86912F7EF726002EFFBB /* BuildTemplates */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BuildTemplates;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +61,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AEBC868D2F7EF726002EFFBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEBC86992F7EF7A1002EFFBB /* ArgumentParser in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				AEB49CE72F6B2D1700CD5690 /* ScopeWorks2 */,
+				AEBC86912F7EF726002EFFBB /* BuildTemplates */,
 				AEB49CE62F6B2D1700CD5690 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				AEB49CE52F6B2D1700CD5690 /* ScopeWorks2.app */,
+				AEBC86902F7EF726002EFFBB /* BuildTemplates */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +115,30 @@
 			productReference = AEB49CE52F6B2D1700CD5690 /* ScopeWorks2.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AEBC868F2F7EF726002EFFBB /* BuildTemplates */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AEBC86942F7EF726002EFFBB /* Build configuration list for PBXNativeTarget "BuildTemplates" */;
+			buildPhases = (
+				AEBC868C2F7EF726002EFFBB /* Sources */,
+				AEBC868D2F7EF726002EFFBB /* Frameworks */,
+				AEBC868E2F7EF726002EFFBB /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AEBC86A12F7F02F0002EFFBB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AEBC86912F7EF726002EFFBB /* BuildTemplates */,
+			);
+			name = BuildTemplates;
+			packageProductDependencies = (
+				AEBC86982F7EF7A1002EFFBB /* ArgumentParser */,
+			);
+			productName = BuildTemplates;
+			productReference = AEBC86902F7EF726002EFFBB /* BuildTemplates */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -77,11 +146,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					AEB49CE42F6B2D1700CD5690 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					AEBC868F2F7EF726002EFFBB = {
+						CreatedOnToolsVersion = 26.4;
 					};
 				};
 			};
@@ -94,12 +166,16 @@
 			);
 			mainGroup = AEB49CDC2F6B2D1700CD5690;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AEBC86972F7EF7A1002EFFBB /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AEB49CE62F6B2D1700CD5690 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				AEB49CE42F6B2D1700CD5690 /* ScopeWorks2 */,
+				AEBC868F2F7EF726002EFFBB /* BuildTemplates */,
 			);
 		};
 /* End PBXProject section */
@@ -122,7 +198,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AEBC868C2F7EF726002EFFBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AEBC86A12F7F02F0002EFFBB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = AEBC86A02F7F02F0002EFFBB /* ArgumentParser */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AEB49CEE2F6B2D1900CD5690 /* Debug */ = {
@@ -272,7 +362,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
@@ -319,7 +409,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
@@ -338,6 +428,36 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		AEBC86952F7EF726002EFFBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VBNQV8KG4G;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AEBC86962F7EF726002EFFBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VBNQV8KG4G;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -362,7 +482,40 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AEBC86942F7EF726002EFFBB /* Build configuration list for PBXNativeTarget "BuildTemplates" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AEBC86952F7EF726002EFFBB /* Debug */,
+				AEBC86962F7EF726002EFFBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AEBC86972F7EF7A1002EFFBB /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AEBC86982F7EF7A1002EFFBB /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AEBC86972F7EF7A1002EFFBB /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+		AEBC86A02F7F02F0002EFFBB /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AEBC86972F7EF7A1002EFFBB /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AEB49CDD2F6B2D1700CD5690 /* Project object */;
 }
