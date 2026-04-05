@@ -251,7 +251,8 @@ struct BuildTemplates: AsyncParsableCommand {
                     type: .eightWay,
                     center: CGPoint(x: 0, y: 0),
                     radius: 1.0,
-                    startAngle:  Float.pi/6)]
+//                    startAngle:  0)]
+                startAngle:  Float.pi/6)]
             case 1: // MARK: Polygon grid template
                 isCircular = true
                 elements = polygonElements()

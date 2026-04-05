@@ -239,12 +239,15 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         encoder.setFragmentTexture(texture, index: 0)
         
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
+    
         if template.isCircular {
+            let multiplier: Float = scopeState.selectedScopeType == 1 ? 2.0 : 1.0
             for (_, anElement) in template.elements.enumerated() {
-                let center = simd_float2(anElement.center)
-                let radius: Float = Float(anElement.radius * scopeState.radiusScale)
+                var center = simd_float2(anElement.center)
+                center.x *= multiplier
+                center.y *= multiplier
+                let radius: Float = Float(anElement.radius * scopeState.radiusScale) * multiplier
                 for i in 0..<scopeState.polygonSides {
-//                    print("Center = \(center.myDescription)")
                     let angle = fmod((Float(i) *  2  * (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
                     let cosA = cos(angle)
                     let sinA = sin(angle)
@@ -252,15 +255,15 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     let cosB = cos(nextA)
                     let sinB = sin(nextA)
                     // Zoom in
-                    let point2x = radius * cosA + center.x
-                    let point3x = radius * cosB + center.x
-                    let point2y = radius * sinA + center.y
-                    let point3y = radius * sinB + center.y
+                    let point2x = (radius * cosA + center.x)
+                    let point3x = (radius * cosB + center.x)
+                    let point2y = (radius * sinA + center.y)
+                    let point3y = (radius * sinB + center.y)
                     let point2: simd_float2 = simd_float2(point2x, point2y)
                     let point3: simd_float2 = simd_float2(point3x, point3y)
                     
                     var verts: [simd_float2]
-                    if i.isMultiple(of: 2) && scopeState.flipAlternates {
+                    if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                         verts = [
                             center,
                             point3,
@@ -294,7 +297,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
 
                     if scopeState.drawWithReflection {
-                        if i.isMultiple(of: 2) && scopeState.flipAlternates {
+                        if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                             verts = [
                                 center,
                                 simd_float2(point2x, point2y),

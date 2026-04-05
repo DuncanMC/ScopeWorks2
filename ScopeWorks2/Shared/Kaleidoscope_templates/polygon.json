@@ -1,17 +1,17 @@
 {
-  "name" : "Polygon",
-  "index" : 0,
   "sideCount" : 6,
-  "isCircular" : true,
+  "modifiedDate" : 797114906.764799,
+  "name" : "Polygon",
   "displayDescription" : "Polygon kaleidoscope.",
   "elements" : [
     {
-      "centerY" : 0,
+      "startAngle" : 0.52359873,
       "radius" : 1,
-      "centerX" : 0,
       "type" : 1,
-      "startAngle" : 0.52359873
+      "centerX" : 0,
+      "centerY" : 0
     }
   ],
-  "modifiedDate" : 797111946.949689
+  "isCircular" : true,
+  "index" : 0
 }
