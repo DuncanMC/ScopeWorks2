@@ -82,13 +82,13 @@ struct BuildTemplates: AsyncParsableCommand {
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 9
-            ScopeElement(
-                type: .polygon,
-                center: CGPoint(x: 0.0, y: -2*sqrt3Over5),
-                radius: 0.2,
-                startAngle: 0
-            ),
+//            //Element 9
+//            ScopeElement(
+//                type: .polygon,
+//                center: CGPoint(x: 0.0, y: -2*sqrt3Over5),
+//                radius: 0.2,
+//                startAngle: 0
+//            ),
             //Element 10
             ScopeElement(
                 type: .polygon,
@@ -124,13 +124,13 @@ struct BuildTemplates: AsyncParsableCommand {
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 15
-            ScopeElement(
-                type: .polygon,
-                center: CGPoint(x: 0.0, y: 2*sqrt3Over5),
-                radius: 0.2,
-                startAngle: 0
-            ),
+//            //Element 15
+//            ScopeElement(
+//                type: .polygon,
+//                center: CGPoint(x: 0.0, y: 2*sqrt3Over5),
+//                radius: 0.2,
+//                startAngle: 0
+//            ),
             //Element 16
             ScopeElement(
                 type: .polygon,
@@ -162,7 +162,7 @@ struct BuildTemplates: AsyncParsableCommand {
             //Element 20
             ScopeElement(
                 type: .polygon,
-                center: CGPoint(x: 0.9, y: 3*sqrt3Over10),
+                center: CGPoint(x: 0.9, y: sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
@@ -249,9 +249,9 @@ struct BuildTemplates: AsyncParsableCommand {
                 isCircular = true
                 elements = [ScopeElement(
                     type: .eightWay,
-                    center: CGPointZero,
+                    center: CGPoint(x: 0, y: 0),
                     radius: 1.0,
-                    startAngle:  0.0)]
+                    startAngle:  Float.pi/6)]
             case 1: // MARK: Polygon grid template
                 isCircular = true
                 elements = polygonElements()

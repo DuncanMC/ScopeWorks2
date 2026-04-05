@@ -20,6 +20,7 @@ class ScopeState: ObservableObject {
         return Float(selectedImageSize.width / selectedImageSize.height)
     }
     
+    @Published var radiusScale = 1.0
     @Published var trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] //TODO
 
@@ -41,7 +42,7 @@ class ScopeViewModel: ObservableObject {
     var scopeState: ScopeState
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
-        let scopeTemplates = ScopeWorks2App.scopeTemplates
+//        let scopeTemplates = ScopeWorks2App.scopeTemplates
 //        for aTemplate in scopeTemplates {
 //            print(aTemplate)
 //        }
@@ -97,9 +98,6 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .aspectRatio(1.0, contentMode: .fit)
                 .background(Color.white)
-                .onChange(of: scopeState.showOutlines) { oldValue, newValue in
-                    print("showOutlines = \(newValue)")
-                }
             Spacer()
             ScrollView(.horizontal) {
                 VStack(spacing: 10) {

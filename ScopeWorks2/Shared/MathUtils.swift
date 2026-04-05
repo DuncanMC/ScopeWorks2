@@ -33,3 +33,12 @@ public func rotateTriangle(trianglePoints: TrianglePoints, angle: Float, aroundC
     return TrianglePoints(point1: point1, point2: point2, point3: point3)
 }
 
+extension simd_float2 {
+    
+    public init(_ cgPoint: CGPoint) {
+        self.init(x: Float(cgPoint.x), y: Float(cgPoint.y))
+    }
+    public var myDescription: String {
+        return "(\(self[0]), \(self[1]))"
+    }
+}

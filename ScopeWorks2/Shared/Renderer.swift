@@ -5,11 +5,6 @@ import simd
 import UIKit
 #endif
 
-extension simd_float2 {
-    public var myDescription: String {
-        return "(\(self[0]), \(self[1]))"
-    }
-}
 
 extension Float {
     var degreesToRadians: Float {
@@ -31,6 +26,9 @@ let white: SIMD4<Float> = SIMD4<Float>(1, 1, 1, 1)
 let zeroPoint = simd_float2(0,0)
 
 class ScopeRenderer: NSObject, MTKViewDelegate {
+    
+    static var logPoints: Bool = false
+//    static var indexToDraw: Int? = nil
     weak var mtkView: MTKView?
     var device: MTLDevice!
     var commandQueue: MTLCommandQueue!
@@ -125,6 +123,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     func loadTexture() {
 #if os(macOS)
         if let url = Bundle.main.url(forResource: "example", withExtension: "png"),
+//        if let url = Bundle.main.url(forResource: "test 2", withExtension: "png"),
            let imageData = try? Data(contentsOf: url) {
             
             Task { @MainActor in
@@ -238,117 +237,135 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(texture, index: 0)
-        //        descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0.0, green: 0, blue: 0, alpha: 1.0)
         
-        // Draw six equilateral triangles forming the hexagon
-        let radius: Float = 0.99
-        for i in 0..<scopeState.polygonSides {
-            let angle = Float(i) *  2  * (.pi / Float(scopeState.polygonSides))
-            let cosA = cos(angle)
-            let sinA = sin(angle)
-            let nextA = Float(i+1) * 2 *  (.pi / Float(scopeState.polygonSides))
-            let cosB = cos(nextA)
-            let sinB = sin(nextA)
-            let point2x = radius * cosA
-            let point3x = radius * cosB
-            let point2y = radius * sinA
-            let point3y = radius * sinB
-            var verts: [simd_float2]
-            if i.isMultiple(of: 2) && scopeState.flipAlternates {
-                verts = [
-                    simd_float2(0, 0),
-                    simd_float2(point3x, point3y),
-                    simd_float2(point2x, point2y)
-                ]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
+        if template.isCircular {
+            for (_, anElement) in template.elements.enumerated() {
+                let center = simd_float2(anElement.center)
+                let radius: Float = Float(anElement.radius * scopeState.radiusScale)
+                for i in 0..<scopeState.polygonSides {
+//                    print("Center = \(center.myDescription)")
+                    let angle = fmod((Float(i) *  2  * (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
+                    let cosA = cos(angle)
+                    let sinA = sin(angle)
+                    let nextA = fmod((Float(i+1) * 2 *  (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
+                    let cosB = cos(nextA)
+                    let sinB = sin(nextA)
+                    // Zoom in
+                    let point2x = radius * cosA + center.x
+                    let point3x = radius * cosB + center.x
+                    let point2y = radius * sinA + center.y
+                    let point3y = radius * sinB + center.y
+                    let point2: simd_float2 = simd_float2(point2x, point2y)
+                    let point3: simd_float2 = simd_float2(point3x, point3y)
+                    
+                    var verts: [simd_float2]
+                    if i.isMultiple(of: 2) && scopeState.flipAlternates {
+                        verts = [
+                            center,
+                            point3,
+                            point2
+                        ]
+                        
+                    } else {
+                        verts = [
+                            center,
+                            point2,
+                            point3
+                        ]
+                        
+                    }
+                    
+                    if ScopeRenderer.logPoints {
+                        print("point2 = \(point2.myDescription)")
+                        print("point3 = \(point3.myDescription)")
+                    }
+                    encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                    
+                    var uniforms: Uniforms = Uniforms(
+                        color: simd_float4(1, 1, 1, 1),
+                        drawWithTetxure: true,
+                        textureTriangle: scopeState.trianglePoints
+                    )
+                    
+                    encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                    encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                    
+                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
 
-            } else {
-                verts = [
-                    simd_float2(0, 0),
-                    simd_float2(point2x, point2y),
-                    simd_float2(point3x, point3y)
-                ]
-
-            }
-
-            encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-            
-            var uniforms: Uniforms = Uniforms(
-                color: simd_float4(1, 1, 1, 1),
-                drawWithTetxure: true,
-                textureTriangle: scopeState.trianglePoints
-            )
-            encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-            if scopeState.drawWithReflection {
-                if i.isMultiple(of: 2) && scopeState.flipAlternates {
-                    verts = [
-                        simd_float2(0, 0),
-                        simd_float2(point2x, point2y),
-                        simd_float2(point3x, point3y)
-                    ]
-                } else {
-                    verts = [
-                        simd_float2(0, 0),
-                        simd_float2(point3x, point3y),
-                        simd_float2(point2x, point2y)
-                    ]
+                    if scopeState.drawWithReflection {
+                        if i.isMultiple(of: 2) && scopeState.flipAlternates {
+                            verts = [
+                                center,
+                                simd_float2(point2x, point2y),
+                                simd_float2(point3x, point3y)
+                            ]
+                        } else {
+                            verts = [
+                                center,
+                                simd_float2(point3x, point3y),
+                                simd_float2(point2x, point2y)
+                            ]
+                        }
+                            encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                            
+                            var uniforms: Uniforms = Uniforms(
+                                color: simd_float4(1, 1, 1, 1),
+                                drawWithTetxure: true,
+                                textureTriangle: scopeState.trianglePoints
+                            )
+                            encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                            
+                            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                    }
+                    
+                    if scopeState.showOutlines {
+                        // Draw outlines using drawThickLine()
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[1], p2: verts[2],
+                                      color: black,
+                                      thickness:  outerThickness / Float(drawableSize.width))
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[0], p2: verts[1],
+                                      color: black,
+                                      thickness: outerThickness / Float(drawableSize.width))
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[0], p2: verts[2],
+                                      color: black,
+                                      thickness: outerThickness / Float(drawableSize.width))
+                        
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[1], p2: verts[2],
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableSize.width))
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[0], p2: verts[1],
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableSize.width))
+                        drawThickLine(encoder: encoder,
+                                      p1: verts[0], p2: verts[2],
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableSize.width))
+                        
+                        //            //Now draw again with a 1-pixel thick white line
+                        //            drawLine(encoder: encoder,
+                        //                          p1: verts[1], p2: verts[2],
+                        //                          color: white)
+                        //            drawLine(encoder: encoder,
+                        //                          p1: verts[0], p2: verts[1],
+                        //                          color: white)
+                        //            drawLine(encoder: encoder,
+                        //                          p1: verts[0], p2: verts[2],
+                        //                          color: white)
+                    }
                 }
-                
-                encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-                
-                var uniforms: Uniforms = Uniforms(
-                    color: simd_float4(1, 1, 1, 1),
-                    drawWithTetxure: true,
-                    textureTriangle: scopeState.trianglePoints
-                )
-                encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             }
-
-            if scopeState.showOutlines {
-                // Draw outlines using drawThickLine()
-                drawThickLine(encoder: encoder,
-                              p1: verts[1], p2: verts[2],
-                              color: black,
-                              thickness:  outerThickness / Float(drawableSize.width))
-                drawThickLine(encoder: encoder,
-                              p1: verts[0], p2: verts[1],
-                              color: black,
-                              thickness: outerThickness / Float(drawableSize.width))
-                drawThickLine(encoder: encoder,
-                              p1: verts[0], p2: verts[2],
-                              color: black,
-                              thickness: outerThickness / Float(drawableSize.width))
-                
-                drawThickLine(encoder: encoder,
-                              p1: verts[1], p2: verts[2],
-                              color: white,
-                              thickness: innerThickness / Float(drawableSize.width))
-                drawThickLine(encoder: encoder,
-                              p1: verts[0], p2: verts[1],
-                              color: white,
-                              thickness: innerThickness / Float(drawableSize.width))
-                drawThickLine(encoder: encoder,
-                              p1: verts[0], p2: verts[2],
-                              color: white,
-                              thickness: innerThickness / Float(drawableSize.width))
-                
-                //            //Now draw again with a 1-pixel thick white line
-                //            drawLine(encoder: encoder,
-                //                          p1: verts[1], p2: verts[2],
-                //                          color: white)
-                //            drawLine(encoder: encoder,
-                //                          p1: verts[0], p2: verts[1],
-                //                          color: white)
-                //            drawLine(encoder: encoder,
-                //                          p1: verts[0], p2: verts[2],
-                //                          color: white)
-            }
+        } else {
+            
         }
+        
+
 
         encoder.endEncoding()
         commandBuffer.present(drawable)
