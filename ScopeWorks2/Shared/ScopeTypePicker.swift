@@ -10,38 +10,54 @@ import SwiftUI
 struct ScopeTypePicker: View {
     
     var title: String
-    var options: [String]
+    var options: [(title: String, index: Int)]
     @Binding var selection: Int
 
     var body: some View {
-        Picker(selection: $selection, label:
-                
-                HStack {
-            Rectangle()
-#if os(macOS)
-                .foregroundColor(Color(nsColor: .windowBackgroundColor))
-#else
-                .foregroundColor(Color(uiColor: .systemBackground))
-#endif
-                .frame(height: 40)
-//            Text(title)
-//            Image(systemName: "chevron.down")
-//                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 8))
-        }
-//            .overlay(
-//                RoundedRectangle(cornerRadius: 5)
-//                    .stroke(Color.black, lineWidth: 1)
-//            )
+            List {
+                Picker(title, selection: $selection) {
+                    ForEach(options, id: \.self.index) { option in
+                        Text("\(option.title)")
+                    }
+                }
+            }
+            .frame(height: 100)
+            .border(.black, width: 2)
+            .frame(minWidth: 250)
+
+
+            /*
+             Text(title)
+            Picker(selection: $selection, label:
+                    HStack {
+                        Rectangle()
+                        #if os(macOS)
+                            .foregroundColor(Color(nsColor: .windowBackgroundColor))
+                        #else
+                            .foregroundColor(Color(uiColor: .systemBackground))
+                        #endif
+                            .frame(height: 40)
+                        
+                    }
                 .overlay(
-                    Text("Picker Option \(options[selection])")
+                    Text("\(options[selection].title)")
                 )
                     .padding(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-        ) {
-            ForEach(options, id: \.self) { option in
-                Text("Picker Option \(option)")
+
+            ) {
+                ForEach(options, id: \.self.index) { option in
+                    Text("\(option.title)")
+                }
             }
-        }
-        .pickerStyle(MenuPickerStyle())
+            .pickerStyle(MenuPickerStyle())
+            */
+//            .overlay(
+//                RoundedRectangle(cornerRadius: 16)
+//                    .stroke(.blue, lineWidth: 2)
+//            )
+            
+
+        
     }
 }
 

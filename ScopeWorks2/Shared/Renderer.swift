@@ -38,7 +38,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
     var texture: MTLTexture? {
         didSet {
-            print("In ScopeRenderer texture didSet")
+//            print("In ScopeRenderer texture didSet")
             Task { @MainActor in
                 scopeState.trianglePoints = calcTrianglePoints()
                 scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
@@ -55,11 +55,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let drawWithTetxure: Bool
         let textureTriangle: TrianglePoints
     }
-    var imageData: Data? {
-        didSet {
-            print("In ScopeRenderer image didSet")
-        }
-    }
+    var imageData: Data?
 
 #if os(iOS)
     init(scopeState: ScopeState) {
@@ -148,7 +144,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     tex.pixelFormat == .bgra8Unorm_srgb ||
                     tex.pixelFormat == .rgba16Float ||
                     tex.pixelFormat == .rgba32Float
-                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
+//                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
                 } else {
                     print("[ScopeRenderer] Failed to load texture.")
                 }
@@ -177,7 +173,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         tex.pixelFormat == .bgra8Unorm_srgb ||
                         tex.pixelFormat == .rgba16Float ||
                         tex.pixelFormat == .rgba32Float
-                        print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
+//                        print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
                     } else {
                         print("[ScopeRenderer] Failed to load texture.")
                     }

@@ -10,6 +10,10 @@ import SwiftUI
 @main
 struct ScopeWorks2App: App {
 
+    static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {
+        return scopeTemplates.map { (title: $0.name, index: $0.index) }
+    }()
+
     static var scopeTemplateNames: [String] = {
         return scopeTemplates.map { $0.name }
     }()

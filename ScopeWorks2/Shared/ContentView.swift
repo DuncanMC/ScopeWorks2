@@ -42,9 +42,9 @@ class ScopeViewModel: ObservableObject {
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
         let scopeTemplates = ScopeWorks2App.scopeTemplates
-        for aTemplate in scopeTemplates {
-            print(aTemplate)
-        }
+//        for aTemplate in scopeTemplates {
+//            print(aTemplate)
+//        }
     }
     
     func changeAnimationState() {
@@ -102,71 +102,80 @@ struct ContentView: View {
                 }
             Spacer()
             ScrollView(.horizontal) {
-                HStack(alignment: .center,spacing: 20) {
-                    Spacer()
-                    #if os(iOS)
+                VStack(spacing: 10) {
+                    HStack(alignment: .center, spacing: 20) {
+                        Spacer()
+    #if os(iOS)
                         PhotoPickerView(scopeState: scopeState)
-                    #endif
-                    
-                    ScopeTypePicker(title: "Kaledioscope Type", options: ScopeWorks2App.scopeTemplateNames, selection: $scopeState.selectedScopeType )
-                        .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
-                            print("selectedScopeType = \(newValue)")
-                        }
+    #endif
+                        
+                        ScopeTypePicker(title: "Kaledioscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
+                            .frame(width: 360)
 
-                    
-                    LabeledContent(content: {
-                        TextField("",
-                                  text: $polygonSidesString,
-                                  onEditingChanged: { isEditing in
-                            print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
-                        },
-                                  onCommit: {
-                            print("In onCommit, $polygonSidesString = \(polygonSidesString)")
-                            guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
-                                Task { @MainActor in
-                                    self.polygonSidesString = "\(scopeState.polygonSides)"
-                                }
-                                return
+                            .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
+//                                print("selectedScopeType = \(newValue)")
                             }
-                            scopeState.polygonSides = value.intValue
-                            isFocused = false
-                        }
-                        )
+                        
+                        
+                        LabeledContent(content: {
+                            TextField("",
+                                      text: $polygonSidesString,
+                                      onEditingChanged: { isEditing in
+//                                print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
+                            },
+                                      onCommit: {
+//                                print("In onCommit, $polygonSidesString = \(polygonSidesString)")
+                                guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
+                                    Task { @MainActor in
+                                        self.polygonSidesString = "\(scopeState.polygonSides)"
+                                    }
+                                    return
+                                }
+                                scopeState.polygonSides = value.intValue
+                                isFocused = false
+                            }
+                            )
                             .textFieldStyle(.roundedBorder)
                             .frame(minWidth: 30, maxWidth: 50)
                             .focused($isFocused)
                             .onChange(of: isFocused) {
                                 if isFocused {
-                                    #if os(iOS)
+    #if os(iOS)
                                     Task { @MainActor in
                                         UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
                                     }
-                                    #elseif os(macOS)
+    #elseif os(macOS)
                                     Task { @MainActor in
                                         NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
                                     }
-                                    #endif
+    #endif
                                     selection = .init(range: site.startIndex..<site.endIndex)
                                 }
                             }
                             .onAppear() {
                                 polygonSidesString = "\(scopeState.polygonSides)"
                             }
-                    },
-                                   label: {
-                        Text("Polygon sides")
+                        },
+                                       label: {
+                            Text("Polygon sides")
+                            
+                        })
+                        .padding()
                         
-                    })
-                    .padding()
+                        Toggle(isOn: $scopeState.showOutlines) {
+                            Text("Show outlines")
+                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        }
+                        Toggle(isOn: $scopeState.useBlackBackground) {
+                            Text("Use black background")
+                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        }
+                        Spacer()
 
-                    Toggle(isOn: $scopeState.showOutlines) {
-                        Text("Show outlines")
-                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
                     }
-                    Toggle(isOn: $scopeState.useBlackBackground) {
-                        Text("Use black background")
-                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                    }
+                HStack(alignment: .center,spacing: 20) {
+                    Spacer()
+
                     Toggle(isOn: $scopeState.flipAlternates) {
                         Text("Flip alternates")
                             .frame(maxWidth: .infinity, alignment: toggleAlignment)
@@ -189,7 +198,8 @@ struct ContentView: View {
                     Spacer()
                 }
             }
-//            .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+            }
+            .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
         }
     }
 }
