@@ -10,7 +10,7 @@ class ScopeState: ObservableObject {
     let portrait = "portrait"
     let landscape = "landscape"
 
-    @Published var textureName = "landscape"
+    @Published var textureName = "example"
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
         #if os(iOS)
@@ -44,11 +44,19 @@ class ScopeState: ObservableObject {
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
+    @Published var texAspect: Float = 1
+    @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
     @Published var texture: MTLTexture? {
         didSet {
             Task { @MainActor in
+                guard let texture else { return }
                 trianglePoints = calcTrianglePoints()
                 rotationCenter = centerPoint(trianglePoints: trianglePoints)
+                let texWidth = CGFloat(texture.width)
+                let texHeight = CGFloat(texture.height)
+                texSize = CGSize(width: texWidth, height: texHeight)
+                texAspect = Float(texWidth / texHeight)
+                print("After loading texture, texWidth = \(texWidth). texHeight =  \(texWidth). texAspect = \(texAspect)")
             }
         }
     }
@@ -150,8 +158,8 @@ struct ContentView: View {
                     SourceImageViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
-                        .aspectRatio(1.0, contentMode: .fit)
- //                        .border(.black)
+                        .aspectRatio(scopeState.texSize, contentMode: .fit)
+                         .border(.black)
 
                 }
                 ScopeViewRepresentable(scopeState: scopeState)
@@ -224,6 +232,11 @@ struct ContentView: View {
                             Text("Show outlines")
                                 .frame(maxWidth: .infinity, alignment: toggleAlignment)
                         }
+                        Toggle(isOn: $scopeState.showSourceImage) {
+                            Text("Show source image")
+                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        }
+                        
                         Toggle(isOn: $scopeState.useBlackBackground) {
                             Text("Use black background")
                                 .frame(maxWidth: .infinity, alignment: toggleAlignment)
@@ -330,6 +343,7 @@ struct PhotoPickerView: View {
     }
 }
 #endif
+
 
 
 

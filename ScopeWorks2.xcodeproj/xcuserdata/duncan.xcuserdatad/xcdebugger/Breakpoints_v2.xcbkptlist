@@ -7,32 +7,48 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D71BB18E-F147-410A-8D2D-449136F1CE33"
+            uuid = "4C0D075A-D2BE-46D9-9881-E9B2F9DDA183"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "ScopeWorks2/Shared/SourceImageRenderer.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "241"
-            endingLineNumber = "241"
-            landmarkName = "draw(in:)"
+            startingLineNumber = "349"
+            endingLineNumber = "349"
+            landmarkName = "drawSquare(in:encoder:center:color:width:orthoMatrix:texAspect:asDiamond:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "26EB4546-DDA1-4F11-8B42-0F7CE8446525"
+            uuid = "3B7F43BC-2ADA-459E-AEE6-7AB60131F014"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "ScopeWorks2/Shared/SourceImageRenderer.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "252"
-            endingLineNumber = "252"
-            landmarkName = "draw(in:)"
+            startingLineNumber = "327"
+            endingLineNumber = "327"
+            landmarkName = "drawSquare(in:encoder:center:color:width:orthoMatrix:texAspect:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "2E830AEC-7D63-4204-8493-D5CD63C0F4F4"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ScopeWorks2/Shared/SourceImageRenderer.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "328"
+            endingLineNumber = "328"
+            landmarkName = "drawSquare(in:encoder:center:color:width:orthoMatrix:texAspect:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

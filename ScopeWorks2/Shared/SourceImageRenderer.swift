@@ -173,7 +173,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             return
         }
         
-        let aspect = Float(width / height)
+//        let aspect = Float(width / height)
         
         // In your vertex shader, multiply positions by orthoMatrix
         
@@ -193,7 +193,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             return
         }
         guard let texture = texture else {
-            //            print("[ScopeRenderer] texture is nil")
             return
         }
         
@@ -202,8 +201,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let texAspect = texWidth / texHeight
         
         // Model-View-Projection matrix example
-        var orthoMatrix = matrix_identity_float4x4
-        orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
+        let orthoMatrix = matrix_identity_float4x4
+//        orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
         
         
         let commandBuffer = commandQueue.makeCommandBuffer()!
@@ -224,30 +223,14 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(texture, index: 0)
-        var factor: Float
-        if texAspect >= 1 {
-            factor = 1.0
-        } else {
-            factor = 0.75
-        }
         var verts: [simd_float2]
-        switch texAspect {
-        case 1.0:
-            verts = [simd_float2(x: -1, y:  1), // point1
-                     simd_float2(x:  1, y: 1 ), // point2
-                     simd_float2(x: 1, y: -1)   //point3
-            ]
-        case let value where value > 1.0:
-            verts = [simd_float2(x: -1, y:  1),  // point1
-                     simd_float2(x:  1 , y: 1 ),  // point2
-                     simd_float2(x: 1 / texAspect, y: -1)    // point3
-            ]
-        default: // aspect < 1.0
-            verts = [simd_float2(x: -1, y:  1),  // point1
-                     simd_float2(x:  factor * texAspect, y: 1 ),   // point2
-                     simd_float2(x: factor * texAspect, y: -1)    // point3
-            ]
-        }
+        
+        let p1 = simd_float2(x: -1, y:  1)
+        let p2 = simd_float2(x:  1, y:  1)
+        let p3 = simd_float2(x:  1, y: -1)
+        let p4 = simd_float2(x: -1, y: -1)
+
+        verts = [p1, p2, p3]
         
         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
         
@@ -266,39 +249,155 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         
-        switch texAspect {
-        case 1.0:
-            verts = [simd_float2(x: -1, y:  1), // point1
-                     simd_float2(x:  1, y: -1), // point3
-                     simd_float2(x:  -1, y: -1) // point4
-            ]
-        case let value where value > 1.0:
-            verts = [simd_float2(x: -1, y:  1), // point1
-                     simd_float2(x:  1, y: -1), // point3
-                     simd_float2(x:  -1, y: -1) // point4
-            ]
-        default:
-            
-            verts = [simd_float2(x: -1, y:  1), // point1
-                     simd_float2(x:  factor * texAspect, y: -1), // point3
-                     simd_float2(x:  -1, y: -1) // point4
-            ]
-        }
-        
+
+        verts = [p1, p3, p4]
+
         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
 
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point1 * 2 - 1 , p2: scopeState.trianglePoints.point2 * 2 - 1,
+                      color: black,
+                      thickness:  6.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point2 * 2 - 1, p2: scopeState.trianglePoints.point3 * 2 - 1,
+                      color: black,
+                      thickness:  6.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point3 * 2 - 1, p2: scopeState.trianglePoints.point1 * 2 - 1,
+                      color: black,
+                      thickness:  6.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
         
-        
-        
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point1 * 2 - 1 , p2: scopeState.trianglePoints.point2 * 2 - 1,
+                      color: white,
+                      thickness:  2.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point2 * 2 - 1, p2: scopeState.trianglePoints.point3 * 2 - 1,
+                      color: white,
+                      thickness:  2.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        drawThickLine(encoder: encoder,
+                      p1: scopeState.trianglePoints.point3 * 2 - 1, p2: scopeState.trianglePoints.point1 * 2 - 1,
+                      color: white,
+                      thickness:  3.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        let outsideWidth: Float = 20
+        let insideWidth: Float = 18
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point1, color: black, width: outsideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect)
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point1, color: yellow, width: insideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect)
+
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point2, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point2, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
-        scopeState.lastAnimationStepTime = CACurrentMediaTime()
     }
     
+    func drawSquare(in view: MTKView,
+                    encoder: MTLRenderCommandEncoder,
+                    center: simd_float2,
+                    color: SIMD4<Float>, width: Float,
+                    orthoMatrix: float4x4,
+                    texAspect: Float,
+                    asDiamond: Bool = false) {
+
+        let center: simd_float2 = simd_float2(x: center.x * 2 - 1, y: center.y * 2 - 1)
+        let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
+        let offset = (widthPerPixel * width)
+        let p1: simd_float2
+        let p2: simd_float2
+        let p3: simd_float2
+        let p4: simd_float2
+        if asDiamond {
+            p1 = simd_float2(x: center.x - offset, y: center.y + offset)
+            p2 = simd_float2(x: center.x + offset, y: center.y + offset)
+            p3 = simd_float2(x: center.x + offset, y: center.y - offset)
+            p4 = simd_float2(x: center.x - offset, y: center.y - offset)
+
+        } else {
+            p1 = simd_float2(x: center.x, y: center.y + offset)
+            p2 = simd_float2(x: center.x + offset, y: center.y)
+            p3 = simd_float2(x: center.x, y: center.y - offset)
+            p4 = simd_float2(x: center.x - offset, y: center.y)
+        }
+        
+        var verts: [simd_float2] = [p1, p2, p3]
+
+        let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+        
+        var uniforms: Uniforms = Uniforms(
+            color: color,
+            drawWithTetxure: false,
+            drawTextureTriangles: false,
+            textureTriangle:  trianglePoints,
+            texAspect: texAspect,
+            orthoMatrix: orthoMatrix
+        )
+
+        encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+        
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+
+        verts = [p1, p3, p4]
+
+        encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+
+    }
+    
+    func drawThickLine(encoder: MTLRenderCommandEncoder,
+                       p1: simd_float2, p2: simd_float2,
+                       color: SIMD4<Float>, thickness: Float,
+                       orthoMatrix: float4x4,
+                       texAspect: Float) {
+        let dir = normalize(p2 - p1)
+        let normal = simd_float2(-dir.y, dir.x) * thickness / 2
+        let v0 = p1 + normal
+        let v1 = p1 - normal
+        let v2 = p2 + normal
+        let v3 = p2 - normal
+        let vertices = [v0, v1, v2, v3]
+        encoder.setVertexBytes(vertices, length: MemoryLayout<simd_float2>.stride * 4, index: 0)
+        let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+
+        var uniforms: Uniforms = Uniforms(
+            color: color,
+            drawWithTetxure: false,
+            drawTextureTriangles: false,
+            textureTriangle:  trianglePoints,
+            texAspect: texAspect,
+            orthoMatrix: orthoMatrix
+        )
+        encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+        encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+    }
+
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         drawableSize = size
         // For example, you may want to adjust your projection or drawing to match portrait/landscape changes

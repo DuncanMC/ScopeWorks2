@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>283</string>
+					<string>296</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>282</string>
+					<string>295</string>
 					<key>Timestamp</key>
-					<string>797194744.167298</string>
+					<string>797208178.313813</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>150</string>
+					<string>158</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>149</string>
+					<string>157</string>
 					<key>Timestamp</key>
-					<string>797194744.167502</string>
+					<string>797200334.062196</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -156,7 +156,7 @@
 				<key>trailing</key>
 				<string>                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
-                        .aspectRatio(1.0, contentMode: .fit)
+                        .aspectRatio(scopeState.texSize, contentMode: .fit)
 </string>
 			</dict>
 			<key>title</key>

@@ -20,12 +20,15 @@ public struct TrianglePoints {
 
 
 
-
+let red: SIMD4<Float> = SIMD4<Float>(1, 0, 0, 1)
+let yellow: SIMD4<Float> = SIMD4<Float>(1, 1, 0, 1)
+let blue: SIMD4<Float> = SIMD4<Float>(0, 0, 1, 1)
 let black: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 1)
 let white: SIMD4<Float> = SIMD4<Float>(1, 1, 1, 1)
 let zeroPoint = simd_float2(0,0)
 
 class ScopeRenderer: NSObject, MTKViewDelegate {
+    
     
     static var logPoints: Bool = false
 //    static var indexToDraw: Int? = nil
@@ -110,19 +113,18 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 let options: [MTKTextureLoader.Option: Any] =
                 [.origin:MTKTextureLoader.Origin.bottomLeft,
                  .generateMipmaps: true]
-                texture = try loader.newTexture(data: imageData, options: options)
-                if let tex = texture {
-                    let hasAlpha =
-                    tex.pixelFormat == .rgba8Unorm ||
-                    tex.pixelFormat == .rgba8Unorm_srgb ||
-                    tex.pixelFormat == .bgra8Unorm ||
-                    tex.pixelFormat == .bgra8Unorm_srgb ||
-                    tex.pixelFormat == .rgba16Float ||
-                    tex.pixelFormat == .rgba32Float
-//                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
-                } else {
-                    print("[ScopeRenderer] Failed to load texture.")
+                let tex = try loader.newTexture(data: imageData, options: options)
+                Task { @MainActor in
+                    scopeState.texture = tex
                 }
+                let hasAlpha =
+                tex.pixelFormat == .rgba8Unorm ||
+                tex.pixelFormat == .rgba8Unorm_srgb ||
+                tex.pixelFormat == .bgra8Unorm ||
+                tex.pixelFormat == .bgra8Unorm_srgb ||
+                tex.pixelFormat == .rgba16Float ||
+                tex.pixelFormat == .rgba32Float
+                //                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
             } catch {
                 print("Error loading texture: \(error)")
             }
@@ -130,25 +132,22 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 #else
             let loader = MTKTextureLoader(device: device)
                 do {
-                    guard let imageData,
-                          let image = UIImage(data: imageData)
-                    else { return }
+                    guard let imageData else { return }
                     let options: [MTKTextureLoader.Option: Any] =
                     [.origin:MTKTextureLoader.Origin.bottomLeft,
                      .generateMipmaps: true]
-                    scopeState.texture = try loader.newTexture(cgImage: image.cgImage!, options: options)
-
-                    if let tex = scopeState.texture {
-                        let hasAlpha =
-                        tex.pixelFormat == .rgba8Unorm ||
-                        tex.pixelFormat == .rgba8Unorm_srgb ||
-                        tex.pixelFormat == .bgra8Unorm ||
-                        tex.pixelFormat == .bgra8Unorm_srgb ||
-                        tex.pixelFormat == .rgba16Float ||
-                        tex.pixelFormat == .rgba32Float
-                    } else {
-                        print("[ScopeRenderer] Failed to load texture.")
+                    let tex = try loader.newTexture(data: imageData, options: options)
+                    Task { @MainActor in
+                        scopeState.texture = tex
                     }
+
+                    let hasAlpha =
+                    tex.pixelFormat == .rgba8Unorm ||
+                    tex.pixelFormat == .rgba8Unorm_srgb ||
+                    tex.pixelFormat == .bgra8Unorm ||
+                    tex.pixelFormat == .bgra8Unorm_srgb ||
+                    tex.pixelFormat == .rgba16Float ||
+                    tex.pixelFormat == .rgba32Float
                 } catch {
                     print("Error loading texture: \(error)")
                 }
@@ -180,9 +179,20 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let blackValues = [0.0, 0.0, 0.0, 1.0]
         let whiteValues = [1.0, 1.0, 1.0, 1.0]
         
-        
         if scopeState.animate {
+            if ScopeRenderer.logPoints {
+                print("Before animate.")
+                print("   trianglePoints.point1 = \(scopeState.trianglePoints.point1.myDescription)")
+                print("   trianglePoints.point2 = \(scopeState.trianglePoints.point2.myDescription)")
+                print("   trianglePoints.point3 = \(scopeState.trianglePoints.point3.myDescription)")
+            }
             animateKaleidoscope()
+            if ScopeRenderer.logPoints {
+                print("After animate.")
+                print("   trianglePoints.point1 = \(scopeState.trianglePoints.point1.myDescription)")
+                print("   trianglePoints.point2 = \(scopeState.trianglePoints.point2.myDescription)")
+                print("   trianglePoints.point3 = \(scopeState.trianglePoints.point3.myDescription)")
+            }
         }
 
         //print("[ScopeRenderer] draw(in:) called. drawableSize: \(drawableSize), view.bounds: \(view.bounds)")
@@ -271,10 +281,10 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         
                     }
                     
-                    if ScopeRenderer.logPoints {
-                        print("point2 = \(point2.myDescription)")
-                        print("point3 = \(point3.myDescription)")
-                    }
+//                    if ScopeRenderer.logPoints {
+//                        print("point2 = \(point2.myDescription)")
+//                        print("point3 = \(point3.myDescription)")
+//                    }
                     encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
                     
                     var uniforms: Uniforms = Uniforms(

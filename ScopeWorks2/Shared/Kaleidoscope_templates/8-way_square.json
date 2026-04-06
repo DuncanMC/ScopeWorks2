@@ -1,17 +1,17 @@
 {
-  "sideCount" : 6,
-  "modifiedDate" : 797114906.766057,
-  "name" : "8-way square",
-  "displayDescription" : "8-way square kaleidoscope.",
+  "isCircular" : false,
   "elements" : [
     {
-      "type" : 1,
+      "radius" : 0.5,
       "centerX" : 0.5,
       "centerY" : 0.5,
-      "radius" : 0.5,
+      "type" : 1,
       "startAngle" : 0
     }
   ],
-  "isCircular" : false,
-  "index" : 2
+  "index" : 2,
+  "displayDescription" : "8-way square kaleidoscope.",
+  "modifiedDate" : 797197316.388799,
+  "sideCount" : 6,
+  "name" : "8-way square"
 }
