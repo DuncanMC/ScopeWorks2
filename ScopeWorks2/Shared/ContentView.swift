@@ -19,8 +19,8 @@ class ScopeState: ObservableObject {
                 selectedImageSize.width > 0 else { return 0 }
         return Float(selectedImageSize.width / selectedImageSize.height)
     }
-    
-    @Published var radiusScale = 1.0
+    @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
+    @Published var radiusScale: Float = 1.0
     @Published var trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] //TODO
 
@@ -57,6 +57,19 @@ class ScopeViewModel: ObservableObject {
 
 struct ContentView: View {
     
+    let zoomDetents: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
+    let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+    var zoomString: String {
+        String(format:"%.02f", scopeState.zoom)
+    }
+    
+    var radiusString: String {
+        String(format:"%.02f", scopeState.radiusScale)
+    }
+
+    //
+
     static let numberFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.maximumFractionDigits = 0
@@ -87,6 +100,10 @@ struct ContentView: View {
 
     }
     
+    private func label(for value: Double) -> some View {
+        Text(String(format: "%.2f", value))
+    }
+    
     #if os(iOS)
         @State private var image: UIImage? = nil
     #elseif os(macOS)
@@ -96,7 +113,6 @@ struct ContentView: View {
         VStack {
             ScopeViewRepresentable(scopeState: scopeState)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .aspectRatio(1.0, contentMode: .fit)
                 .background(Color.white)
             Spacer()
             ScrollView(.horizontal) {
@@ -170,6 +186,52 @@ struct ContentView: View {
                         }
                         Spacer()
 
+                        // Visual detents and snapping for iOS 18+/macOS 26+
+                        VStack {
+                            Text("Zoom \(zoomString)")
+                            Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                        }
+//                        , neutralValue: { editing in
+//                                if !editing {
+//                                    let threshold = 0.1
+//                                    if let nearest = zoomDetents.min(by: { abs($0 - scopeState.zoom) < abs($1 - scopeState.zoom) }),
+//                                       abs(nearest - scopeState.zoom) < threshold {
+//                                        scopeState.zoom = nearest
+//                                    }
+//                                }
+//                            }) {
+//                                Text("Zoom")
+//                            } label: {
+//                                SliderTickContentForEach(zoomDetents, id: \.self) { val in
+//                                    SliderTick(val) {
+//                                        Text(String(format: "%.1f", val))
+//                                    }
+//                                }
+//                            }
+//                        }
+                        Spacer()
+                        VStack {
+                            Text("Radius \(radiusString)")
+                            Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
+//                            , onEditingChanged: { editing in
+//                                if !editing {
+//                                    let threshold = 0.05
+//                                    if let nearest = radiusDetents.min(by: { abs($0 - scopeState.radiusScale) < abs($1 - scopeState.radiusScale) }),
+//                                        abs(nearest - scopeState.radiusScale) < threshold {
+//                                        scopeState.radiusScale = nearest
+//                                    }
+//                                }
+//                            }) {
+//                                Text("Radius")
+//                            } ticks: {
+//                                SliderTickContentForEach(radiusDetents, id: \.self) { val in
+//                                    SliderTick(val) {
+//                                        Text(String(format: "%.2f", val))
+//                                    }
+//                                }
+//                            }
+                        }
+                        //radiusScale
                     }
                 HStack(alignment: .center,spacing: 20) {
                     Spacer()
@@ -224,4 +286,9 @@ struct PhotoPickerView: View {
     }
 }
 #endif
+
+
+
+
+
 

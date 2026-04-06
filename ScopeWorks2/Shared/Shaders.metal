@@ -16,6 +16,7 @@ struct Uniforms {
     float4 color;
     bool drawWithTexture;
     TrianglePoints trianglePoints;
+    float4x4 orthoMatrix;
 };
 
 
@@ -24,7 +25,9 @@ vertex VertexOut vertex_main(const device float2* position [[buffer(0)]],
                              uint vid [[vertex_id]]) {
     VertexOut out;
     float2 pos = position[vid];
-    out.position = float4(pos, 0, 1);
+//    out.position = float4(pos, 0, 1);
+    out.position = uniforms.orthoMatrix * float4(pos, 0, 1);
+
 
     // Map each vertex to its corresponding triangle point UV
     float2 triPoints[3] = {

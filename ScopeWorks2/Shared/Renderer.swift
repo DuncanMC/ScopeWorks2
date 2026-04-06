@@ -52,6 +52,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let color: simd_float4
         let drawWithTetxure: Bool
         let textureTriangle: TrianglePoints
+        let orthoMatrix: float4x4
     }
     var imageData: Data?
 
@@ -191,6 +192,21 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     
     func draw(in view: MTKView) {
         
+        let width = view.drawableSize.width
+        let height = view.drawableSize.height
+        guard height != 0 else {
+            print("Window height is zero!")
+            return
+        }
+        
+        let aspect = Float(width / height)
+        
+        // Model-View-Projection matrix example
+          var orthoMatrix = matrix_identity_float4x4
+          orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
+
+          // In your vertex shader, multiply positions by orthoMatrix
+        
         let outerThickness: Float = 6.0
         let innerThickness: Float = 2.0
         let blackValues = [0.0, 0.0, 0.0, 1.0]
@@ -241,12 +257,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
     
         if template.isCircular {
-            let multiplier: Float = scopeState.selectedScopeType == 1 ? 2.0 : 1.0
+            let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : 1.0
             for (_, anElement) in template.elements.enumerated() {
                 var center = simd_float2(anElement.center)
                 center.x *= multiplier
                 center.y *= multiplier
-                let radius: Float = Float(anElement.radius * scopeState.radiusScale) * multiplier
+                let radius: Float = Float(anElement.radius) * scopeState.radiusScale * multiplier
                 for i in 0..<scopeState.polygonSides {
                     let angle = fmod((Float(i) *  2  * (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
                     let cosA = cos(angle)
@@ -288,7 +304,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     var uniforms: Uniforms = Uniforms(
                         color: simd_float4(1, 1, 1, 1),
                         drawWithTetxure: true,
-                        textureTriangle: scopeState.trianglePoints
+                        textureTriangle: scopeState.trianglePoints,
+                        orthoMatrix: orthoMatrix
+                          // In your vertex shader, multiply positions by orthoMatrix
                     )
                     
                     encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -315,7 +333,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             var uniforms: Uniforms = Uniforms(
                                 color: simd_float4(1, 1, 1, 1),
                                 drawWithTetxure: true,
-                                textureTriangle: scopeState.trianglePoints
+                                textureTriangle: scopeState.trianglePoints,
+                                orthoMatrix: orthoMatrix
                             )
                             encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                             encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -328,28 +347,34 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: black,
-                                      thickness:  outerThickness / Float(drawableSize.width))
+                                      thickness:  outerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: black,
-                                      thickness: outerThickness / Float(drawableSize.width))
+                                      thickness: outerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: black,
-                                      thickness: outerThickness / Float(drawableSize.width))
+                                      thickness: outerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width))
+                                      thickness: innerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width))
+                                      thickness: innerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width))
+                                      thickness: innerThickness / Float(drawableSize.width),
+                                      orthoMatrix: orthoMatrix)
                         
                         //            //Now draw again with a 1-pixel thick white line
                         //            drawLine(encoder: encoder,
@@ -376,26 +401,29 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         scopeState.lastAnimationStepTime = CACurrentMediaTime()
     }
 
-    func drawLine(encoder: MTLRenderCommandEncoder,
-                  p1: simd_float2, p2: simd_float2,
-                  color: SIMD4<Float>) {
-        let vertices: [SIMD2<Float>] = [p1, p2]
-        encoder.setVertexBytes(vertices, length: MemoryLayout<simd_float2>.stride * 2, index: 0)
-        let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
-
-        var uniforms: Uniforms = Uniforms(
-            color: color,
-            drawWithTetxure: false,
-            textureTriangle: trianglePoints
-        )
-        encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-        encoder.drawPrimitives(type: .line, vertexStart: 0, vertexCount: 2)
-    }
+//    func drawLine(encoder: MTLRenderCommandEncoder,
+//                  p1: simd_float2, p2: simd_float2,
+//                  color: SIMD4<Float>,
+//                  orthoMatrix: float4x4) {
+//        let vertices: [SIMD2<Float>] = [p1, p2]
+//        encoder.setVertexBytes(vertices, length: MemoryLayout<simd_float2>.stride * 2, index: 0)
+//        let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+//
+//        var uniforms: Uniforms = Uniforms(
+//            color: color,
+//            drawWithTetxure: false,
+//            textureTriangle: trianglePoints,
+//            orthoMatrix: orthoMatrix)
+//        )
+//        encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+//        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+//        encoder.drawPrimitives(type: .line, vertexStart: 0, vertexCount: 2)
+//    }
 
     func drawThickLine(encoder: MTLRenderCommandEncoder,
                        p1: simd_float2, p2: simd_float2,
-                       color: SIMD4<Float>, thickness: Float) {
+                       color: SIMD4<Float>, thickness: Float,
+                       orthoMatrix: float4x4) {
         let dir = normalize(p2 - p1)
         let normal = simd_float2(-dir.y, dir.x) * thickness / 2
         let v0 = p1 + normal
@@ -409,7 +437,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         var uniforms: Uniforms = Uniforms(
             color: color,
             drawWithTetxure: false,
-            textureTriangle:  trianglePoints
+            textureTriangle:  trianglePoints,
+            orthoMatrix: orthoMatrix
         )
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -419,7 +448,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     // Store the drawable size
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         drawableSize = size
-        // Optionally, update any scale/aspect-ratio logic here
         // For example, you may want to adjust your projection or drawing to match portrait/landscape changes
     }
 }
