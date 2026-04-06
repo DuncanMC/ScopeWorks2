@@ -13,7 +13,6 @@ struct ScopeViewRepresentable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
-//        mtkView.isOpaque = true
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator
         mtkView.colorPixelFormat = .bgra8Unorm
@@ -22,7 +21,6 @@ struct ScopeViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
-//        print("In \(#function), showOutlines = \(scopeState.showOutlines)")
         if let imageData = scopeState.selectedImageData {
             context.coordinator.updateImageData(imageData)
 
@@ -63,15 +61,15 @@ struct ScopeViewRepresentable: UIViewRepresentable {
 
 #endif
 
-#if os(iOS)
-extension ScopeViewRepresentable {
-    func makeUIView(context: Context) -> MTKView { makeNSView(context: context) }
-    
-    func updateUIView(_ uiView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
-
-        }
-    }
-}
-#endif
+//#if os(iOS)
+//extension ScopeViewRepresentable {
+//    func makeUIView(context: Context) -> MTKView { makeNSView(context: context) }
+//    
+//    func updateUIView(_ uiView: MTKView, context: Context) {
+//        if let imageData = scopeState.selectedImageData {
+//            context.coordinator.updateImageData(imageData)
+//
+//        }
+//    }
+//}
+//#endif

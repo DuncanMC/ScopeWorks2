@@ -3,6 +3,14 @@ import Combine
 
 class ScopeState: ObservableObject {
     @Published var selectedImageData: Data? = nil
+    
+    
+    let example = "example"
+    let test2 = "test 2"
+    let portrait = "portrait"
+    let landscape = "landscape"
+
+    @Published var textureName = "landscape"
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
         #if os(iOS)
@@ -29,12 +37,38 @@ class ScopeState: ObservableObject {
     @Published var showOutlines: Bool = false
     @Published var useBlackBackground: Bool = false
     @Published var flipAlternates: Bool = true
+    @Published var showSourceImage: Bool = true
     @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
     @Published var polygonSides = 6
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
+    @Published var texture: MTLTexture? {
+        didSet {
+            Task { @MainActor in
+                trianglePoints = calcTrianglePoints()
+                rotationCenter = centerPoint(trianglePoints: trianglePoints)
+            }
+        }
+    }
+
+    func calcTrianglePoints()
+    -> TrianglePoints {
+        guard selectedImageData != nil else {
+            return (TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint))
+        }
+
+        let point1 = SIMD2<Float>(0.4, 0.25)
+        let point2 = SIMD2<Float>(0.6, 0.25)
+        let base =  point2[0] - point1[0]
+        let angle = .pi / 3.0
+        let deltaY = Float(sin(angle)) * base
+        let deltaX = Float(cos(angle)) * base
+        let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+        return TrianglePoints(point1: point1, point2: point2, point3: point3)
+    }
+
 
 }
 
@@ -111,9 +145,19 @@ struct ContentView: View {
     #endif
     var body: some View {
         VStack {
-            ScopeViewRepresentable(scopeState: scopeState)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
+            HStack {
+                if scopeState.showSourceImage {
+                    SourceImageViewRepresentable(scopeState: scopeState)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                        .aspectRatio(1.0, contentMode: .fit)
+ //                        .border(.black)
+
+                }
+                ScopeViewRepresentable(scopeState: scopeState)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white)
+            }
             Spacer()
             ScrollView(.horizontal) {
                 VStack(spacing: 10) {

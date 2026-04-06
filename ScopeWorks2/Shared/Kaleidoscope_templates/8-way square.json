@@ -1,0 +1,17 @@
+{
+  "sideCount" : 6,
+  "isCircular" : false,
+  "modifiedDate" : 796925729.047433,
+  "name" : "8-way square",
+  "elements" : [
+    {
+      "type" : 1,
+      "centerY" : 0.5,
+      "radius" : 0.5,
+      "startAngle" : 0,
+      "centerX" : 0.5
+    }
+  ],
+  "displayDescription" : "8-way square kaleidoscope.",
+  "index" : 2
+}

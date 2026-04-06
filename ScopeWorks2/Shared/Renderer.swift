@@ -34,15 +34,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     var commandQueue: MTLCommandQueue!
     var pipeline: MTLRenderPipelineState!
 
-    var texture: MTLTexture? {
-        didSet {
-//            print("In ScopeRenderer texture didSet")
-            Task { @MainActor in
-                scopeState.trianglePoints = calcTrianglePoints()
-                scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
-            }
-        }
-    }
     
     var scopeState: ScopeState
     // Track current drawable size for orientation handling
@@ -51,7 +42,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     struct Uniforms {
         let color: simd_float4
         let drawWithTetxure: Bool
+        let drawTextureTriangles: Bool
         let textureTriangle: TrianglePoints
+        let texAspect: Float
         let orthoMatrix: float4x4
     }
     var imageData: Data?
@@ -76,21 +69,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         }
 #endif
 
-    func calcTrianglePoints()
-    -> TrianglePoints {
-        guard scopeState.selectedImageData != nil else {
-            return (TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint))
-        }
-
-        let point1 = SIMD2<Float>(0.4, 0.25)
-        let point2 = SIMD2<Float>(0.6, 0.25)
-        let base =  point2[0] - point1[0]
-        let angle = .pi / 3.0
-        let deltaY = Float(sin(angle)) * base
-        let deltaX = Float(cos(angle)) * base
-        let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
-        return TrianglePoints(point1: point1, point2: point2, point3: point3)
-    }
     
 
     func makePipeline() {
@@ -100,7 +78,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         pipelineDesc.fragmentFunction = library?.makeFunction(name: "fragment_main")
         pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
 
-        // ---- New changes
         // Enable blending for transparent drawing
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
@@ -109,7 +86,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
         pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
         pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        // ---- end of new changes
         
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)
     }
@@ -123,8 +99,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
     func loadTexture() {
 #if os(macOS)
-        if let url = Bundle.main.url(forResource: "example", withExtension: "png"),
-//        if let url = Bundle.main.url(forResource: "test 2", withExtension: "png"),
+        if let url = Bundle.main.url(forResource: scopeState.textureName, withExtension: "png"),
            let imageData = try? Data(contentsOf: url) {
             
             Task { @MainActor in
@@ -154,7 +129,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         }
 #else
             let loader = MTKTextureLoader(device: device)
-//            texture = try loader.newTexture(cgImage: img.cgImage!, options: [MTKTextureLoaderOptionOrigin: MTKTextureLoaderOriginTopLeft as NSObject])
                 do {
                     guard let imageData,
                           let image = UIImage(data: imageData)
@@ -162,10 +136,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     let options: [MTKTextureLoader.Option: Any] =
                     [.origin:MTKTextureLoader.Origin.bottomLeft,
                      .generateMipmaps: true]
-//                    texture = try loader.newTexture(data: imageData, options: options)
-                    texture = try loader.newTexture(cgImage: image.cgImage!, options: options)
+                    scopeState.texture = try loader.newTexture(cgImage: image.cgImage!, options: options)
 
-                    if let tex = texture {
+                    if let tex = scopeState.texture {
                         let hasAlpha =
                         tex.pixelFormat == .rgba8Unorm ||
                         tex.pixelFormat == .rgba8Unorm_srgb ||
@@ -173,7 +146,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         tex.pixelFormat == .bgra8Unorm_srgb ||
                         tex.pixelFormat == .rgba16Float ||
                         tex.pixelFormat == .rgba32Float
-//                        print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
                     } else {
                         print("[ScopeRenderer] Failed to load texture.")
                     }
@@ -201,10 +173,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         
         let aspect = Float(width / height)
         
-        // Model-View-Projection matrix example
-          var orthoMatrix = matrix_identity_float4x4
-          orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
-
           // In your vertex shader, multiply positions by orthoMatrix
         
         let outerThickness: Float = 6.0
@@ -230,10 +198,18 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             print("[ScopeRenderer] pipeline is nil")
             return
         }
-        guard let texture = texture else {
+        guard let texture = scopeState.texture else {
 //            print("[ScopeRenderer] texture is nil")
             return
         }
+
+        let texWidth = Float(texture.width)
+        let texHeight = Float(texture.height)
+        let texAspect = texWidth / texHeight
+        
+        // Model-View-Projection matrix example
+          var orthoMatrix = matrix_identity_float4x4
+          orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
 
         let commandBuffer = commandQueue.makeCommandBuffer()!
         if scopeState.useBlackBackground {
@@ -304,7 +280,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     var uniforms: Uniforms = Uniforms(
                         color: simd_float4(1, 1, 1, 1),
                         drawWithTetxure: true,
+                        drawTextureTriangles: true,
                         textureTriangle: scopeState.trianglePoints,
+                        texAspect: texAspect,
                         orthoMatrix: orthoMatrix
                           // In your vertex shader, multiply positions by orthoMatrix
                     )
@@ -333,7 +311,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             var uniforms: Uniforms = Uniforms(
                                 color: simd_float4(1, 1, 1, 1),
                                 drawWithTetxure: true,
+                                drawTextureTriangles: true,
                                 textureTriangle: scopeState.trianglePoints,
+                                texAspect: texAspect,
                                 orthoMatrix: orthoMatrix
                             )
                             encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -348,34 +328,40 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       p1: verts[1], p2: verts[2],
                                       color: black,
                                       thickness:  outerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: black,
                                       thickness: outerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: black,
                                       thickness: outerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
-                        
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
                                       thickness: innerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: white,
                                       thickness: innerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: white,
                                       thickness: innerThickness / Float(drawableSize.width),
-                                      orthoMatrix: orthoMatrix)
-                        
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+
                         //            //Now draw again with a 1-pixel thick white line
                         //            drawLine(encoder: encoder,
                         //                          p1: verts[1], p2: verts[2],
@@ -413,6 +399,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 //            color: color,
 //            drawWithTetxure: false,
 //            textureTriangle: trianglePoints,
+//            texAspect: texAspect,
 //            orthoMatrix: orthoMatrix)
 //        )
 //        encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -423,7 +410,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     func drawThickLine(encoder: MTLRenderCommandEncoder,
                        p1: simd_float2, p2: simd_float2,
                        color: SIMD4<Float>, thickness: Float,
-                       orthoMatrix: float4x4) {
+                       orthoMatrix: float4x4,
+                       texAspect: Float) {
         let dir = normalize(p2 - p1)
         let normal = simd_float2(-dir.y, dir.x) * thickness / 2
         let v0 = p1 + normal
@@ -437,7 +425,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         var uniforms: Uniforms = Uniforms(
             color: color,
             drawWithTetxure: false,
+            drawTextureTriangles: false,
             textureTriangle:  trianglePoints,
+            texAspect: texAspect,
             orthoMatrix: orthoMatrix
         )
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)

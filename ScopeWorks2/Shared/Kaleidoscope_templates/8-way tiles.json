@@ -1,0 +1,38 @@
+{
+  "sideCount" : 6,
+  "isCircular" : false,
+  "modifiedDate" : 796925729.047628,
+  "name" : "8-way tiles",
+  "elements" : [
+    {
+      "centerX" : 0.25,
+      "radius" : 0.25,
+      "startAngle" : 0,
+      "centerY" : 0.25,
+      "type" : 1
+    },
+    {
+      "centerX" : 0.25,
+      "radius" : 0.25,
+      "startAngle" : 0,
+      "centerY" : -0.25,
+      "type" : 1
+    },
+    {
+      "centerX" : -0.25,
+      "radius" : 0.25,
+      "startAngle" : 0,
+      "centerY" : -0.25,
+      "type" : 1
+    },
+    {
+      "centerX" : -0.25,
+      "radius" : 0.25,
+      "startAngle" : 0,
+      "centerY" : 0.25,
+      "type" : 1
+    }
+  ],
+  "displayDescription" : "8-way tiles kaleidoscope.",
+  "index" : 3
+}

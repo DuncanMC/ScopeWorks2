@@ -1,0 +1,199 @@
+{
+  "index" : 1,
+  "displayDescription" : "Polygon grid kaleidoscope.",
+  "isCircular" : true,
+  "elements" : [
+    {
+      "startAngle" : 0,
+      "type" : 0,
+      "centerX" : 0,
+      "centerY" : 0,
+      "radius" : 0.2
+    },
+    {
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerX" : 0.3,
+      "type" : 0,
+      "centerY" : -0.17320508075688773
+    },
+    {
+      "centerX" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.6928203230275509,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.6928203230275509,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.3,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.34641016151377546,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.6,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : 0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.17320508075688773,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.9,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
+    }
+  ],
+  "sideCount" : 6,
+  "name" : "Polygon grid",
+  "modifiedDate" : 796925729.047003
+}
