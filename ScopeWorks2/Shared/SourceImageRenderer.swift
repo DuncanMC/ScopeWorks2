@@ -327,7 +327,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let insideWidth: Float = 8
         
         // Draw the center point of the polygon as a "donut" shape so it stands out.
-        drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: yellow, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 9, lineThickness: 15)
+        drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: yellow, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 8, lineThickness: 10)
         drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 3)
         drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 6, lineThickness: 3)
 
@@ -338,10 +338,114 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
         drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
 
-        // DRaw the rotation center
+        // Draw the rotation center
         let rotationCenter = simd_float2(x:scopeState.rotationCenter.x * 2 / scopeState.texAspect - 1, y: scopeState.rotationCenter.y * 2 - 1)
-        drawCircle(in: view, encoder: encoder, center: rotationCenter, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 5)
-        drawCircle(in: view, encoder: encoder, center: rotationCenter, color: white, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 14, lineThickness: 3)
+        drawCircle(
+            in: view,
+            encoder: encoder,
+            center: rotationCenter,
+            color: black,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect,
+            radius: 14,
+            lineThickness: 8)
+        drawCircle(
+            in: view,
+            encoder: encoder,
+            center: rotationCenter,
+            color: white,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect,
+            radius: 14,
+            lineThickness: 4)
+        
+        let arcRadius: Float = 32
+        let arrowPoint1: simd_float2
+        let arrowPoint2: simd_float2
+        let arrowPoint3: simd_float2
+        let arrowPoint1Outer: simd_float2
+        let arrowPoint2Outer: simd_float2
+        let arrowPoint3Outer: simd_float2
+
+        let arrowheadSize = 10 * scale / Float(view.drawableSize.width)
+        let outerArrowheadSize = arrowheadSize * 1.2
+
+        drawArc(
+            in: view,
+            encoder: encoder,
+            center: rotationCenter,
+            color: black,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect,
+            radius: arcRadius,
+            startAngle: 0,
+            endAngle: 90,
+            steps: 5,
+            lineThickness: 9)
+        
+
+        
+        let arcOffset = arcRadius * scale / Float(view.drawableSize.width)
+        if scopeState.rotationSpeed > 0 {
+            //counterclockwise
+            arrowPoint1 = simd_float2(x: rotationCenter.x, y: rotationCenter.y + arcOffset)
+            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y - arrowheadSize )
+            arrowPoint3 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+            arrowPoint1Outer = simd_float2(x: rotationCenter.x -  2 * scale / Float(view.drawableSize.width), y: rotationCenter.y + arcOffset)
+
+            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y - outerArrowheadSize )
+            arrowPoint3Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+
+        } else {
+            //clockwise
+            arrowPoint1 = simd_float2(x: rotationCenter.x + arcOffset, y: rotationCenter.y)
+            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+            arrowPoint3 = simd_float2(x: arrowPoint1.x - arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+            arrowPoint1Outer = simd_float2(x: arrowPoint1.x, y: arrowPoint1.y -  2 * scale / Float(view.drawableSize.width) )
+            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+            arrowPoint3Outer = simd_float2(x: arrowPoint1.x - outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+        }
+        
+        drawThickLine(encoder: encoder,
+                      p1: arrowPoint1Outer, p2: arrowPoint2Outer,
+                      color: black,
+                      thickness:  9 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+        drawThickLine(encoder: encoder,
+                      p1: arrowPoint1Outer, p2: arrowPoint3Outer,
+                      color: black,
+                      thickness:  9 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+        drawArc(
+            in: view,
+            encoder: encoder,
+            center: rotationCenter,
+            color: white,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect,
+            radius: arcRadius,
+            startAngle: 2,
+            endAngle: 95,
+            steps: 5,
+            lineThickness: 5)
+
+        drawThickLine(encoder: encoder,
+                      p1: arrowPoint1, p2: arrowPoint2,
+                      color: white,
+                      thickness:  3.0 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+        drawThickLine(encoder: encoder,
+                      p1: arrowPoint1, p2: arrowPoint3,
+                      color: white,
+                      thickness:  3 / Float(drawableSize.width),
+                      orthoMatrix: orthoMatrix,
+                      texAspect: texAspect)
+
+
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
@@ -463,10 +567,14 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     }
     
     func drawThickLine(encoder: MTLRenderCommandEncoder,
-                       p1: simd_float2, p2: simd_float2,
-                       color: SIMD4<Float>, thickness: Float,
+                       p1: simd_float2,
+                       p2: simd_float2,
+                       color: SIMD4<Float>,
+                       thickness: Float,
                        orthoMatrix: float4x4,
                        texAspect: Float) {
+        
+        let thickness = thickness * scale
         let dir = normalize(p2 - p1)
         let normal = simd_float2(-dir.y, dir.x) * thickness / 2
         let v0 = p1 + normal
