@@ -11,6 +11,17 @@ import UIKit
 
 class SourceImageRenderer: NSObject, MTKViewDelegate {
     
+    func logPoints(imagePoints: TrianglePoints) {
+        print("TrianglePoints:")
+        print("   trianglePoints.point1 = \(scopeState.trianglePoints.point1.myDescription)")
+        print("   trianglePoints.point2 = \(scopeState.trianglePoints.point2.myDescription)")
+        print("   trianglePoints.point2 = \(scopeState.trianglePoints.point3.myDescription)")
+        print("ImagePoints:")
+        print("   imagePoints.point1 = \(imagePoints.point1.myDescription)")
+        print("   imagePoints.point2 = \(imagePoints.point2.myDescription)")
+        print("   imagePoints.point2 = \(imagePoints.point3.myDescription)")
+
+    }
     static var logPoints: Bool = false
 //    static var indexToDraw: Int? = nil
     weak var mtkView: MTKView?
@@ -256,23 +267,28 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-
+        
+        let imagePoints: TrianglePoints = TrianglePoints(
+            point1: simd_float2(x: scopeState.trianglePoints.point1.x * 2 / scopeState.texAspect - 1, y: scopeState.trianglePoints.point1.y * 2 - 1),
+            point2: simd_float2(x: scopeState.trianglePoints.point2.x * 2 / scopeState.texAspect - 1, y: scopeState.trianglePoints.point2.y * 2 - 1),
+            point3: simd_float2(x: scopeState.trianglePoints.point3.x * 2 / scopeState.texAspect - 1, y: scopeState.trianglePoints.point3.y * 2 - 1)
+        )
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point1 * 2 - 1 , p2: scopeState.trianglePoints.point2 * 2 - 1,
+                      p1: imagePoints.point1 , p2: imagePoints.point2,
                       color: black,
                       thickness:  6.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
                       texAspect: texAspect)
 
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point2 * 2 - 1, p2: scopeState.trianglePoints.point3 * 2 - 1,
+                      p1: imagePoints.point2, p2: imagePoints  .point3,
                       color: black,
                       thickness:  6.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
                       texAspect: texAspect)
 
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point3 * 2 - 1, p2: scopeState.trianglePoints.point1 * 2 - 1,
+                      p1: imagePoints.point3, p2: imagePoints.point1,
                       color: black,
                       thickness:  6.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
@@ -280,21 +296,21 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 
         
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point1 * 2 - 1 , p2: scopeState.trianglePoints.point2 * 2 - 1,
+                      p1: imagePoints.point1 , p2: imagePoints.point2,
                       color: white,
                       thickness:  2.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
                       texAspect: texAspect)
 
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point2 * 2 - 1, p2: scopeState.trianglePoints.point3 * 2 - 1,
+                      p1: imagePoints.point2, p2: imagePoints.point3,
                       color: white,
                       thickness:  2.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
                       texAspect: texAspect)
 
         drawThickLine(encoder: encoder,
-                      p1: scopeState.trianglePoints.point3 * 2 - 1, p2: scopeState.trianglePoints.point1 * 2 - 1,
+                      p1: imagePoints.point3, p2: imagePoints.point1,
                       color: white,
                       thickness:  3.0 / Float(drawableSize.width),
                       orthoMatrix: orthoMatrix,
@@ -302,14 +318,14 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 
         let outsideWidth: Float = 20
         let insideWidth: Float = 18
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point1, color: black, width: outsideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect)
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point1, color: yellow, width: insideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point1, color: black, width: outsideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point1, color: yellow, width: insideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
 
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point2, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point2, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point2, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point2, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
 
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
-        drawSquare(in: view, encoder: encoder, center: scopeState.trianglePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
+        drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
 
         encoder.endEncoding()
         commandBuffer.present(drawable)
@@ -324,24 +340,25 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     texAspect: Float,
                     asDiamond: Bool = false) {
 
-        let center: simd_float2 = simd_float2(x: center.x * 2 - 1, y: center.y * 2 - 1)
+        let center: simd_float2 = simd_float2(x: center.x, y: center.y)
         let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
-        let offset = (widthPerPixel * width)
+        let yOffset = (widthPerPixel * width)
+        let xOffset = (widthPerPixel * width / scopeState.texAspect)
         let p1: simd_float2
         let p2: simd_float2
         let p3: simd_float2
         let p4: simd_float2
-        if asDiamond {
-            p1 = simd_float2(x: center.x - offset, y: center.y + offset)
-            p2 = simd_float2(x: center.x + offset, y: center.y + offset)
-            p3 = simd_float2(x: center.x + offset, y: center.y - offset)
-            p4 = simd_float2(x: center.x - offset, y: center.y - offset)
+        if !asDiamond {
+            p1 = simd_float2(x: center.x - xOffset, y: center.y + yOffset)
+            p2 = simd_float2(x: center.x + xOffset, y: center.y + yOffset)
+            p3 = simd_float2(x: center.x + xOffset, y: center.y - yOffset)
+            p4 = simd_float2(x: center.x - xOffset, y: center.y - yOffset)
 
         } else {
-            p1 = simd_float2(x: center.x, y: center.y + offset)
-            p2 = simd_float2(x: center.x + offset, y: center.y)
-            p3 = simd_float2(x: center.x, y: center.y - offset)
-            p4 = simd_float2(x: center.x - offset, y: center.y)
+            p1 = simd_float2(x: center.x, y: center.y + yOffset)
+            p2 = simd_float2(x: center.x + xOffset, y: center.y)
+            p3 = simd_float2(x: center.x, y: center.y - yOffset)
+            p4 = simd_float2(x: center.x - xOffset, y: center.y)
         }
         
         var verts: [simd_float2] = [p1, p2, p3]
