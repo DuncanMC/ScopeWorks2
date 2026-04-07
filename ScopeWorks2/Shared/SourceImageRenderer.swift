@@ -22,6 +22,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         print("   imagePoints.point2 = \(imagePoints.point3.myDescription)")
 
     }
+    var scale: Float = 1.0
     static var logPoints: Bool = false
 //    static var indexToDraw: Int? = nil
     weak var mtkView: MTKView?
@@ -34,7 +35,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 //            print("In ScopeRenderer texture didSet")
             Task { @MainActor in
                 scopeState.trianglePoints = calcTrianglePoints()
-                scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
+//                scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
             }
         }
     }
@@ -207,6 +208,12 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             return
         }
         
+#if os(macOS)
+        scale = Float(mtkView?.window?.screen?.backingScaleFactor ?? 1.0)
+#else
+        scale = Float(mtkView?.contentScaleFactor ?? 1)
+#endif
+        
         let texWidth = Float(texture.width)
         let texHeight = Float(texture.height)
         let texAspect = texWidth / texHeight
@@ -316,30 +323,98 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                       orthoMatrix: orthoMatrix,
                       texAspect: texAspect)
 
-        let outsideWidth: Float = 20
-        let insideWidth: Float = 18
-        drawSquare(in: view, encoder: encoder, center: imagePoints.point1, color: black, width: outsideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
-        drawSquare(in: view, encoder: encoder, center: imagePoints.point1, color: yellow, width: insideWidth*2, orthoMatrix: orthoMatrix, texAspect: texAspect, asDiamond: true)
+        let outsideWidth: Float = 10
+        let insideWidth: Float = 8
+        
+        // Draw the center point of the polygon as a "donut" shape so it stands out.
+        drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: yellow, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 9, lineThickness: 15)
+        drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 3)
+        drawCircle(in: view, encoder: encoder, center: imagePoints.point1, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 6, lineThickness: 3)
 
+        
         drawSquare(in: view, encoder: encoder, center: imagePoints.point2, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
         drawSquare(in: view, encoder: encoder, center: imagePoints.point2, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
 
         drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
         drawSquare(in: view, encoder: encoder, center: imagePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
 
+        // DRaw the rotation center
+        let rotationCenter = simd_float2(x:scopeState.rotationCenter.x * 2 / scopeState.texAspect - 1, y: scopeState.rotationCenter.y * 2 - 1)
+        drawCircle(in: view, encoder: encoder, center: rotationCenter, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 5)
+        drawCircle(in: view, encoder: encoder, center: rotationCenter, color: white, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 14, lineThickness: 3)
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
     }
+    func drawCircle(in view: MTKView,
+                    encoder: MTLRenderCommandEncoder,
+                    center: simd_float2,
+                    color: SIMD4<Float>,
+                    orthoMatrix: float4x4,
+                    texAspect: Float,
+                    radius: Float,
+                    steps: Int = 12,
+                    lineThickness: Float,
+    ) {
+        drawArc(in: view,
+                encoder: encoder,
+                center: center,
+                color: color,
+                orthoMatrix: orthoMatrix,
+                texAspect: texAspect,
+                radius: radius,
+                endAngle: 360,
+                steps: steps,
+                lineThickness: lineThickness)
+    }
     
+    func drawArc(in view: MTKView,
+                 encoder: MTLRenderCommandEncoder,
+                 center: simd_float2,
+                 color: SIMD4<Float>,
+                 orthoMatrix: float4x4,
+                 texAspect: Float,
+                 radius: Float,
+                 startAngle: Float = 0,
+                 endAngle: Float = 360.0,
+                 steps: Int = 12,
+                 lineThickness: Float,
+                 asDiamond: Bool = false) {
+        
+        let radius = radius * scale
+        let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
+        let center: simd_float2 = simd_float2(x: center.x, y: center.y)
+        let startAngleRadians = startAngle.degreesToRadians
+        let arcDelta = endAngle.degreesToRadians - startAngleRadians
+        let notFullCircle = startAngle != 0.0 || endAngle != 360.0
+        for step in 0 ..< (notFullCircle ? steps - 1 : steps) {
+            let angle = startAngleRadians + Float(step) / Float(steps) * arcDelta
+            let angle2 = Float((step+1) % steps) / Float(steps) * arcDelta
+            var deltaX = cos(angle) * widthPerPixel / scopeState.texAspect * radius
+            var deltaY = sin(angle) * widthPerPixel * radius
+            let p1 = simd_float2(x: center.x + deltaX, y: center.y + deltaY)
+            deltaX = cos(angle2) * widthPerPixel / scopeState.texAspect * radius
+            deltaY = sin(angle2) * widthPerPixel * radius
+            let p2 = simd_float2(x: center.x + deltaX, y: center.y + deltaY)
+            drawThickLine(encoder: encoder,
+                          p1: p1,
+                          p2: p2,
+                          color: color,
+                          thickness: lineThickness/Float(drawableSize.width),
+                          orthoMatrix: orthoMatrix, texAspect: texAspect)
+        }
+    }
+
     func drawSquare(in view: MTKView,
                     encoder: MTLRenderCommandEncoder,
                     center: simd_float2,
-                    color: SIMD4<Float>, width: Float,
+                    color: SIMD4<Float>,
+                    width: Float,
                     orthoMatrix: float4x4,
                     texAspect: Float,
                     asDiamond: Bool = false) {
 
+        let width = width * scale
         let center: simd_float2 = simd_float2(x: center.x, y: center.y)
         let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
         let yOffset = (widthPerPixel * width)

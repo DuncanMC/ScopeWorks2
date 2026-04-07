@@ -29,7 +29,10 @@ class ScopeState: ObservableObject {
     }
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
-    @Published var trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+    @Published var trianglePoints = TrianglePoints(
+        point1: SIMD2<Float>(0.4, 0.25),
+        point2: SIMD2<Float>(0.6, 0.25),
+        point3: SIMD2<Float>(0.5, 0.42320508))
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] //TODO
 
     @Published var selectedScopeType: Int = 0
@@ -37,10 +40,16 @@ class ScopeState: ObservableObject {
     @Published var showOutlines: Bool = false
     @Published var useBlackBackground: Bool = false
     @Published var flipAlternates: Bool = true
+    @Published var splitTriangle: Bool = false
     @Published var showSourceImage: Bool = true
     @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
-    @Published var polygonSides = 6
+    @Published var polygonSides = 6 {
+        didSet {
+            print("sides changed to \(polygonSides)")
+            trianglePoints = calcTrianglePoints()
+        }
+    }
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
@@ -51,7 +60,7 @@ class ScopeState: ObservableObject {
             Task { @MainActor in
                 guard let texture else { return }
                 trianglePoints = calcTrianglePoints()
-                rotationCenter = centerPoint(trianglePoints: trianglePoints)
+//                rotationCenter = centerPoint(trianglePoints: trianglePoints)
                 let texWidth = CGFloat(texture.width)
                 let texHeight = CGFloat(texture.height)
                 texSize = CGSize(width: texWidth, height: texHeight)
@@ -64,16 +73,28 @@ class ScopeState: ObservableObject {
     func calcTrianglePoints()
     -> TrianglePoints {
         guard selectedImageData != nil else {
-            return (TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint))
+            return TrianglePoints(
+                point1: SIMD2<Float>(0.4, 0.25),
+                point2: SIMD2<Float>(0.6, 0.25),
+                point3: SIMD2<Float>(0.5, 0.42320508))
         }
 
-        let point1 = SIMD2<Float>(0.4, 0.25)
-        let point2 = SIMD2<Float>(0.6, 0.25)
-        let base =  point2[0] - point1[0]
-        let angle = .pi / 3.0
-        let deltaY = Float(sin(angle)) * base
-        let deltaX = Float(cos(angle)) * base
+        
+        let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+        let point1 = trianglePoints.point1
+        let centerAngle = atan2(Double(midpoint.y - point1.y), Double(midpoint.x - point1.x) )
+        
+        
+        
+        let stepArc = Double.pi / Double(polygonSides)
+        let radius = distanceBetween(p1: point1, p2: trianglePoints.point2)
+        var deltaY = Float(sin(centerAngle + stepArc)) * radius
+        var deltaX = Float(cos(centerAngle + stepArc)) * radius
+        let point2 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+        deltaY = Float(sin(centerAngle - stepArc)) * radius
+        deltaX = Float(cos(centerAngle - stepArc)) * radius
         let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+
         return TrianglePoints(point1: point1, point2: point2, point3: point3)
     }
 

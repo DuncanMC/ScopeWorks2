@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>296</string>
+					<string>317</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>295</string>
+					<string>316</string>
 					<key>Timestamp</key>
-					<string>797208178.313813</string>
+					<string>797272083.727379</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>158</string>
+					<string>179</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>157</string>
+					<string>178</string>
 					<key>Timestamp</key>
-					<string>797200334.062196</string>
+					<string>797272083.727554</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -161,6 +161,99 @@
 			</dict>
 			<key>title</key>
 			<string>SourceImageViewRepresentable</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>73</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>72</string>
+					<key>Timestamp</key>
+					<string>797272083.727519</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ContentView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    func calcTrianglePoints()
+</string>
+				<key>leading</key>
+				<string>    }
+
+</string>
+				<key>trailing</key>
+				<string>    -&gt; TrianglePoints {
+        guard selectedImageData != nil else {
+            return TrianglePoints(
+</string>
+			</dict>
+			<key>title</key>
+			<string>calcTrianglePoints</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>33</string>
+					<key>EndingLineNumber</key>
+					<string>31</string>
+					<key>StartingColumnNumber</key>
+					<string>19</string>
+					<key>StartingLineNumber</key>
+					<string>31</string>
+					<key>Timestamp</key>
+					<string>797270036.0603991</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ContentView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>trianglePoints</string>
+				<key>leading</key>
+				<string>    @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
+    @Published var radiusScale: Float = 1.0
+    @Published var </string>
+				<key>trailing</key>
+				<string> = TrianglePoints(
+        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
+        point2: SIMD2&lt;Float&gt;(0.6, 0.25),
+</string>
+			</dict>
+			<key>title</key>
+			<string>trianglePoints</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>

@@ -12,10 +12,18 @@ extension Float {
     }
 }
 
-public struct TrianglePoints {
+public struct TrianglePoints: CustomStringConvertible{
     let point1: SIMD2<Float>
     let point2: SIMD2<Float>
     let point3: SIMD2<Float>
+    
+    public var description: String {
+        return """
+            point1: \(point1.myDescription)
+            point2: \(point2.myDescription)
+            point3: \(point3.myDescription)
+            """
+    }
 }
 
 
@@ -243,12 +251,15 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
     
         if template.isCircular {
-            let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : 1.0
+            let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
             for (_, anElement) in template.elements.enumerated() {
                 var center = simd_float2(anElement.center)
                 center.x *= multiplier
                 center.y *= multiplier
-                let radius: Float = Float(anElement.radius) * scopeState.radiusScale * multiplier
+                var radius: Float = Float(anElement.radius) * multiplier
+                if scopeState.selectedScopeType == 1 {
+                    radius *= scopeState.radiusScale
+                }
                 for i in 0..<scopeState.polygonSides {
                     let angle = fmod((Float(i) *  2  * (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
                     let cosA = cos(angle)

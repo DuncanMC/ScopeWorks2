@@ -8,6 +8,16 @@ import Foundation
 import MetalKit
 import simd
 
+public func distanceBetween(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> Float {
+    let deltaX = p1.x - p2.x
+    let deltaY = p1.y - p2.y
+    return sqrt(deltaX * deltaX + deltaY * deltaY)
+}
+                             
+public func midpoint(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> SIMD2<Float> {
+    return SIMD2<Float>(x: (p1.x + p2.x)/2, y: (p1.y + p2.y)/2)
+}
+
 public func centerPoint(trianglePoints: TrianglePoints) -> SIMD2<Float> {
     let x = (trianglePoints.point1.x + trianglePoints.point2.x + trianglePoints.point3.x) / 3
     let y = (trianglePoints.point1.y + trianglePoints.point2.y + trianglePoints.point3.y) / 3
