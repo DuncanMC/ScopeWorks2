@@ -613,8 +613,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     #else
             newScale = CGFloat(mtkView?.contentScaleFactor ?? 1)
     #endif
-            let scaledSize =   CGSize(width: size.width/newScale, height: size.width/newScale)
-//            print("In SourceImageRenderer, scale = \(newScale). scaled image size = \(scaledSize)")
+            let scaledSize =   CGSize(width: size.width/newScale, height: size.height/newScale)
+            //print("In SourceImageRenderer, scale = \(newScale). scaled image size = \(scaledSize)")
 
             scopeState.imageViewSize = scaledSize
         }

@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>493</string>
+					<string>502</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>492</string>
+					<string>501</string>
 					<key>Timestamp</key>
-					<string>797364674.97499</string>
+					<string>797370217.614235</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>356</string>
+					<string>365</string>
 					<key>StartingColumnNumber</key>
-					<string>24</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>355</string>
+					<string>364</string>
 					<key>Timestamp</key>
-					<string>797365012.985719</string>
+					<string>797370217.614251</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -147,12 +147,12 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>.frame(maxWidth: .infinity, maxHeight: .infinity)
+				<string>                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 </string>
 				<key>leading</key>
 				<string>                if scopeState.showSourceImage {
                     SourceImageViewRepresentable(scopeState: scopeState)
-                        </string>
+</string>
 				<key>trailing</key>
 				<string>                        .background(Color.white)
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
@@ -178,7 +178,7 @@
 					<key>StartingLineNumber</key>
 					<string>104</string>
 					<key>Timestamp</key>
-					<string>797363917.575711</string>
+					<string>797369907.276832</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -225,7 +225,7 @@
 					<key>StartingLineNumber</key>
 					<string>43</string>
 					<key>Timestamp</key>
-					<string>797352899.870132</string>
+					<string>797369907.27676</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

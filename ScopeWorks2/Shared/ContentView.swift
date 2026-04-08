@@ -48,7 +48,7 @@ class ScopeState: ObservableObject {
     
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] {
         didSet {
-//            print("rotationCenter changed")
+            //print("rotationCenter changed")
         }
     }
 
@@ -215,7 +215,10 @@ class ScopeState: ObservableObject {
             print("trianglePoint2 = \(trianglePoint2)")
             print("trianglePoint3 = \(trianglePoint3)")
         }
-        let result = matchPoint(startLocation, inPoints: points)
+        let aspect = imageViewSize.width / imageViewSize.height
+        let adjusted = CGPoint(x: startLocation.x * aspect, y: startLocation.y)
+        //print("Adjusted tap point = \(adjusted)")
+        let result = matchPoint(adjusted, inPoints: points)
         return result
     }
 
@@ -230,9 +233,11 @@ class ScopeState: ObservableObject {
         defer {
 //            self.lastDragLocation = value.location
         }
-        let deltaX = value.location.x - lastDragLocation.x
+        let aspect = imageViewSize.width / imageViewSize.height
+        
+        let deltaX = (value.location.x - lastDragLocation.x) * aspect
         let deltaY = value.location.y - lastDragLocation.y
-//        print("You moved by (x: \(deltaX), y: \(deltaY)")
+        //print("You moved by (x: \(deltaX), y: \(deltaY)")
 
         switch draggingState {
         case .inRotationCenter:
@@ -249,6 +254,10 @@ class ScopeState: ObservableObject {
             let newPoint3Metal = viewPointToMetal(newPoint3)
 
             self.trianglePoints  = TrianglePoints(point1: newPoint1Metal, point2: newPoint2Metal, point3: newPoint3Metal)
+            let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
+            let newRotationCenter = viewPointToMetal(newCenterPoint)
+            
+            self.rotationCenter = newRotationCenter
 
         default:
             return
@@ -273,7 +282,7 @@ struct ContentView: View {
     let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
     var zoomString: String {
-        String(format:"%.02f", scopeState.zoom)
+        String(format:"%.02f", scopeState.zoom/2.0)
     }
     
     var radiusString: String {
@@ -514,6 +523,8 @@ struct ContentView: View {
                         scopeState.rotationSpeed *= -1
                         scopeState.movementSpeed *= -1
                     }
+                    .keyboardShortcut("r", modifiers: [.command])
+
                     Spacer()
                 }
             }
