@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>411</string>
+					<string>493</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>410</string>
+					<string>492</string>
 					<key>Timestamp</key>
-					<string>797341433.111163</string>
+					<string>797364674.97499</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>270</string>
+					<string>356</string>
 					<key>StartingColumnNumber</key>
-					<string>0</string>
+					<string>24</string>
 					<key>StartingLineNumber</key>
-					<string>269</string>
+					<string>355</string>
 					<key>Timestamp</key>
-					<string>797341433.111261</string>
+					<string>797365012.985719</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -147,16 +147,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                        return SourceImageViewRepresentable(scopeState: scopeState)
+				<string>.frame(maxWidth: .infinity, maxHeight: .infinity)
 </string>
 				<key>leading</key>
-				<string>                            }
-                        }
-</string>
+				<string>                if scopeState.showSourceImage {
+                    SourceImageViewRepresentable(scopeState: scopeState)
+                        </string>
 				<key>trailing</key>
-				<string>                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.white)
-                            .aspectRatio(scopeState.texSize, contentMode: .fit)
+				<string>                        .background(Color.white)
+                        .aspectRatio(scopeState.texSize, contentMode: .fit)
+                        .border(.blue, width: 2)
 </string>
 			</dict>
 			<key>title</key>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>81</string>
+					<string>105</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>80</string>
+					<string>104</string>
 					<key>Timestamp</key>
-					<string>797287969.630785</string>
+					<string>797363917.575711</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -194,16 +194,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    func calcTrianglePoints()
+				<string>    func calcTrianglePoints() -&gt; TrianglePoints {
 </string>
 				<key>leading</key>
-				<string>    }
+				<string>    
 
 </string>
 				<key>trailing</key>
-				<string>    -&gt; TrianglePoints {
-        guard selectedImageData != nil else {
+				<string>        guard selectedImageData != nil else {
             return TrianglePoints(
+                point1: SIMD2&lt;Float&gt;(0.4, 0.25),
 </string>
 			</dict>
 			<key>title</key>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>33</string>
+					<string>44</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>32</string>
+					<string>43</string>
 					<key>Timestamp</key>
-					<string>797285512.223561</string>
+					<string>797352899.870132</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

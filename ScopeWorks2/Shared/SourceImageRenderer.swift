@@ -597,7 +597,27 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+
+
         drawableSize = size
+        Task { @MainActor in
+            let newScale: CGFloat
+    #if os(macOS)
+            if let backingScaleFactor = mtkView?.window?.screen?.backingScaleFactor
+            {
+                newScale = CGFloat(backingScaleFactor)
+            } else {
+                print("backingScaleFactor is nil!")
+                newScale = 1
+            }
+    #else
+            newScale = CGFloat(mtkView?.contentScaleFactor ?? 1)
+    #endif
+            let scaledSize =   CGSize(width: size.width/newScale, height: size.width/newScale)
+//            print("In SourceImageRenderer, scale = \(newScale). scaled image size = \(scaledSize)")
+
+            scopeState.imageViewSize = scaledSize
+        }
         // For example, you may want to adjust your projection or drawing to match portrait/landscape changes
     }
 }

@@ -1,17 +1,17 @@
 {
-  "isCircular" : false,
+  "modifiedDate" : 797351293.167101,
+  "index" : 2,
   "elements" : [
     {
+      "startAngle" : 0,
       "radius" : 0.5,
-      "centerX" : 0.5,
       "centerY" : 0.5,
       "type" : 1,
-      "startAngle" : 0
+      "centerX" : 0.5
     }
   ],
-  "index" : 2,
-  "displayDescription" : "8-way square kaleidoscope.",
-  "modifiedDate" : 797197316.388799,
+  "isCircular" : false,
   "sideCount" : 6,
-  "name" : "8-way square"
+  "name" : "8-way square",
+  "displayDescription" : "8-way square kaleidoscope."
 }
