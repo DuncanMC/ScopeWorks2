@@ -32,9 +32,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 
     var texture: MTLTexture? {
         didSet {
-//            print("In ScopeRenderer texture didSet")
             Task { @MainActor in
-                scopeState.trianglePoints = calcTrianglePoints()
 //                scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
             }
         }
@@ -178,7 +176,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     
     func draw(in view: MTKView) {
         
-        let width = view.drawableSize.width
+//        let width = view.drawableSize.width
         let height = view.drawableSize.height
         guard height != 0 else {
             print("Window height is zero!")

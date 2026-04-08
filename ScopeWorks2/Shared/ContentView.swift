@@ -1,16 +1,17 @@
 import SwiftUI
 import Combine
+import simd
 
 class ScopeState: ObservableObject {
-    @Published var selectedImageData: Data? = nil
     
+    @Published var selectedImageData: Data? = nil
     
     let example = "example"
     let test2 = "test 2"
     let portrait = "portrait"
     let landscape = "landscape"
 
-    @Published var textureName = "example"
+    @Published var textureName = "landscape"
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
         #if os(iOS)
@@ -33,6 +34,7 @@ class ScopeState: ObservableObject {
         point1: SIMD2<Float>(0.4, 0.25),
         point2: SIMD2<Float>(0.6, 0.25),
         point3: SIMD2<Float>(0.5, 0.42320508))
+    
     @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] //TODO
 
     @Published var selectedScopeType: Int = 0
@@ -46,8 +48,9 @@ class ScopeState: ObservableObject {
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
-            print("sides changed to \(polygonSides)")
             trianglePoints = calcTrianglePoints()
+            rotationCenter = centerPoint(trianglePoints: trianglePoints) // TODO: Remove this 
+            
         }
     }
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
@@ -55,6 +58,11 @@ class ScopeState: ObservableObject {
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
     @Published var texAspect: Float = 1
     @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
+    @Published var imageViewSize: CGSize = CGSizeZero {
+        didSet{
+            print("imageViewSize = \(imageViewSize)")
+        }
+    }
     @Published var texture: MTLTexture? {
         didSet {
             Task { @MainActor in
@@ -65,7 +73,7 @@ class ScopeState: ObservableObject {
                 let texHeight = CGFloat(texture.height)
                 texSize = CGSize(width: texWidth, height: texHeight)
                 texAspect = Float(texWidth / texHeight)
-                print("After loading texture, texWidth = \(texWidth). texHeight =  \(texWidth). texAspect = \(texAspect)")
+//                print("After loading texture, texWidth = \(texWidth). texHeight =  \(texWidth). texAspect = \(texAspect)")
             }
         }
     }
@@ -105,10 +113,6 @@ class ScopeViewModel: ObservableObject {
     var scopeState: ScopeState
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
-//        let scopeTemplates = ScopeWorks2App.scopeTemplates
-//        for aTemplate in scopeTemplates {
-//            print(aTemplate)
-//        }
     }
     
     func changeAnimationState() {
@@ -151,8 +155,89 @@ struct ContentView: View {
 
     @State var polygonSidesString = ""
     
+    @State private var isDragging = false
+    
     @StateObject var scopeState = ScopeState()
     @StateObject var scopeViewModel = ScopeViewModel(scopeState: ScopeState())
+    
+    enum DragLocations: String {
+        case inRotationCenter
+        case inTrianglePoint1
+        case inTrianglePoint2
+        case inTrianglePoint3
+        case inTriangleBody
+    }
+
+    typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
+
+    func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {
+        return CGPoint(
+            x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(scopeState.imageViewSize.width))),
+            y: scopeState.imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(scopeState.imageViewSize.height))))
+    }
+    func matchPoint(_  tapPoint: CGPoint, inPoints points: [DragPointTuple]) -> DragPointTuple? {
+        let slop: CGFloat = 20
+        for (aPoint, location) in points {
+            if tapPoint.x > aPoint.x - slop && tapPoint.x < aPoint.x + slop &&
+                tapPoint.y > aPoint.y - slop && tapPoint.y < aPoint.y + slop
+            {
+                    return (aPoint, location)
+            }
+        }
+        return nil
+    }
+    
+    func getDragLocation(_ startLocation: CGPoint) -> DragPointTuple? {
+        
+        let trianglePoint1 = metalPointToView(scopeState.trianglePoints.point1)
+        let trianglePoint2 = metalPointToView(scopeState.trianglePoints.point2)
+        let trianglePoint3 = metalPointToView(scopeState.trianglePoints.point3)
+        let rotationCenterPoint = metalPointToView(scopeState.rotationCenter)
+        let points: [DragPointTuple] = [
+            (rotationCenterPoint, .inRotationCenter),
+            (trianglePoint1, .inTrianglePoint1),
+            (trianglePoint2, .inTrianglePoint2),
+            (trianglePoint3, .inTrianglePoint3)
+        ]
+        return matchPoint(startLocation, inPoints: points)
+//        print("imageViewSize = \(scopeState.imageViewSize)")
+//        print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
+//        print("You tapped on \(startLocation)")
+//        print("rotationCenterPoint = \(rotationCenterPoint)")
+//        print("trianglePoint1 = \(trianglePoint1)")
+//        print("trianglePoint2 = \(trianglePoint2)")
+//        print("trianglePoint3 = \(trianglePoint3)")
+//        return nil
+    }
+    
+    var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                if !isDragging {
+                    print("Begin dragging in view.")
+                    if let target = getDragLocation( value.startLocation) {
+                        print("User tapped in \(target.dragLocation.rawValue)")
+                        if target.dragLocation == .inRotationCenter {
+                            
+                        }
+                    } else {
+                        print("User did not tap in a known location")
+                    }
+                    /*
+                     check for tap/drag in:
+                        center location
+                        triangle corner
+                        triangle body
+                        anywhere not in one of those places.
+                     */
+                    self.isDragging = true
+                }
+            }
+            .onEnded { value in
+                self.isDragging = false
+                print("ended drag event")
+            }
+    }
     
     var toggleAlignment: Alignment {
     #if os(macOS)
@@ -176,11 +261,20 @@ struct ContentView: View {
         VStack {
             HStack {
                 if scopeState.showSourceImage {
-                    SourceImageViewRepresentable(scopeState: scopeState)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.white)
-                        .aspectRatio(scopeState.texSize, contentMode: .fit)
-                         .border(.black)
+                    GeometryReader { geometry in
+                        Task { @MainActor in
+                            if scopeState.imageViewSize != geometry.size {
+                                scopeState.imageViewSize = geometry.size
+                            }
+                        }
+                        return SourceImageViewRepresentable(scopeState: scopeState)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.white)
+                            .aspectRatio(scopeState.texSize, contentMode: .fit)
+                            .border(.black)
+                            .gesture(dragGesture)
+                    }
+
 
                 }
                 ScopeViewRepresentable(scopeState: scopeState)
@@ -200,7 +294,7 @@ struct ContentView: View {
                             .frame(width: 360)
 
                             .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
-//                                print("selectedScopeType = \(newValue)")
+                                //print("selectedScopeType = \(newValue)")
                             }
                         
                         
@@ -208,10 +302,10 @@ struct ContentView: View {
                             TextField("",
                                       text: $polygonSidesString,
                                       onEditingChanged: { isEditing in
-//                                print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
+                                //print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
                             },
                                       onCommit: {
-//                                print("In onCommit, $polygonSidesString = \(polygonSidesString)")
+                                //print("In onCommit, $polygonSidesString = \(polygonSidesString)")
                                 guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
                                     Task { @MainActor in
                                         self.polygonSidesString = "\(scopeState.polygonSides)"

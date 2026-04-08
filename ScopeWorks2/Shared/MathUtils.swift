@@ -8,12 +8,40 @@ import Foundation
 import MetalKit
 import simd
 
+
+extension FloatingPoint {
+  /// Allows mapping between reverse ranges, which are illegal to construct (e.g. `10..<0`).
+  func interpolated(
+    fromLowerBound: Self,
+    fromUpperBound: Self,
+    toLowerBound: Self,
+    toUpperBound: Self) -> Self
+  {
+    let positionInRange = (self - fromLowerBound) / (fromUpperBound - fromLowerBound)
+    return (positionInRange * (toUpperBound - toLowerBound)) + toLowerBound
+  }
+
+  func interpolated(from: ClosedRange<Self>, to: ClosedRange<Self>) -> Self {
+    interpolated(
+      fromLowerBound: from.lowerBound,
+      fromUpperBound: from.upperBound,
+      toLowerBound: to.lowerBound,
+      toUpperBound: to.upperBound)
+  }
+}
+
+
 public func distanceBetween(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> Float {
     let deltaX = p1.x - p2.x
     let deltaY = p1.y - p2.y
     return sqrt(deltaX * deltaX + deltaY * deltaY)
 }
-                             
+ 
+func remap(sourceMin: Float, sourceMax: Float, destMin: Float, destMax: Float, t: Float) -> Float {
+    let f = (t - sourceMin) / (sourceMax - sourceMin)
+    return simd_mix(destMin, destMax, f)
+}
+
 public func midpoint(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> SIMD2<Float> {
     return SIMD2<Float>(x: (p1.x + p2.x)/2, y: (p1.y + p2.y)/2)
 }

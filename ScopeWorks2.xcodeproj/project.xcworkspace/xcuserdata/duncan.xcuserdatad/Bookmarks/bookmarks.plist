@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>317</string>
+					<string>411</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>316</string>
+					<string>410</string>
 					<key>Timestamp</key>
-					<string>797272083.727379</string>
+					<string>797341433.111163</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>179</string>
+					<string>270</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>178</string>
+					<string>269</string>
 					<key>Timestamp</key>
-					<string>797272083.727554</string>
+					<string>797341433.111261</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -147,16 +147,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                    SourceImageViewRepresentable(scopeState: scopeState)
+				<string>                        return SourceImageViewRepresentable(scopeState: scopeState)
 </string>
 				<key>leading</key>
-				<string>            HStack {
-                if scopeState.showSourceImage {
+				<string>                            }
+                        }
 </string>
 				<key>trailing</key>
-				<string>                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.white)
-                        .aspectRatio(scopeState.texSize, contentMode: .fit)
+				<string>                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.white)
+                            .aspectRatio(scopeState.texSize, contentMode: .fit)
 </string>
 			</dict>
 			<key>title</key>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>73</string>
+					<string>81</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>72</string>
+					<string>80</string>
 					<key>Timestamp</key>
-					<string>797272083.727519</string>
+					<string>797287969.630785</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -217,15 +217,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>33</string>
+					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>31</string>
+					<string>33</string>
 					<key>StartingColumnNumber</key>
-					<string>19</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>31</string>
+					<string>32</string>
 					<key>Timestamp</key>
-					<string>797270036.0603991</string>
+					<string>797285512.223561</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -241,15 +241,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>trianglePoints</string>
+				<string>    @Published var trianglePoints = TrianglePoints(
+</string>
 				<key>leading</key>
 				<string>    @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
-    @Published var </string>
+</string>
 				<key>trailing</key>
-				<string> = TrianglePoints(
-        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
+				<string>        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
         point2: SIMD2&lt;Float&gt;(0.6, 0.25),
+        point3: SIMD2&lt;Float&gt;(0.5, 0.42320508))
 </string>
 			</dict>
 			<key>title</key>

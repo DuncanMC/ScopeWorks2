@@ -1,8 +1,6 @@
 import SwiftUI
 import MetalKit
 #if os(macOS)
-//ScopeViewRepresentable
-//SourceImageViewRepresentable
 struct SourceImageViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
 
@@ -63,15 +61,3 @@ struct SourceImageViewRepresentable: UIViewRepresentable {
 
 #endif
 
-#if os(iOS)
-extension ScopeViewRepresentable {
-    func makeUIView(context: Context) -> MTKView { makeNSView(context: context) }
-    
-    func updateUIView(_ uiView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
-
-        }
-    }
-}
-#endif
