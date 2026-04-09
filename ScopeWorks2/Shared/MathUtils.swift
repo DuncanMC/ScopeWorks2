@@ -30,6 +30,12 @@ extension FloatingPoint {
   }
 }
 
+public func distanceBetween(p1:  CGPoint, p2: CGPoint) -> CGFloat {
+    let deltaX = p1.x - p2.x
+    let deltaY = p1.y - p2.y
+    return sqrt(deltaX * deltaX + deltaY * deltaY)
+}
+
 
 public func distanceBetween(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> Float {
     let deltaX = p1.x - p2.x
@@ -44,6 +50,12 @@ func remap(sourceMin: Float, sourceMax: Float, destMin: Float, destMax: Float, t
 
 public func midpoint(p1:  SIMD2<Float>, p2: SIMD2<Float>) -> SIMD2<Float> {
     return SIMD2<Float>(x: (p1.x + p2.x)/2, y: (p1.y + p2.y)/2)
+}
+
+public func centerCGPoint(triangleCGPoints: TriangleCGPoints) -> CGPoint {
+    let x = (triangleCGPoints.point1.x + triangleCGPoints.point2.x + triangleCGPoints.point3.x) / 3
+    let y = (triangleCGPoints.point1.y + triangleCGPoints.point2.y + triangleCGPoints.point3.y) / 3
+    return CGPoint(x: x, y: y)
 }
 
 public func centerPoint(trianglePoints: TrianglePoints) -> SIMD2<Float> {
@@ -79,4 +91,52 @@ extension simd_float2 {
     public var myDescription: String {
         return "(\(self[0]), \(self[1]))"
     }
+}
+
+// MARK: - trasformation matrix utilities
+
+func makeTranslationMatrix(tx: Float, ty: Float) -> simd_float3x3 {
+    
+    var matrix = matrix_identity_float3x3
+    
+    matrix[0, 2] = tx
+    matrix[1, 2] = ty
+    
+    return matrix
+
+//    let rows = [
+//        simd_float3(     1,      0,     0),
+//        simd_float3(     0,      1,     0),
+//        simd_float3(     tx,      ty,      1)
+//    ]
+//    
+//    return float3x3(rows: rows)
+
+//    var matrix = matrix_identity_float3x3
+//
+    //This code from the sample is wrong (rows and columns are reversed)
+//    matrix[2, 0] = tx
+//    matrix[2, 1] = ty
+//    
+//    return matrix
+}
+
+func makeRotationMatrix(angle: Float) -> simd_float3x3 {
+    let rows = [
+        simd_float3(cos(angle), -sin(angle), 0),
+        simd_float3(sin(angle), cos(angle), 0),
+        simd_float3(0,          0,          1)
+    ]
+    
+    return float3x3(rows: rows)
+}
+
+func makeScaleMatrix(xScale: Float, yScale: Float) -> simd_float3x3 {
+    let rows = [
+        simd_float3(xScale,      0, 0),
+        simd_float3(     0, yScale, 0),
+        simd_float3(     0,      0, 1)
+    ]
+    
+    return float3x3(rows: rows)
 }

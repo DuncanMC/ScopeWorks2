@@ -12,6 +12,20 @@ extension Float {
     }
 }
 
+public struct TriangleCGPoints: CustomStringConvertible{
+    let point1: CGPoint
+    let point2: CGPoint
+    let point3: CGPoint
+    
+    public var description: String {
+        return """
+            point1: \(point1)
+            point2: \(point2)
+            point3: \(point3)
+            """
+    }
+}
+
 public struct TrianglePoints: CustomStringConvertible{
     let point1: SIMD2<Float>
     let point2: SIMD2<Float>

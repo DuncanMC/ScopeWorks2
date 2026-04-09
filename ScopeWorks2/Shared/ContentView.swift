@@ -74,6 +74,7 @@ class ScopeState: ObservableObject {
     @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
     @Published var draggingState: DragLocations? = nil
     @Published var lastDragLocation: CGPoint? = nil
+    @Published var previousRotation: Float? = nil
     
     @Published var imageViewSize: CGSize = CGSizeZero {
         willSet {
@@ -228,11 +229,60 @@ class ScopeState: ObservableObject {
         }
     }
     
-    func handleDragging(value: DragGesture.Value) {
-        guard let lastDragLocation = lastDragLocation else { return }
-        defer {
-//            self.lastDragLocation = value.location
+    func rotateTriangleByAngle(_ angle: Float) {
+        
+        guard !angle.isNaN else { return }
+        
+        var rotationAngle: Float = angle
+        if let previousRotation {
+            rotationAngle = fmod(angle - previousRotation, Float.pi * 2)
         }
+            
+        let pivotPoint = centerPoint(trianglePoints: trianglePoints)
+        trianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: rotationAngle, aroundCenter: pivotPoint)
+        if trianglePoints.point1.x.isNaN {
+            print("NAN!")
+        }
+
+        previousRotation = angle
+    }
+    
+    func positionVector(point: simd_float2) -> simd_float3 {
+        return simd_float3(x: point.x, y: point.y, z: 1)
+    }
+    
+    func pointFromVector(_ vector: simd_float3) -> simd_float2 {
+        return simd_float2(vector.x, vector.y)
+    }
+    
+    func shiftPoint(_ point: inout simd_float2, by offset: simd_float2) {
+        point += offset
+    }
+
+    func scaleTrianglePoints(by scale: Float, centeredAt center: simd_float2) {
+        //print("center = \(center.myDescription)")
+        let scaleMatrix = makeScaleMatrix(xScale: scale, yScale: scale)
+
+                let translation = makeTranslationMatrix(tx: -center.x, ty: -center.y)
+                let reverseTranslation = makeTranslationMatrix(tx: center.x , ty: center.y )
+        
+//  -- This code does not work. The translationMatrix has no effect. Why?
+        let transform = translation * scaleMatrix * reverseTranslation
+        let point1 = ((positionVector(point: trianglePoints.point1)) * transform)
+        let point2 = ((positionVector(point: trianglePoints.point2))  * transform)
+        let point3 = ((positionVector(point: trianglePoints.point3))  * transform)
+        trianglePoints = TrianglePoints(
+            point1: pointFromVector(point1),
+            point2: pointFromVector(point2),
+            point3: pointFromVector(point3)
+            )
+    }
+    
+    func handleDragging(
+        value: DragGesture.Value,
+        flags: UInt
+    ) {
+        guard let lastDragLocation = lastDragLocation else { return }
         let aspect = imageViewSize.width / imageViewSize.height
         
         let deltaX = (value.location.x - lastDragLocation.x) * aspect
@@ -240,6 +290,20 @@ class ScopeState: ObservableObject {
         //print("You moved by (x: \(deltaX), y: \(deltaY)")
 
         switch draggingState {
+        case .inTrianglePoint1, .inTrianglePoint2, .inTrianglePoint3:
+            let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
+            let centerCGPoint = centerCGPoint(triangleCGPoints: triangleCGPoint)
+            let startingDistance = distanceBetween(p1: centerCGPoint, p2: lastDragLocation)
+            let currentDistance = distanceBetween(p1: centerCGPoint, p2: value.location)
+            let startingDistanceString = String(format: "%.02f", startingDistance)
+            let currentDistanceString = String(format: "%.02f", currentDistance)
+            let sizeChange = Float(currentDistance/startingDistance)
+            let changeString = String(format: "%.02f", sizeChange)
+            //print("startingDistance = \(startingDistanceString). currentDistance = \(currentDistanceString). change = \(changeString)")
+            let triangleCenter = centerPoint(trianglePoints: trianglePoints)
+            scaleTrianglePoints(by: sizeChange, centeredAt: triangleCenter)
+            self.lastDragLocation = value.location
+
         case .inRotationCenter:
             let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
             let newRotationCenter = viewPointToMetal(newCenterPoint)
@@ -259,6 +323,38 @@ class ScopeState: ObservableObject {
             
             self.rotationCenter = newRotationCenter
 
+        case .outsideTriangle:
+            let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
+            var  roateAroundCenter: Bool = false
+            #if os(macOS)
+                roateAroundCenter = flags & NSEvent.ModifierFlags.option.rawValue != 0
+            #endif
+            let pivotPoint: CGPoint
+            if roateAroundCenter {
+                pivotPoint = centerCGPoint(triangleCGPoints: triangleCGPoint)
+            } else {
+                pivotPoint = rotationCenterPoint
+            }
+            let centerMetalPoint = viewPointToMetal(pivotPoint)
+            
+            #if os(macOS)
+            
+            #endif
+
+            let deltaX = value.location.x - pivotPoint.x
+            let deltaY = value.location.y - pivotPoint.y
+            let angle1 = Float(atan2(lastDragLocation.x - pivotPoint.x, lastDragLocation.y - pivotPoint.y))
+            let angle2 = Float(atan2(deltaX, deltaY))
+            let angleChange = angle2 - angle1
+            trianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: angleChange, aroundCenter: centerMetalPoint)
+            if trianglePoints.point1.x.isNaN {
+                print("NAN!")
+            }
+
+            
+            self.lastDragLocation = value.location
+
+            break
         default:
             return
         }
@@ -310,13 +406,39 @@ struct ContentView: View {
     @State var polygonSidesString = ""
     
     @State private var isDragging = false
+    @State private var isRotating = false
     
     @StateObject var scopeState = ScopeState()
 //    @StateObject var scopeViewModel = ScopeViewModel(scopeState: scopeState)
         
+    var rotateGesture: some Gesture {
+        RotateGesture()
+            .onChanged { value in
+                if !isRotating {
+                    //print("begin rotate gesture.")
+                    isRotating = true
+                }
+
+                scopeState.rotateTriangleByAngle(Float(-value.rotation.radians))
+            }
+            .onEnded { _ in
+                //print("rotateGesture ended.")
+                isRotating = false
+                isDragging = false
+                scopeState.previousRotation = nil
+                scopeState.lastDragLocation = nil
+
+            }
+    }
+    
     var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                var  flags: UInt = 0
+#if os(macOS)
+                flags = NSEvent.modifierFlags.rawValue
+#endif
+
                 if !isDragging {
                     //print("Begin dragging in view.")
                     if let target = scopeState.getDragLocation( value.startLocation) {
@@ -329,14 +451,21 @@ struct ContentView: View {
                     }
 
                 } else {
-                    scopeState.handleDragging(value: value)
+                    //print("continuing drag.")
+                    scopeState.handleDragging(value: value, flags: flags)
                 }
             }
             .onEnded { value in
                 self.isDragging = false
+                isRotating = false
                 scopeState.lastDragLocation = nil
-                //print("ended drag event")
+                //print("dragGesture ended.")
+
             }
+    }
+    
+    var rotateOrDragGesture: some Gesture {
+        return ExclusiveGesture(rotateGesture, dragGesture)
     }
     
     var toggleAlignment: Alignment {
@@ -366,7 +495,8 @@ struct ContentView: View {
                         .background(Color.white)
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .border(.blue, width: 2)
-                        .gesture(dragGesture)
+                        .gesture(ExclusiveGesture(dragGesture, rotateGesture))
+//                        .gesture(rotateGesture)
                 }
                 ScopeViewRepresentable(scopeState: scopeState)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
