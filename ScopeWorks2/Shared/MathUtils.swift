@@ -122,6 +122,12 @@ func makeTranslationMatrix(tx: Float, ty: Float) -> simd_float3x3 {
 }
 typealias RangeLimits = (minX: Float, maxX: Float, minY: Float, maxY: Float)
 
+extension simd_float2 {
+    func adjustedBy(dx: Float, dy: Float) -> simd_float2 {
+        return simd_float2(self.x + dx, self.y + dy)
+    }
+}
+
 func triangleLimits(trianglePoints: TrianglePoints) -> RangeLimits {
     let minX = min(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)
     let maxX = max(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)

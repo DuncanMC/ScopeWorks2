@@ -182,14 +182,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             print("Window height is zero!")
             return
         }
-        
-//        let aspect = Float(width / height)
-        
-        // In your vertex shader, multiply positions by orthoMatrix
-        
-        let blackValues = [0.0, 0.0, 0.0, 1.0]
-        let whiteValues = [1.0, 1.0, 1.0, 1.0]
-        
+                
         guard let drawable = view.currentDrawable else {
             print("[ScopeRenderer] currentDrawable is nil")
             return
@@ -222,19 +215,14 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         
         
         let commandBuffer = commandQueue.makeCommandBuffer()!
-        if scopeState.useBlackBackground {
-            descriptor.colorAttachments[0].clearColor = MTLClearColor(
-                red: blackValues[0],
-                green: blackValues[1],
-                blue: blackValues[2],
-                alpha: blackValues[3])
-        } else {
-            descriptor.colorAttachments[0].clearColor = MTLClearColor(
-                red: whiteValues[0],
-                green: whiteValues[1],
-                blue: whiteValues[2],
-                alpha: whiteValues[3])
-        }
+        
+        let colorComponents = scopeState.backgroundColor.components()
+        descriptor.colorAttachments[0].clearColor = MTLClearColor(
+            red: colorComponents[0],
+            green: colorComponents[1],
+            blue: colorComponents[2],
+            alpha: colorComponents[3])
+
         descriptor.colorAttachments[0].loadAction =  MTLLoadAction.clear
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)

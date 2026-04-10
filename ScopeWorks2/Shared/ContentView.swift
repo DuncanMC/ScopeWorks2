@@ -22,7 +22,7 @@ class ScopeState: ObservableObject {
     let portrait = "portrait"
     let landscape = "landscape"
 
-    @Published var textureName = "example"
+    @Published var textureName = "circles twirled 2"
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
         #if os(iOS)
@@ -41,6 +41,7 @@ class ScopeState: ObservableObject {
     }
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
+    @Published var backgroundColor = Color.white
     @Published var trianglePoints = TrianglePoints(
         point1: SIMD2<Float>(0.4, 0.25),
         point2: SIMD2<Float>(0.6, 0.25),
@@ -56,7 +57,6 @@ class ScopeState: ObservableObject {
     @Published var selectedScopeType: Int = 0
 
     @Published var showOutlines: Bool = false
-    @Published var useBlackBackground: Bool = false
     @Published var flipAlternates: Bool = true
     @Published var splitTriangle: Bool = false
     @Published var showSourceImage: Bool = true
@@ -102,35 +102,35 @@ class ScopeState: ObservableObject {
     private var trianglePoint3: CGPoint = CGPointZero
     private var rotationCenterPoint: CGPoint = CGPointZero
     
-    typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, xAdjustment: Float?, yAdjustment: Float?)
+    typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
     
     func adjustTrianglePoints(trianglePoints: TrianglePoints) -> AdjustmentResult {
         let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
         let triangleLimits = triangleLimits(trianglePoints: trianglePoints)
-        var xAdjustment: Float? = nil
-        var yAdjustment: Float? = nil
+        var dx: Float? = nil
+        var dy: Float? = nil
         //if out of range in x, calc x adjustment
         if triangleLimits.minX < textureLimits.minX {
-            xAdjustment = textureLimits.minX - triangleLimits.minX
+            dx = textureLimits.minX - triangleLimits.minX
         } else if triangleLimits.maxX > textureLimits.maxX {
-            xAdjustment = textureLimits.maxX - triangleLimits.maxX
+            dx = textureLimits.maxX - triangleLimits.maxX
         }
         if triangleLimits.minY < textureLimits.minY {
-            yAdjustment = textureLimits.minY - triangleLimits.minY
+            dy = textureLimits.minY - triangleLimits.minY
         } else if triangleLimits.maxY > textureLimits.maxY {
-            yAdjustment = textureLimits.maxY - triangleLimits.maxY
+            dy = textureLimits.maxY - triangleLimits.maxY
         }
-        let adjusted = xAdjustment != nil || yAdjustment != nil
+        let adjusted = dx != nil || dy != nil
         if adjusted {
-            let deltaX = xAdjustment ?? 0.0
-            let deltaY = yAdjustment ?? 0.0
+            let deltaX = dx ?? 0.0
+            let deltaY = dy ?? 0.0
             let newTrianglePoints = TrianglePoints(
                 point1: SIMD2<Float>(trianglePoints.point1.x + deltaX, trianglePoints.point1.y + deltaY),
                 point2: SIMD2<Float>(trianglePoints.point2.x + deltaX, trianglePoints.point2.y + deltaY),
                 point3: SIMD2<Float>(trianglePoints.point3.x + deltaX, trianglePoints.point3.y + deltaY))
-            return (newTrianglePoints, true, xAdjustment, yAdjustment)
+            return (newTrianglePoints, true, dx, dy)
         }
-        return (trianglePoints, false, xAdjustment, yAdjustment)
+        return (trianglePoints, false, dx, dy)
     }
     
     func calcTrianglePoints() -> TrianglePoints {
@@ -393,6 +393,10 @@ class ScopeState: ObservableObject {
             }
             let adjustment = adjustTrianglePoints(trianglePoints: changed)
             trianglePoints = adjustment.points
+            if adjustment.adjusted {
+                rotationCenter = rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
+                rotationCenterPoint = metalPointToView(rotationCenter)
+            }
 
         default:
             return
@@ -499,8 +503,9 @@ struct ContentView: View {
                 isRotating = false
                 scopeState.lastDragLocation = nil
                 let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
-                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).  TrianglePoints = \n\(scopeState.trianglePoints)")
-
+//                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
+//                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
+//                print("TrianglePoints = \n\(scopeState.trianglePoints)")
             }
     }
     
@@ -582,15 +587,15 @@ struct ContentView: View {
                             .focused($isFocused)
                             .onChange(of: isFocused) {
                                 if isFocused {
-    #if os(iOS)
-                                    Task { @MainActor in
-                                        UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
-                                    }
-    #elseif os(macOS)
-                                    Task { @MainActor in
-                                        NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
-                                    }
-    #endif
+                                    #if os(iOS)
+                                        Task { @MainActor in
+                                            UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                                        }
+                                    #elseif os(macOS)
+                                        Task { @MainActor in
+                                            NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+                                        }
+                                    #endif
                                     selection = .init(range: site.startIndex..<site.endIndex)
                                 }
                             }
@@ -613,10 +618,11 @@ struct ContentView: View {
                                 .frame(maxWidth: .infinity, alignment: toggleAlignment)
                         }
                         
-                        Toggle(isOn: $scopeState.useBlackBackground) {
-                            Text("Use black background")
-                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                        }
+                        ColorPicker("Background color", selection: $scopeState.backgroundColor)
+//                        Toggle(isOn: $scopeState.useBlackBackground) {
+//                            Text("Use black background")
+//                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+//                        }
                         Spacer()
 
                         // Visual detents and snapping for iOS 18+/macOS 26+

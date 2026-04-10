@@ -28,6 +28,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AE9AC1CC2F898A5000F468FE /* Exceptions for "ScopeWorks2" folder in "ScopeWorks2" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AEB49CE42F6B2D1700CD5690 /* ScopeWorks2 */;
+		};
 		AEBC86A62F7F0B30002EFFBB /* Exceptions for "ScopeWorks2" folder in "BuildTemplates" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -41,6 +48,7 @@
 		AEB49CE72F6B2D1700CD5690 /* ScopeWorks2 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				AE9AC1CC2F898A5000F468FE /* Exceptions for "ScopeWorks2" folder in "ScopeWorks2" target */,
 				AEBC86A62F7F0B30002EFFBB /* Exceptions for "ScopeWorks2" folder in "BuildTemplates" target */,
 			);
 			explicitFolders = (
@@ -355,6 +363,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScopeWorks2/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need access to add images to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to save images to your photo library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -403,6 +414,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScopeWorks2/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need access to add images to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to save images to your photo library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

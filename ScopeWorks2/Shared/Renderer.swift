@@ -1,5 +1,6 @@
 import MetalKit
 import simd
+import SwiftUI
 
 #if os(iOS)
 import UIKit
@@ -184,8 +185,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let adjustment = scopeState.adjustTrianglePoints(trianglePoints: changed)
         scopeState.trianglePoints = adjustment.points
         if adjustment.adjusted {
-            scopeState.rotationCenter.x += adjustment.xAdjustment ?? 0.0
-            scopeState.rotationCenter.y += adjustment.yAdjustment ?? 0.0
+            scopeState.rotationCenter = scopeState.rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
         }
     }
     
@@ -204,8 +204,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         
         let outerThickness: Float = 6.0
         let innerThickness: Float = 2.0
-        let blackValues = [0.0, 0.0, 0.0, 1.0]
-        let whiteValues = [1.0, 1.0, 1.0, 1.0]
         
         if scopeState.animate {
             if ScopeRenderer.logPoints {
@@ -250,19 +248,14 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
           orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
 
         let commandBuffer = commandQueue.makeCommandBuffer()!
-        if scopeState.useBlackBackground {
-            descriptor.colorAttachments[0].clearColor = MTLClearColor(
-                red: blackValues[0],
-                green: blackValues[1],
-                blue: blackValues[2],
-                alpha: blackValues[3])
-        } else {
-            descriptor.colorAttachments[0].clearColor = MTLClearColor(
-            red: whiteValues[0],
-            green: whiteValues[1],
-            blue: whiteValues[2],
-            alpha: whiteValues[3])
-        }
+        let colorComponents = scopeState.backgroundColor.components()
+        
+        descriptor.colorAttachments[0].clearColor = MTLClearColor(
+            red: colorComponents[0],
+            green: colorComponents[1],
+            blue: colorComponents[2],
+            alpha: colorComponents[3])
+
         descriptor.colorAttachments[0].loadAction =  MTLLoadAction.clear
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)

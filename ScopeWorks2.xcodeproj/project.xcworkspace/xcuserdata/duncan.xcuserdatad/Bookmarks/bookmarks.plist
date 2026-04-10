@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>672</string>
+					<string>678</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>671</string>
+					<string>677</string>
 					<key>Timestamp</key>
-					<string>797523452.684237</string>
+					<string>797548730.157234</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>534</string>
+					<string>539</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>533</string>
+					<string>538</string>
 					<key>Timestamp</key>
-					<string>797523452.684069</string>
+					<string>797548730.157213</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -178,7 +178,7 @@
 					<key>StartingLineNumber</key>
 					<string>135</string>
 					<key>Timestamp</key>
-					<string>797522306.3023961</string>
+					<string>797528160.382143</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>44</string>
+					<string>45</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>43</string>
+					<string>44</string>
 					<key>Timestamp</key>
-					<string>797520824.36318</string>
+					<string>797528089.7246751</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -244,8 +244,8 @@
 				<string>    @Published var trianglePoints = TrianglePoints(
 </string>
 				<key>leading</key>
-				<string>    @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
-    @Published var radiusScale: Float = 1.0
+				<string>    @Published var radiusScale: Float = 1.0
+    @Published var backgroundColor = Color.white
 </string>
 				<key>trailing</key>
 				<string>        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
@@ -272,7 +272,7 @@
 					<key>StartingLineNumber</key>
 					<string>310</string>
 					<key>Timestamp</key>
-					<string>797522562.186901</string>
+					<string>797528160.382167</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
