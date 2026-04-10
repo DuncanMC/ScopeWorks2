@@ -180,7 +180,13 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let elapsed = CACurrentMediaTime() - scopeState.lastAnimationStepTime
         let degrees = Float(elapsed * Double(scopeState.rotationSpeed))
         let radians = degrees.degreesToRadians
-        scopeState.trianglePoints = rotateTriangle(trianglePoints: scopeState.trianglePoints, angle: radians, aroundCenter: scopeState.rotationCenter)
+        let changed = rotateTriangle(trianglePoints: scopeState.trianglePoints, angle: radians, aroundCenter: scopeState.rotationCenter)
+        let adjustment = scopeState.adjustTrianglePoints(trianglePoints: changed)
+        scopeState.trianglePoints = adjustment.points
+        if adjustment.adjusted {
+            scopeState.rotationCenter.x += adjustment.xAdjustment ?? 0.0
+            scopeState.rotationCenter.y += adjustment.yAdjustment ?? 0.0
+        }
     }
     
     func draw(in view: MTKView) {

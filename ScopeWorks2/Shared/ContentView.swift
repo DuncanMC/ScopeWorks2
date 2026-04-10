@@ -102,7 +102,37 @@ class ScopeState: ObservableObject {
     private var trianglePoint3: CGPoint = CGPointZero
     private var rotationCenterPoint: CGPoint = CGPointZero
     
-
+    typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, xAdjustment: Float?, yAdjustment: Float?)
+    
+    func adjustTrianglePoints(trianglePoints: TrianglePoints) -> AdjustmentResult {
+        let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
+        let triangleLimits = triangleLimits(trianglePoints: trianglePoints)
+        var xAdjustment: Float? = nil
+        var yAdjustment: Float? = nil
+        //if out of range in x, calc x adjustment
+        if triangleLimits.minX < textureLimits.minX {
+            xAdjustment = textureLimits.minX - triangleLimits.minX
+        } else if triangleLimits.maxX > textureLimits.maxX {
+            xAdjustment = textureLimits.maxX - triangleLimits.maxX
+        }
+        if triangleLimits.minY < textureLimits.minY {
+            yAdjustment = textureLimits.minY - triangleLimits.minY
+        } else if triangleLimits.maxY > textureLimits.maxY {
+            yAdjustment = textureLimits.maxY - triangleLimits.maxY
+        }
+        let adjusted = xAdjustment != nil || yAdjustment != nil
+        if adjusted {
+            let deltaX = xAdjustment ?? 0.0
+            let deltaY = yAdjustment ?? 0.0
+            let newTrianglePoints = TrianglePoints(
+                point1: SIMD2<Float>(trianglePoints.point1.x + deltaX, trianglePoints.point1.y + deltaY),
+                point2: SIMD2<Float>(trianglePoints.point2.x + deltaX, trianglePoints.point2.y + deltaY),
+                point3: SIMD2<Float>(trianglePoints.point3.x + deltaX, trianglePoints.point3.y + deltaY))
+            return (newTrianglePoints, true, xAdjustment, yAdjustment)
+        }
+        return (trianglePoints, false, xAdjustment, yAdjustment)
+    }
+    
     func calcTrianglePoints() -> TrianglePoints {
         guard selectedImageData != nil else {
             return TrianglePoints(
@@ -259,7 +289,7 @@ class ScopeState: ObservableObject {
         point += offset
     }
 
-    func scaleTrianglePoints(by scale: Float, centeredAt center: simd_float2) {
+    func scaleTrianglePoints(by scale: Float, centeredAt center: simd_float2) -> TrianglePoints{
         //print("center = \(center.myDescription)")
         let scaleMatrix = makeScaleMatrix(xScale: scale, yScale: scale)
 
@@ -271,7 +301,7 @@ class ScopeState: ObservableObject {
         let point1 = ((positionVector(point: trianglePoints.point1)) * transform)
         let point2 = ((positionVector(point: trianglePoints.point2))  * transform)
         let point3 = ((positionVector(point: trianglePoints.point3))  * transform)
-        trianglePoints = TrianglePoints(
+        return TrianglePoints(
             point1: pointFromVector(point1),
             point2: pointFromVector(point2),
             point3: pointFromVector(point3)
@@ -295,13 +325,17 @@ class ScopeState: ObservableObject {
             let centerCGPoint = centerCGPoint(triangleCGPoints: triangleCGPoint)
             let startingDistance = distanceBetween(p1: centerCGPoint, p2: lastDragLocation)
             let currentDistance = distanceBetween(p1: centerCGPoint, p2: value.location)
-            let startingDistanceString = String(format: "%.02f", startingDistance)
-            let currentDistanceString = String(format: "%.02f", currentDistance)
             let sizeChange = Float(currentDistance/startingDistance)
-            let changeString = String(format: "%.02f", sizeChange)
+            
+            //let changeString = String(format: "%.02f", sizeChange)
+            //let startingDistanceString = String(format: "%.02f", startingDistance)
+            //let currentDistanceString = String(format: "%.02f", currentDistance)
             //print("startingDistance = \(startingDistanceString). currentDistance = \(currentDistanceString). change = \(changeString)")
             let triangleCenter = centerPoint(trianglePoints: trianglePoints)
-            scaleTrianglePoints(by: sizeChange, centeredAt: triangleCenter)
+            let changed = scaleTrianglePoints(by: sizeChange, centeredAt: triangleCenter)
+            let adjustment = adjustTrianglePoints(trianglePoints: changed)
+            trianglePoints = adjustment.points
+
             self.lastDragLocation = value.location
 
         case .inRotationCenter:
@@ -317,11 +351,19 @@ class ScopeState: ObservableObject {
             let newPoint3 = CGPoint(x: trianglePoint3.x + deltaX, y: trianglePoint3.y + deltaY)
             let newPoint3Metal = viewPointToMetal(newPoint3)
 
-            self.trianglePoints  = TrianglePoints(point1: newPoint1Metal, point2: newPoint2Metal, point3: newPoint3Metal)
-            let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
-            let newRotationCenter = viewPointToMetal(newCenterPoint)
-            
-            self.rotationCenter = newRotationCenter
+            let changed = TrianglePoints(point1: newPoint1Metal, point2: newPoint2Metal, point3: newPoint3Metal)
+            let adjustment = adjustTrianglePoints(trianglePoints: changed)
+            trianglePoints = adjustment.points
+
+            #if os(macOS)
+                if NSEvent.modifierFlags.rawValue & NSEvent.ModifierFlags.shift.rawValue != 0 {
+                                     let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
+                                     let newRotationCenter = viewPointToMetal(newCenterPoint)
+                         
+                                     self.rotationCenter = newRotationCenter
+                }
+            #endif
+
 
         case .outsideTriangle:
             let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
@@ -337,24 +379,21 @@ class ScopeState: ObservableObject {
             }
             let centerMetalPoint = viewPointToMetal(pivotPoint)
             
-            #if os(macOS)
-            
-            #endif
 
             let deltaX = value.location.x - pivotPoint.x
             let deltaY = value.location.y - pivotPoint.y
             let angle1 = Float(atan2(lastDragLocation.x - pivotPoint.x, lastDragLocation.y - pivotPoint.y))
             let angle2 = Float(atan2(deltaX, deltaY))
             let angleChange = angle2 - angle1
-            trianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: angleChange, aroundCenter: centerMetalPoint)
-            if trianglePoints.point1.x.isNaN {
-                print("NAN!")
-            }
-
-            
+            let changed = rotateTriangle(trianglePoints: trianglePoints, angle: angleChange, aroundCenter: centerMetalPoint)
             self.lastDragLocation = value.location
+            guard !changed.point1.x.isNaN else {
+                print("NAN!")
+                return
+            }
+            let adjustment = adjustTrianglePoints(trianglePoints: changed)
+            trianglePoints = adjustment.points
 
-            break
         default:
             return
         }
@@ -459,7 +498,8 @@ struct ContentView: View {
                 self.isDragging = false
                 isRotating = false
                 scopeState.lastDragLocation = nil
-                //print("dragGesture ended.")
+                let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
+                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).  TrianglePoints = \n\(scopeState.trianglePoints)")
 
             }
     }

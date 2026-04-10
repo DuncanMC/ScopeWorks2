@@ -120,6 +120,15 @@ func makeTranslationMatrix(tx: Float, ty: Float) -> simd_float3x3 {
 //    
 //    return matrix
 }
+typealias RangeLimits = (minX: Float, maxX: Float, minY: Float, maxY: Float)
+
+func triangleLimits(trianglePoints: TrianglePoints) -> RangeLimits {
+    let minX = min(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)
+    let maxX = max(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)
+    let minY = min(trianglePoints.point1.y, trianglePoints.point2.y, trianglePoints.point3.y)
+    let maxY = max(trianglePoints.point1.y, trianglePoints.point2.y, trianglePoints.point3.y)
+    return (minX, maxX, minY, maxY)
+}
 
 func makeRotationMatrix(angle: Float) -> simd_float3x3 {
     let rows = [

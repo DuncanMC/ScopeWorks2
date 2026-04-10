@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>632</string>
+					<string>672</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>631</string>
+					<string>671</string>
 					<key>Timestamp</key>
-					<string>797456226.935209</string>
+					<string>797523452.684237</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>494</string>
+					<string>534</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>493</string>
+					<string>533</string>
 					<key>Timestamp</key>
-					<string>797456226.9350801</string>
+					<string>797523452.684069</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>106</string>
+					<string>136</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>105</string>
+					<string>135</string>
 					<key>Timestamp</key>
-					<string>797437678.466776</string>
+					<string>797522306.3023961</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -197,8 +197,8 @@
 				<string>    func calcTrianglePoints() -&gt; TrianglePoints {
 </string>
 				<key>leading</key>
-				<string>    
-
+				<string>    }
+    
 </string>
 				<key>trailing</key>
 				<string>        guard selectedImageData != nil else {
@@ -225,7 +225,7 @@
 					<key>StartingLineNumber</key>
 					<string>43</string>
 					<key>Timestamp</key>
-					<string>797373195.520023</string>
+					<string>797520824.36318</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -255,6 +255,53 @@
 			</dict>
 			<key>title</key>
 			<string>trianglePoints</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>311</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>310</string>
+					<key>Timestamp</key>
+					<string>797522562.186901</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ContentView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    func handleDragging(
+</string>
+				<key>leading</key>
+				<string>    }
+    
+</string>
+				<key>trailing</key>
+				<string>        value: DragGesture.Value,
+        flags: UInt
+    ) {
+</string>
+			</dict>
+			<key>title</key>
+			<string>handleDragging</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>
