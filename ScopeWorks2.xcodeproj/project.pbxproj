@@ -53,6 +53,7 @@
 			);
 			explicitFolders = (
 				Shared/Kaleidoscope_templates,
+				"Shared/ScopeWorks source images",
 			);
 			path = ScopeWorks2;
 			sourceTree = "<group>";

@@ -117,8 +117,9 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 
     func loadTexture() {
 #if os(macOS)
-        if let url = Bundle.main.url(forResource: scopeState.textureName, withExtension: "png"),
-           let imageData = try? Data(contentsOf: url) {
+        guard scopeState.imageURL != nil,
+        let imageData else { return }
+//           let imageData = try? Data(contentsOf: url) {
             
             Task { @MainActor in
                 scopeState.selectedImageData = imageData
@@ -143,7 +144,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             } catch {
                 print("Error loading texture: \(error)")
             }
-        }
 #else
             let loader = MTKTextureLoader(device: device)
 //            texture = try loader.newTexture(cgImage: img.cgImage!, options: [MTKTextureLoaderOptionOrigin: MTKTextureLoaderOriginTopLeft as NSObject])

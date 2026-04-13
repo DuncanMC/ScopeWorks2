@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
 import simd
+import PhotosUI
+
 
 enum DragLocations: String {
     case inRotationCenter
@@ -15,14 +17,19 @@ typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
 
 class ScopeState: ObservableObject {
     
-    @Published var selectedImageData: Data? = nil
+    init(){
+        print("In ScopeState init")
+        Task { @MainActor in
+            try await photoManager.setupAlbumOnFirstLaunch()
+        }
+        
+    }
     
     let example = "example"
     let test2 = "test 2"
     let portrait = "portrait"
     let landscape = "landscape"
 
-    @Published var textureName = "circles twirled 2"
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
         #if os(iOS)
@@ -39,6 +46,9 @@ class ScopeState: ObservableObject {
                 selectedImageSize.width > 0 else { return 0 }
         return Float(selectedImageSize.width / selectedImageSize.height)
     }
+    // MARK: - Properties to be saved in ScopeWorks document
+    @Published var imageURL: URL? = nil
+//    @Published var textureName = "example"
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
     @Published var backgroundColor = Color.white
@@ -52,16 +62,12 @@ class ScopeState: ObservableObject {
             //print("rotationCenter changed")
         }
     }
-
-
-    @Published var selectedScopeType: Int = 0
-
     @Published var showOutlines: Bool = false
     @Published var flipAlternates: Bool = true
     @Published var splitTriangle: Bool = false
-    @Published var showSourceImage: Bool = true
     @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
+    @Published var showControls = true
     @Published var polygonSides = 6 {
         didSet {
             trianglePoints = calcTrianglePoints()
@@ -69,6 +75,17 @@ class ScopeState: ObservableObject {
     }
     @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
+
+    // MARK: - other published properties
+    @Published var showOpenDialog: Bool = false
+
+    @Published var photoManager = PhotoLibraryManager()
+    @Published var showSourceImage: Bool = true
+    @Published var selectedImageData: Data? = nil
+
+
+    @Published var selectedScopeType: Int = 0
+
     @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
     @Published var texAspect: Float = 1
     @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
@@ -76,6 +93,8 @@ class ScopeState: ObservableObject {
     @Published var lastDragLocation: CGPoint? = nil
     @Published var previousRotation: Float? = nil
     
+    
+    @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
     @Published var imageViewSize: CGSize = CGSizeZero {
         willSet {
             //print("about to change imageViewSize")
@@ -416,10 +435,13 @@ class ScopeState: ObservableObject {
 //}
 
 struct ContentView: View {
-    
+        
     let zoomDetents: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
     let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
+    var rotationString: String {
+        String(format:"%.02f", scopeState.rotationSpeed)
+    }
     var zoomString: String {
         String(format:"%.02f", scopeState.zoom/2.0)
     }
@@ -543,184 +565,219 @@ struct ContentView: View {
                         .gesture(ExclusiveGesture(dragGesture, rotateGesture))
 //                        .gesture(rotateGesture)
                 }
-                ScopeViewRepresentable(scopeState: scopeState)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.white)
-            }
-            Spacer()
-            ScrollView(.horizontal) {
-                VStack(spacing: 10) {
-                    HStack(alignment: .center, spacing: 20) {
-                        Spacer()
-    #if os(iOS)
-                        PhotoPickerView(scopeState: scopeState)
-    #endif
-                        
-                        ScopeTypePicker(title: "Kaledioscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
-                            .frame(width: 360)
+                ZStack {
+                    ScopeViewRepresentable(scopeState: scopeState)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                    Button(scopeState.showControls ? "Hide controls" : "Show controls") {
+                        scopeState.showControls.toggle()
+                    }
+                    .background(Color.black.opacity(0.4))
+                    .foregroundStyle(.white)
+                    .keyboardShortcut("t", modifiers: [.command])
 
-                            .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
-                                //print("selectedScopeType = \(newValue)")
-                            }
-                        
-                        
-                        LabeledContent(content: {
-                            TextField("",
-                                      text: $polygonSidesString,
-                                      onEditingChanged: { isEditing in
-                                //print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
-                            },
-                                      onCommit: {
-                                //print("In onCommit, $polygonSidesString = \(polygonSidesString)")
-                                guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
-                                    Task { @MainActor in
-                                        self.polygonSidesString = "\(scopeState.polygonSides)"
-                                    }
-                                    return
-                                }
-                                scopeState.polygonSides = value.intValue
-                                isFocused = false
-                            }
-                            )
-                            .textFieldStyle(.roundedBorder)
-                            .frame(minWidth: 30, maxWidth: 50)
-                            .focused($isFocused)
-                            .onChange(of: isFocused) {
-                                if isFocused {
-                                    #if os(iOS)
-                                        Task { @MainActor in
-                                            UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
-                                        }
-                                    #elseif os(macOS)
-                                        Task { @MainActor in
-                                            NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
-                                        }
-                                    #endif
-                                    selection = .init(range: site.startIndex..<site.endIndex)
-                                }
-                            }
-                            .onAppear() {
-                                polygonSidesString = "\(scopeState.polygonSides)"
-                            }
-                        },
-                                       label: {
-                            Text("Polygon sides")
-                            
-                        })
-                        .padding()
-                        
-                        Toggle(isOn: $scopeState.showOutlines) {
-                            Text("Show outlines")
-                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                        }
-                        Toggle(isOn: $scopeState.showSourceImage) {
-                            Text("Show source image")
-                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                        }
-                        
-                        ColorPicker("Background color", selection: $scopeState.backgroundColor)
-//                        Toggle(isOn: $scopeState.useBlackBackground) {
-//                            Text("Use black background")
-//                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-//                        }
-                        Spacer()
 
-                        // Visual detents and snapping for iOS 18+/macOS 26+
-                        VStack {
-                            Text("Zoom \(zoomString)")
-                            Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
-                        }
-//                        , neutralValue: { editing in
-//                                if !editing {
-//                                    let threshold = 0.1
-//                                    if let nearest = zoomDetents.min(by: { abs($0 - scopeState.zoom) < abs($1 - scopeState.zoom) }),
-//                                       abs(nearest - scopeState.zoom) < threshold {
-//                                        scopeState.zoom = nearest
-//                                    }
-//                                }
-//                            }) {
-//                                Text("Zoom")
-//                            } label: {
-//                                SliderTickContentForEach(zoomDetents, id: \.self) { val in
-//                                    SliderTick(val) {
-//                                        Text(String(format: "%.1f", val))
-//                                    }
-//                                }
-//                            }
-//                        }
-                        Spacer()
-                        VStack {
-                            Text("Radius \(radiusString)")
-                            Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
-//                            , onEditingChanged: { editing in
-//                                if !editing {
-//                                    let threshold = 0.05
-//                                    if let nearest = radiusDetents.min(by: { abs($0 - scopeState.radiusScale) < abs($1 - scopeState.radiusScale) }),
-//                                        abs(nearest - scopeState.radiusScale) < threshold {
-//                                        scopeState.radiusScale = nearest
-//                                    }
-//                                }
-//                            }) {
-//                                Text("Radius")
-//                            } ticks: {
-//                                SliderTickContentForEach(radiusDetents, id: \.self) { val in
-//                                    SliderTick(val) {
-//                                        Text(String(format: "%.2f", val))
-//                                    }
-//                                }
-//                            }
-                        }
-                        //radiusScale
-                    }
-                HStack(alignment: .center,spacing: 20) {
-                    Spacer()
 
-                    Toggle(isOn: $scopeState.flipAlternates) {
-                        Text("Flip alternates")
-                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                    }
-                    Toggle(isOn: $scopeState.drawWithReflection) {
-                        Text("Draw with reflection")
-                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                    }
-                    Button(scopeState.animate ? "Stop" : "Animate") {
-                        scopeState.animate.toggle()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.defaultAction)
-//                    Toggle(isOn: $scopeState.animate) {
-//                        Text("Animate")
-//                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-//                    }
-                    .onChange(of: scopeState.animate) { oldValue, newValue in
-                        scopeState.changeAnimationState()
-                    }
-                    Button("Reverse animation") {
-                        scopeState.rotationSpeed *= -1
-                        scopeState.movementSpeed *= -1
-                    }
-                    .keyboardShortcut("r", modifiers: [.command])
-
-                    Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    
                 }
             }
+            if scopeState.showControls {
+                Spacer()
+                ScrollView(.horizontal) {
+                    VStack(spacing: 10) {
+                        HStack(alignment: .center, spacing: 20) {
+                            Spacer()
+                            PhotoPickerView(scopeState: scopeState)
+                            
+                            ScopeTypePicker(title: "Kaledioscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
+                                .frame(width: 360)
+
+                                .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
+                                    //print("selectedScopeType = \(newValue)")
+                                }
+                            
+                            
+                            LabeledContent(content: {
+                                TextField("",
+                                          text: $polygonSidesString,
+                                          onEditingChanged: { isEditing in
+                                    //print("In onEditingChanged isEditing = \(isEditing), $polygonSidesString = \(polygonSidesString)")
+                                },
+                                          onCommit: {
+                                    //print("In onCommit, $polygonSidesString = \(polygonSidesString)")
+                                    guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
+                                        Task { @MainActor in
+                                            self.polygonSidesString = "\(scopeState.polygonSides)"
+                                        }
+                                        return
+                                    }
+                                    scopeState.polygonSides = value.intValue
+                                    isFocused = false
+                                }
+                                )
+                                .textFieldStyle(.roundedBorder)
+                                .frame(minWidth: 30, maxWidth: 50)
+                                .focused($isFocused)
+                                .onChange(of: isFocused) {
+                                    if isFocused {
+                                        #if os(iOS)
+                                            Task { @MainActor in
+                                                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                                            }
+                                        #elseif os(macOS)
+                                            Task { @MainActor in
+                                                NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+                                            }
+                                        #endif
+                                        selection = .init(range: site.startIndex..<site.endIndex)
+                                    }
+                                }
+                                .onAppear() {
+                                    polygonSidesString = "\(scopeState.polygonSides)"
+                                }
+                            },
+                                           label: {
+                                Text("Polygon sides")
+                                
+                            })
+                            .padding()
+                            
+                            Toggle(isOn: $scopeState.showOutlines) {
+                                Text("Show outlines")
+                                    .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            }
+                            Toggle(isOn: $scopeState.showSourceImage) {
+                                Text("Show source image")
+                                    .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            }
+                            .keyboardShortcut("i", modifiers: [.command])
+
+                            ColorPicker("Background color", selection: $scopeState.backgroundColor)
+    //                        Toggle(isOn: $scopeState.useBlackBackground) {
+    //                            Text("Use black background")
+    //                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+    //                        }
+                            Spacer()
+
+                            // Visual detents and snapping for iOS 18+/macOS 26+
+                            VStack {
+                                Text("Zoom \(zoomString)")
+                                Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                            }
+    //                        , neutralValue: { editing in
+    //                                if !editing {
+    //                                    let threshold = 0.1
+    //                                    if let nearest = zoomDetents.min(by: { abs($0 - scopeState.zoom) < abs($1 - scopeState.zoom) }),
+    //                                       abs(nearest - scopeState.zoom) < threshold {
+    //                                        scopeState.zoom = nearest
+    //                                    }
+    //                                }
+    //                            }) {
+    //                                Text("Zoom")
+    //                            } label: {
+    //                                SliderTickContentForEach(zoomDetents, id: \.self) { val in
+    //                                    SliderTick(val) {
+    //                                        Text(String(format: "%.1f", val))
+    //                                    }
+    //                                }
+    //                            }
+    //                        }
+                            Spacer()
+                            VStack {
+                                Text("Radius \(radiusString)")
+                                Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
+    //                            , onEditingChanged: { editing in
+    //                                if !editing {
+    //                                    let threshold = 0.05
+    //                                    if let nearest = radiusDetents.min(by: { abs($0 - scopeState.radiusScale) < abs($1 - scopeState.radiusScale) }),
+    //                                        abs(nearest - scopeState.radiusScale) < threshold {
+    //                                        scopeState.radiusScale = nearest
+    //                                    }
+    //                                }
+    //                            }) {
+    //                                Text("Radius")
+    //                            } ticks: {
+    //                                SliderTickContentForEach(radiusDetents, id: \.self) { val in
+    //                                    SliderTick(val) {
+    //                                        Text(String(format: "%.2f", val))
+    //                                    }
+    //                                }
+    //                            }
+                            }
+                            //radiusScale
+                        }
+                    HStack(alignment: .center,spacing: 20) {
+                        Spacer()
+
+                        Toggle(isOn: $scopeState.flipAlternates) {
+                            Text("Flip alternates")
+                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        }
+                        Toggle(isOn: $scopeState.drawWithReflection) {
+                            Text("Draw with reflection")
+                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        }
+                        VStack {
+                            Text("Rotation speed \(rotationString)")
+                            Slider(value: $scopeState.rotationSpeed, in: 0 ... 15.0)
+                        }
+
+                        Button(scopeState.animate ? "Stop" : "Animate") {
+                            scopeState.animate.toggle()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .keyboardShortcut(.defaultAction)
+    //                    Toggle(isOn: $scopeState.animate) {
+    //                        Text("Animate")
+    //                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+    //                    }
+                        .onChange(of: scopeState.animate) { oldValue, newValue in
+                            scopeState.changeAnimationState()
+                        }
+                        Button("Reverse animation") {
+                            scopeState.rotationSpeed *= -1
+                            scopeState.movementSpeed *= -1
+                        }
+                        .keyboardShortcut("r", modifiers: [.command])
+
+                        Spacer()
+                    }
+                }
+                }
+                .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+
             }
-            .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+            //xxx
         }
     }
 }
 
-#if os(iOS)
-import PhotosUI
+
 
 struct PhotoPickerView: View {
     
     @State private var selectedItem: PhotosPickerItem?
     @StateObject var scopeState: ScopeState
     
-
+    
     var body: some View {
-        PhotosPicker("Select Texture", selection: $selectedItem, matching: .images)
+        #if os(macOS)
+            Button("Choose image") {
+                let panel = NSOpenPanel()
+                panel.allowsMultipleSelection = false
+                panel.canChooseFiles = true
+                panel.canChooseDirectories = false
+                if panel.runModal() == .OK,
+                let url = panel.url {
+                    scopeState.imageURL = url
+                    scopeState.selectedImageData = try! Data(contentsOf: url)
+                }
+//                scopeState.showOpenDialog = true
+            }
+        
+        #else
+        PhotosPicker("Choose image", selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { oldValue, newValue in
                 Task {
                     if let newValue,
@@ -729,9 +786,10 @@ struct PhotoPickerView: View {
                     }
                 }
             }
+        
+#endif
     }
 }
-#endif
 
 
 

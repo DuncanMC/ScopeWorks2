@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>678</string>
+					<string>751</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>677</string>
+					<string>750</string>
 					<key>Timestamp</key>
-					<string>797548730.157234</string>
+					<string>797796449.893059</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,16 +34,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                    Toggle(isOn: $scopeState.flipAlternates) {
+				<string>            //xxx
 </string>
 				<key>leading</key>
-				<string>                    Spacer()
-
+				<string>
+            }
 </string>
 				<key>trailing</key>
-				<string>                        Text("Flip alternates")
-                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                    }
+				<string>        }
+    }
+}
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>539</string>
+					<string>561</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>538</string>
+					<string>560</string>
 					<key>Timestamp</key>
-					<string>797548730.157213</string>
+					<string>797795802.9808429</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>136</string>
+					<string>155</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>135</string>
+					<string>154</string>
 					<key>Timestamp</key>
-					<string>797528160.382143</string>
+					<string>797795802.980877</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>45</string>
+					<string>55</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>44</string>
+					<string>54</string>
 					<key>Timestamp</key>
-					<string>797528089.7246751</string>
+					<string>797795802.98087</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -266,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>311</string>
+					<string>330</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>310</string>
+					<string>329</string>
 					<key>Timestamp</key>
-					<string>797528160.382167</string>
+					<string>797795802.980889</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

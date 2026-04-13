@@ -125,32 +125,32 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
     func loadTexture() {
 #if os(macOS)
-        if let url = Bundle.main.url(forResource: scopeState.textureName, withExtension: "png"),
-           let imageData = try? Data(contentsOf: url) {
+//        if let url = scopeState.imageURL,
+//           let imageData = try? Data(contentsOf: url) {
             
+        guard let imageData else { return }
+        Task { @MainActor in
+            scopeState.selectedImageData = imageData
+        }
+        let loader = MTKTextureLoader(device: device)
+        do {
+            let options: [MTKTextureLoader.Option: Any] =
+            [.origin:MTKTextureLoader.Origin.bottomLeft,
+             .generateMipmaps: true]
+            let tex = try loader.newTexture(data: imageData, options: options)
             Task { @MainActor in
-                scopeState.selectedImageData = imageData
+                scopeState.texture = tex
             }
-            let loader = MTKTextureLoader(device: device)
-            do {
-                let options: [MTKTextureLoader.Option: Any] =
-                [.origin:MTKTextureLoader.Origin.bottomLeft,
-                 .generateMipmaps: true]
-                let tex = try loader.newTexture(data: imageData, options: options)
-                Task { @MainActor in
-                    scopeState.texture = tex
-                }
-                let hasAlpha =
-                tex.pixelFormat == .rgba8Unorm ||
-                tex.pixelFormat == .rgba8Unorm_srgb ||
-                tex.pixelFormat == .bgra8Unorm ||
-                tex.pixelFormat == .bgra8Unorm_srgb ||
-                tex.pixelFormat == .rgba16Float ||
-                tex.pixelFormat == .rgba32Float
-                //                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
-            } catch {
-                print("Error loading texture: \(error)")
-            }
+            let hasAlpha =
+            tex.pixelFormat == .rgba8Unorm ||
+            tex.pixelFormat == .rgba8Unorm_srgb ||
+            tex.pixelFormat == .bgra8Unorm ||
+            tex.pixelFormat == .bgra8Unorm_srgb ||
+            tex.pixelFormat == .rgba16Float ||
+            tex.pixelFormat == .rgba32Float
+            //                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
+        } catch {
+            print("Error loading texture: \(error)")
         }
 #else
             let loader = MTKTextureLoader(device: device)
