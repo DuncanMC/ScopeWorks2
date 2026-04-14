@@ -117,6 +117,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
 
     func loadTexture() {
 #if os(macOS)
+        let textureLoadingOptions = [MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft as NSObject]
         guard scopeState.imageURL != nil,
         let imageData else { return }
 //           let imageData = try? Data(contentsOf: url) {
@@ -129,7 +130,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                 let options: [MTKTextureLoader.Option: Any] =
                 [.origin:MTKTextureLoader.Origin.bottomLeft,
                  .generateMipmaps: true]
-                texture = try loader.newTexture(data: imageData, options: options)
+                texture = try loader.newTexture(data: imageData, options: textureLoadingOptions)
                 if let tex = texture {
                     let hasAlpha =
                     tex.pixelFormat == .rgba8Unorm ||
@@ -154,7 +155,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     let options: [MTKTextureLoader.Option: Any] =
                     [.origin:MTKTextureLoader.Origin.bottomLeft,
                      .generateMipmaps: true]
-                    texture = try loader.newTexture(cgImage: image.cgImage!, options: options)
+                    texture = try loader.newTexture(cgImage: image.cgImage!, options: textureLoadingOptions)
 
                     if let tex = texture {
                         let hasAlpha =

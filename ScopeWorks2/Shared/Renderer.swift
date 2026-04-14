@@ -2,10 +2,45 @@ import MetalKit
 import simd
 import SwiftUI
 
+
+
 #if os(iOS)
 import UIKit
 #endif
+#if os(macOS)
+import AppKit
+#endif
 
+/// Redraw an image from Data so the returned image is always in the default ("up") orientation, as PNG data.
+func normalizedImageData(from imageData: Data) -> Data? {
+#if os(iOS)
+    guard let image = UIImage(data: imageData) else { return nil }
+    // If already up, nothing to do.
+    if image.imageOrientation == .up, let pngData = image.pngData() { return pngData }
+    // Redraw to "up" orientation
+    let renderer = UIGraphicsImageRenderer(size: image.size)
+    let normalizedImage = renderer.image { _ in
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+    }
+    return normalizedImage.pngData()
+#elseif os(macOS)
+    guard let nsImage = NSImage(data: imageData) else { return nil }
+    let imageRect = NSRect(origin: .zero, size: nsImage.size)
+    guard let rep = nsImage.bestRepresentation(for: imageRect, context: nil, hints: nil) else { return nil }
+    let bmp = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(nsImage.size.width), pixelsHigh: Int(nsImage.size.height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+    guard let bmpRep = bmp else { return nil }
+    NSGraphicsContext.saveGraphicsState()
+    if let ctx = NSGraphicsContext(bitmapImageRep: bmpRep) {
+        NSGraphicsContext.current = ctx
+        rep.draw(in: imageRect)
+        ctx.flushGraphics()
+    }
+    NSGraphicsContext.restoreGraphicsState()
+    return bmpRep.representation(using: .png, properties: [:])
+#else
+    return nil
+#endif
+}
 
 extension Float {
     var degreesToRadians: Float {
@@ -134,9 +169,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         }
         let loader = MTKTextureLoader(device: device)
         do {
-            let options: [MTKTextureLoader.Option: Any] =
-            [.origin:MTKTextureLoader.Origin.bottomLeft,
-             .generateMipmaps: true]
+            let options: [MTKTextureLoader.Option: Any] = [.origin:MTKTextureLoader.Origin.bottomLeft, .generateMipmaps: true]
             let tex = try loader.newTexture(data: imageData, options: options)
             Task { @MainActor in
                 scopeState.texture = tex
