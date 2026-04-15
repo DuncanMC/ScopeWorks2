@@ -64,7 +64,7 @@ class PhotoLibraryManager {
             // TODO: Make this code create the "ScopeWorks Source images" folder in Documents.
             return
         #else
-        UserDefaults.standard.set(false, forKey: "albumCreated")
+//        UserDefaults.standard.set(false, forKey: "albumCreated")
 
         guard !UserDefaults.standard.bool(forKey: "albumCreated") else { return }
         do {

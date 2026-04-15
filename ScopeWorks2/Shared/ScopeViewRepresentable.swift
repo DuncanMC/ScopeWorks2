@@ -21,8 +21,8 @@ struct ScopeViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
+        if scopeState.selectedImageData != nil {
+            context.coordinator.updateImageData()
 
         }
     }
@@ -54,8 +54,8 @@ extension ScopeViewRepresentable {
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
+        if scopeState.selectedImageData != nil {
+            context.coordinator.updateImageData()
 
         }
     }

@@ -1,38 +1,38 @@
 {
-  "modifiedDate" : 797351293.167397,
-  "index" : 3,
   "elements" : [
     {
-      "startAngle" : 0,
-      "radius" : 0.25,
+      "centerX" : 0.25,
       "centerY" : 0.25,
       "type" : 1,
-      "centerX" : 0.25
+      "startAngle" : 0,
+      "radius" : 0.25
     },
     {
-      "startAngle" : 0,
-      "radius" : 0.25,
+      "centerX" : 0.25,
       "centerY" : -0.25,
       "type" : 1,
-      "centerX" : 0.25
+      "startAngle" : 0,
+      "radius" : 0.25
     },
     {
-      "startAngle" : 0,
-      "radius" : 0.25,
+      "centerX" : -0.25,
       "centerY" : -0.25,
       "type" : 1,
-      "centerX" : -0.25
+      "startAngle" : 0,
+      "radius" : 0.25
     },
     {
-      "startAngle" : 0,
-      "radius" : 0.25,
+      "centerX" : -0.25,
       "centerY" : 0.25,
       "type" : 1,
-      "centerX" : -0.25
+      "startAngle" : 0,
+      "radius" : 0.25
     }
   ],
-  "isCircular" : false,
-  "sideCount" : 6,
+  "index" : 3,
+  "modifiedDate" : 797874548.798303,
+  "displayDescription" : "8-way tiles kaleidoscope.",
   "name" : "8-way tiles",
-  "displayDescription" : "8-way tiles kaleidoscope."
+  "isCircular" : false,
+  "sideCount" : 6
 }

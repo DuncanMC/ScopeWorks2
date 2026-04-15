@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>751</string>
+					<string>758</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>750</string>
+					<string>757</string>
 					<key>Timestamp</key>
-					<string>797796449.893059</string>
+					<string>797885715.834841</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,16 +34,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>            //xxx
+				<string>        }
 </string>
 				<key>leading</key>
-				<string>
-            }
+				<string>            }
+            //xxx
 </string>
 				<key>trailing</key>
-				<string>        }
-    }
+				<string>    }
 }
+
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>561</string>
+					<string>568</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>560</string>
+					<string>567</string>
 					<key>Timestamp</key>
-					<string>797795802.9808429</string>
+					<string>797885715.834814</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -147,16 +147,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+				<string>                        .background(Color.white)
 </string>
 				<key>leading</key>
-				<string>                if scopeState.showSourceImage {
-                    SourceImageViewRepresentable(scopeState: scopeState)
+				<string>                    SourceImageViewRepresentable(scopeState: scopeState)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 </string>
 				<key>trailing</key>
-				<string>                        .background(Color.white)
-                        .aspectRatio(scopeState.texSize, contentMode: .fit)
+				<string>                        .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .border(.blue, width: 2)
+                        .gesture(ExclusiveGesture(dragGesture, rotateGesture))
 </string>
 			</dict>
 			<key>title</key>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>155</string>
+					<string>162</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>154</string>
+					<string>161</string>
 					<key>Timestamp</key>
-					<string>797795802.980877</string>
+					<string>797885715.83485</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -194,16 +194,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    func calcTrianglePoints() -&gt; TrianglePoints {
+				<string>        guard selectedImageData != nil else {
 </string>
 				<key>leading</key>
-				<string>    }
-    
+				<string>    
+    func calcTrianglePoints() -&gt; TrianglePoints {
 </string>
 				<key>trailing</key>
-				<string>        guard selectedImageData != nil else {
-            return TrianglePoints(
+				<string>            return TrianglePoints(
                 point1: SIMD2&lt;Float&gt;(0.4, 0.25),
+                point2: SIMD2&lt;Float&gt;(0.6, 0.25),
 </string>
 			</dict>
 			<key>title</key>
@@ -266,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>330</string>
+					<string>337</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>329</string>
+					<string>336</string>
 					<key>Timestamp</key>
-					<string>797795802.980889</string>
+					<string>797885715.8348579</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -288,16 +288,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    func handleDragging(
+				<string>        value: DragGesture.Value,
 </string>
 				<key>leading</key>
-				<string>    }
-    
+				<string>    
+    func handleDragging(
 </string>
 				<key>trailing</key>
-				<string>        value: DragGesture.Value,
-        flags: UInt
+				<string>        flags: UInt
     ) {
+        guard let lastDragLocation = lastDragLocation else { return }
 </string>
 			</dict>
 			<key>title</key>

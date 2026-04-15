@@ -81,7 +81,13 @@ class ScopeState: ObservableObject {
 
     @Published var photoManager = PhotoLibraryManager()
     @Published var showSourceImage: Bool = true
-    @Published var selectedImageData: Data? = nil
+    @Published var imageUUID: UUID? = nil
+    @Published var isHEIC: Bool = false
+    @Published var selectedImageData: Data? = nil {
+        didSet {
+            imageUUID = UUID()
+        }
+    }
 
 
     @Published var selectedScopeType: Int = 0
@@ -771,6 +777,10 @@ struct PhotoPickerView: View {
                 if panel.runModal() == .OK,
                 let url = panel.url {
                     scopeState.imageURL = url
+                    if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
+                        print("typeID = \(typeID)")
+                        scopeState.isHEIC =  typeID == UTType.heic.identifier
+                    }
                     scopeState.selectedImageData = try! Data(contentsOf: url)
                 }
 //                scopeState.showOpenDialog = true
@@ -778,10 +788,14 @@ struct PhotoPickerView: View {
         
         #else
         PhotosPicker("Choose image", selection: $selectedItem, matching: .images)
-            .onChange(of: selectedItem) { oldValue, newValue in
+            .onChange(of: selectedItem) {
                 Task {
-                    if let newValue,
-                       let data = try? await newValue.loadTransferable(type: Data.self) {
+                    if let newValue = selectedItem {
+                        scopeState.isHEIC =  newValue.supportedContentTypes.contains(UTType.heic)
+                        
+                        let data = try? await newValue.loadTransferable(type: Data.self)
+                        print("newValue = \(newValue)")
+                        print("newValue.supportedContentTypes = \(newValue.supportedContentTypes)")
                         scopeState.selectedImageData = data
                     }
                 }
@@ -790,6 +804,9 @@ struct PhotoPickerView: View {
 #endif
     }
 }
+
+
+
 
 
 

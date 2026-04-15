@@ -30,13 +30,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     var commandQueue: MTLCommandQueue!
     var pipeline: MTLRenderPipelineState!
 
-    var texture: MTLTexture? {
-        didSet {
-            Task { @MainActor in
-//                scopeState.rotationCenter = centerPoint(trianglePoints: scopeState.trianglePoints)
-            }
-        }
-    }
     
     var scopeState: ScopeState
     // Track current drawable size for orientation handling
@@ -50,7 +43,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let texAspect: Float
         let orthoMatrix: float4x4
     }
-    var imageData: Data?
+//    weak var imageData: Data?
 
 #if os(iOS)
     init(scopeState: ScopeState) {
@@ -59,7 +52,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         device = MTLCreateSystemDefaultDevice()
         commandQueue = device.makeCommandQueue()
         makePipeline()
-        loadTexture()
+//        loadTexture()
     }
 #elseif os(macOS)
         init(scopeState: ScopeState) {
@@ -68,7 +61,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             device = MTLCreateSystemDefaultDevice()
             commandQueue = device.makeCommandQueue()
             makePipeline()
-            loadTexture()
+//            loadTexture()
         }
 #endif
 
@@ -108,71 +101,71 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)
     }
 
-    func updateImageData(_ imageData: Data?) {
-        if imageData != self.imageData {
-            self.imageData = imageData
-            loadTexture()
-        }
+    func updateImageData() {
+//        if imageData != self.imageData {
+//            self.imageData = imageData
+//            loadTexture()
+//        }
     }
 
-    func loadTexture() {
-#if os(macOS)
-        let textureLoadingOptions = [MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft as NSObject]
-        guard scopeState.imageURL != nil,
-        let imageData else { return }
-//           let imageData = try? Data(contentsOf: url) {
-            
-            Task { @MainActor in
-                scopeState.selectedImageData = imageData
-            }
-            let loader = MTKTextureLoader(device: device)
-            do {
-                let options: [MTKTextureLoader.Option: Any] =
-                [.origin:MTKTextureLoader.Origin.bottomLeft,
-                 .generateMipmaps: true]
-                texture = try loader.newTexture(data: imageData, options: textureLoadingOptions)
-                if let tex = texture {
-                    let hasAlpha =
-                    tex.pixelFormat == .rgba8Unorm ||
-                    tex.pixelFormat == .rgba8Unorm_srgb ||
-                    tex.pixelFormat == .bgra8Unorm ||
-                    tex.pixelFormat == .bgra8Unorm_srgb ||
-                    tex.pixelFormat == .rgba16Float ||
-                    tex.pixelFormat == .rgba32Float
-                } else {
-                    print("[ScopeRenderer] Failed to load texture.")
-                }
-            } catch {
-                print("Error loading texture: \(error)")
-            }
-#else
-            let loader = MTKTextureLoader(device: device)
-//            texture = try loader.newTexture(cgImage: img.cgImage!, options: [MTKTextureLoaderOptionOrigin: MTKTextureLoaderOriginTopLeft as NSObject])
-                do {
-                    guard let imageData,
-                          let image = UIImage(data: imageData)
-                    else { return }
-                    let options: [MTKTextureLoader.Option: Any] =
-                    [.origin:MTKTextureLoader.Origin.bottomLeft,
-                     .generateMipmaps: true]
-                    texture = try loader.newTexture(cgImage: image.cgImage!, options: textureLoadingOptions)
-
-                    if let tex = texture {
-                        let hasAlpha =
-                        tex.pixelFormat == .rgba8Unorm ||
-                        tex.pixelFormat == .rgba8Unorm_srgb ||
-                        tex.pixelFormat == .bgra8Unorm ||
-                        tex.pixelFormat == .bgra8Unorm_srgb ||
-                        tex.pixelFormat == .rgba16Float ||
-                        tex.pixelFormat == .rgba32Float
-                    } else {
-                        print("[ScopeRenderer] Failed to load texture.")
-                    }
-                } catch {
-                    print("Error loading texture: \(error)")
-                }
-#endif
-    }
+//    func loadTexture() {
+//        let textureLoadingOptions = [MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft as NSObject]
+//#if os(macOS)
+//        guard scopeState.imageURL != nil,
+//        let imageData else { return }
+////           let imageData = try? Data(contentsOf: url) {
+//            
+//            Task { @MainActor in
+//                scopeState.selectedImageData = imageData
+//            }
+//            let loader = MTKTextureLoader(device: device)
+//            do {
+//                let options: [MTKTextureLoader.Option: Any] =
+//                [.origin:MTKTextureLoader.Origin.bottomLeft,
+//                 .generateMipmaps: true]
+//                texture = try loader.newTexture(data: imageData, options: textureLoadingOptions)
+//                if let tex = texture {
+//                    let hasAlpha =
+//                    tex.pixelFormat == .rgba8Unorm ||
+//                    tex.pixelFormat == .rgba8Unorm_srgb ||
+//                    tex.pixelFormat == .bgra8Unorm ||
+//                    tex.pixelFormat == .bgra8Unorm_srgb ||
+//                    tex.pixelFormat == .rgba16Float ||
+//                    tex.pixelFormat == .rgba32Float
+//                } else {
+//                    print("[ScopeRenderer] Failed to load texture.")
+//                }
+//            } catch {
+//                print("Error loading texture: \(error)")
+//            }
+//#else
+//            let loader = MTKTextureLoader(device: device)
+////            texture = try loader.newTexture(cgImage: img.cgImage!, options: [MTKTextureLoaderOptionOrigin: MTKTextureLoaderOriginTopLeft as NSObject])
+//                do {
+//                    guard let imageData,
+//                          let image = UIImage(data: imageData)
+//                    else { return }
+//                    let options: [MTKTextureLoader.Option: Any] =
+//                    [.origin:MTKTextureLoader.Origin.bottomLeft,
+//                     .generateMipmaps: true]
+//                    texture = try loader.newTexture(cgImage: image.cgImage!, options: textureLoadingOptions)
+//
+//                    if let tex = texture {
+//                        let hasAlpha =
+//                        tex.pixelFormat == .rgba8Unorm ||
+//                        tex.pixelFormat == .rgba8Unorm_srgb ||
+//                        tex.pixelFormat == .bgra8Unorm ||
+//                        tex.pixelFormat == .bgra8Unorm_srgb ||
+//                        tex.pixelFormat == .rgba16Float ||
+//                        tex.pixelFormat == .rgba32Float
+//                    } else {
+//                        print("[ScopeRenderer] Failed to load texture.")
+//                    }
+//                } catch {
+//                    print("Error loading texture: \(error)")
+//                }
+//#endif
+//    }
 
     
     func draw(in view: MTKView) {
@@ -196,7 +189,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             print("[ScopeRenderer] pipeline is nil")
             return
         }
-        guard let texture = texture else {
+        guard let texture = scopeState.texture else {
             return
         }
         

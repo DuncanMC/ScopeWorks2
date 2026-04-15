@@ -16,7 +16,9 @@ func normalizedImageData(from imageData: Data) -> Data? {
 #if os(iOS)
     guard let image = UIImage(data: imageData) else { return nil }
     // If already up, nothing to do.
-    if image.imageOrientation == .up, let pngData = image.pngData() { return pngData }
+    if image.imageOrientation == .up, let pngData = image.pngData() {
+        return pngData
+    }
     // Redraw to "up" orientation
     let renderer = UIGraphicsImageRenderer(size: image.size)
     let normalizedImage = renderer.image { _ in
@@ -87,7 +89,7 @@ let zeroPoint = simd_float2(0,0)
 
 class ScopeRenderer: NSObject, MTKViewDelegate {
     
-    
+    var imageUUID: UUID? = nil
     static var logPoints: Bool = false
 //    static var indexToDraw: Int? = nil
     weak var mtkView: MTKView?
@@ -108,7 +110,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let texAspect: Float
         let orthoMatrix: float4x4
     }
-    var imageData: Data?
 
 #if os(iOS)
     init(scopeState: ScopeState) {
@@ -151,10 +152,14 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)
     }
 
-    func updateImageData(_ imageData: Data?) {
-        if imageData != self.imageData {
-            self.imageData = imageData
-            loadTexture()
+    func updateImageData() {
+        if true {
+            if let scopeImageUUID = scopeState.imageUUID,
+               imageUUID != scopeImageUUID {
+                print("New image, UUID = \(scopeImageUUID), reloading texture")
+                loadTexture()
+                imageUUID = scopeState.imageUUID
+            }
         }
     }
 
@@ -163,10 +168,17 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 //        if let url = scopeState.imageURL,
 //           let imageData = try? Data(contentsOf: url) {
             
-        guard let imageData else { return }
-        Task { @MainActor in
-            scopeState.selectedImageData = imageData
+        guard var imageData = scopeState.selectedImageData else { return }
+        if scopeState.isHEIC {
+            if let normalizedImageData = normalizedImageData(from: imageData) {
+                imageData = normalizedImageData
+            }
+
         }
+//        Task { @MainActor in
+//            scopeState.selectedImageData = imageData
+//            imageUUID = scopeState.imageUUID
+//        }
         let loader = MTKTextureLoader(device: device)
         do {
             let options: [MTKTextureLoader.Option: Any] = [.origin:MTKTextureLoader.Origin.bottomLeft, .generateMipmaps: true]
@@ -188,7 +200,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 #else
             let loader = MTKTextureLoader(device: device)
                 do {
-                    guard let imageData else { return }
+                    guard var imageData = scopeState.selectedImageData else { return }
+                    if scopeState.isHEIC {
+                        if let normalizedImageData = normalizedImageData(from: imageData) {
+                            imageData = normalizedImageData
+                        }
+                    }
                     let options: [MTKTextureLoader.Option: Any] =
                     [.origin:MTKTextureLoader.Origin.bottomLeft,
                      .generateMipmaps: true]

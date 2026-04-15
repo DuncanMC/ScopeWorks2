@@ -21,9 +21,10 @@ struct SourceImageViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
-        }
+//        print("In SourceImageViewRepresentable.updateNSView")
+//        if let imageData = scopeState.selectedImageData {
+//            context.coordinator.updateImageData(imageData)
+//        }
     }
 }
         
@@ -52,10 +53,11 @@ struct SourceImageViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ nsView: MTKView, context: Context) {
-        if let imageData = scopeState.selectedImageData {
-            context.coordinator.updateImageData(imageData)
 
-        }
+//        if let imageData = scopeState.selectedImageData {
+//            context.coordinator.updateImageData(imageData)
+//
+//        }
     }
 }
 

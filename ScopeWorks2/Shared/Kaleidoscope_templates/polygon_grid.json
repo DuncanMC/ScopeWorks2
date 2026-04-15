@@ -1,185 +1,185 @@
 {
-  "sideCount" : 6,
-  "index" : 1,
   "name" : "Polygon grid",
-  "displayDescription" : "Polygon grid kaleidoscope.",
-  "modifiedDate" : 797351293.16653,
   "isCircular" : true,
   "elements" : [
     {
-      "centerX" : 0,
+      "radius" : 0.2,
       "startAngle" : 0,
       "type" : 0,
-      "centerY" : 0,
-      "radius" : 0.2
+      "centerX" : 0,
+      "centerY" : 0
     },
     {
-      "centerX" : 0.3,
-      "startAngle" : 0,
-      "type" : 0,
       "centerY" : -0.17320508075688773,
-      "radius" : 0.2
-    },
-    {
-      "centerX" : 0,
       "startAngle" : 0,
       "type" : 0,
+      "radius" : 0.2,
+      "centerX" : 0.3
+    },
+    {
       "centerY" : -0.34641016151377546,
-      "radius" : 0.2
-    },
-    {
-      "centerX" : -0.3,
       "startAngle" : 0,
       "type" : 0,
+      "radius" : 0.2,
+      "centerX" : 0
+    },
+    {
       "centerY" : -0.17320508075688773,
-      "radius" : 0.2
+      "startAngle" : 0,
+      "type" : 0,
+      "radius" : 0.2,
+      "centerX" : -0.3
     },
     {
-      "centerX" : -0.3,
-      "type" : 0,
       "centerY" : 0.17320508075688773,
+      "startAngle" : 0,
+      "type" : 0,
       "radius" : 0.2,
-      "startAngle" : 0
+      "centerX" : -0.3
     },
     {
-      "centerX" : 0,
-      "type" : 0,
       "centerY" : 0.34641016151377546,
+      "startAngle" : 0,
+      "type" : 0,
       "radius" : 0.2,
-      "startAngle" : 0
+      "centerX" : 0
     },
     {
       "centerX" : 0.3,
-      "type" : 0,
-      "centerY" : 0.17320508075688773,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : 0.17320508075688773,
+      "type" : 0
     },
     {
       "centerX" : 0.6,
-      "type" : 0,
-      "centerY" : -0.34641016151377546,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : -0.34641016151377546,
+      "type" : 0
     },
     {
       "centerX" : 0.3,
-      "type" : 0,
-      "centerY" : -0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
     },
     {
       "centerX" : -0.3,
-      "type" : 0,
-      "centerY" : -0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
     },
     {
       "centerX" : -0.6,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : -0.34641016151377546,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : -0.6,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : -0.6,
-      "type" : 0,
-      "centerY" : 0.34641016151377546,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : 0.34641016151377546,
+      "type" : 0
     },
     {
       "centerX" : -0.3,
-      "type" : 0,
-      "centerY" : 0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
     },
     {
       "centerX" : 0.3,
-      "type" : 0,
-      "centerY" : 0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : 0.5196152422706632,
+      "type" : 0
     },
     {
       "centerX" : 0.6,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0.34641016151377546,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : 0.6,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : 0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0.5196152422706632,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : 0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0.17320508075688773,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : 0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : -0.17320508075688773,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : 0.9,
-      "type" : 0,
-      "centerY" : -0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
     },
     {
       "centerX" : -0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0.5196152422706632,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : -0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : 0.17320508075688773,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : -0.9,
-      "type" : 0,
+      "radius" : 0.2,
+      "startAngle" : 0,
       "centerY" : -0.17320508075688773,
-      "radius" : 0.2,
-      "startAngle" : 0
+      "type" : 0
     },
     {
       "centerX" : -0.9,
-      "type" : 0,
-      "centerY" : -0.5196152422706632,
       "radius" : 0.2,
-      "startAngle" : 0
+      "startAngle" : 0,
+      "centerY" : -0.5196152422706632,
+      "type" : 0
     }
-  ]
+  ],
+  "modifiedDate" : 797874548.797527,
+  "displayDescription" : "Polygon grid kaleidoscope.",
+  "sideCount" : 6,
+  "index" : 1
 }
