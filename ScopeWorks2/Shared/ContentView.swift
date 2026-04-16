@@ -15,20 +15,232 @@ enum DragLocations: String {
 
 typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
 
-class ScopeState: ObservableObject {
+// MARK: - Persisted document properties:
+// bookmarkData, imageURL, zoom, radiusScale, backgroundColor, trianglePoints,
+// rotationCenter, showOutlines, flipAlternates, splitTriangle,
+// drawWithReflection, animate, polygonSides,
+// rotationSpeed, movementSpeed, selectedScopeType
+class ScopeState: ObservableObject, Codable {
+    
+    var useButton: Bool = true
+    
+    // MARK: - Codable Keys
+    enum CodingKeys: String, CodingKey {
+        case bookmarkData
+        case zoom
+        case radiusScale
+        case backgroundColor
+        case trianglePoints
+        case rotationCenter
+        case showOutlines
+        case flipAlternates
+        case splitTriangle
+        case drawWithReflection
+        case animate
+        case polygonSides
+        case rotationSpeed
+        case movementSpeed
+        case selectedScopeType
+    }
+    
+    // MARK: - Codable support for Color
+    struct CodableColor: Codable {
+        let red: CGFloat
+        let green: CGFloat
+        let blue: CGFloat
+        let alpha: CGFloat
+        
+        init(color: Color) {
+            #if os(iOS)
+            let uiColor = UIColor(color)
+            var r: CGFloat = 0
+            var g: CGFloat = 0
+            var b: CGFloat = 0
+            var a: CGFloat = 0
+            uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+            self.red = r
+            self.green = g
+            self.blue = b
+            self.alpha = a
+            #elseif os(macOS)
+            let nsColor = NSColor(color)
+            var r: CGFloat = 0
+            var g: CGFloat = 0
+            var b: CGFloat = 0
+            var a: CGFloat = 0
+            nsColor.usingColorSpace(.deviceRGB)?.getRed(&r, green: &g, blue: &b, alpha: &a)
+            self.red = r
+            self.green = g
+            self.blue = b
+            self.alpha = a
+            #else
+            self.red = 1
+            self.green = 1
+            self.blue = 1
+            self.alpha = 1
+            #endif
+        }
+        
+        func toColor() -> Color {
+            Color(.sRGB, red: Double(red), green: Double(green), blue: Double(blue), opacity: Double(alpha))
+        }
+    }
+    
+    // MARK: - Codable support for SIMD2<Float>
+    struct CodableSIMD2: Codable {
+        var x: Float
+        var y: Float
+        
+        init(_ vector: SIMD2<Float>) {
+            self.x = vector.x
+            self.y = vector.y
+        }
+        
+        func toSIMD2() -> SIMD2<Float> {
+            SIMD2<Float>(x, y)
+        }
+    }
+    
+    struct TrianglePointsCodable: Codable {
+        var point1: CodableSIMD2
+        var point2: CodableSIMD2
+        var point3: CodableSIMD2
+        
+        init(_ t: TrianglePoints) {
+            self.point1 = CodableSIMD2(t.point1)
+            self.point2 = CodableSIMD2(t.point2)
+            self.point3 = CodableSIMD2(t.point3)
+        }
+        
+        func toTrianglePoints() -> TrianglePoints {
+            TrianglePoints(
+                point1: point1.toSIMD2(),
+                point2: point2.toSIMD2(),
+                point3: point3.toSIMD2()
+            )
+        }
+    }
+    
+    // MARK: - Initializer for decoding
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
+        if let data = self.bookmarkData {
+            var bookmarkDataIsStale: Bool = false
+            self.imageURL = try URL(resolvingBookmarkData: data, bookmarkDataIsStale: &bookmarkDataIsStale)
+        }
+
+//        self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+        self.zoom = try container.decode(Double.self, forKey: .zoom)
+        self.radiusScale = try container.decode(Float.self, forKey: .radiusScale)
+        let colorCodable = try container.decode(CodableColor.self, forKey: .backgroundColor)
+        self.backgroundColor = colorCodable.toColor()
+        
+        let triangleCodable = try container.decode(TrianglePointsCodable.self, forKey: .trianglePoints)
+        self.trianglePoints = triangleCodable.toTrianglePoints()
+        
+        let rotationCenterCodable = try container.decode(CodableSIMD2.self, forKey: .rotationCenter)
+        self.rotationCenter = rotationCenterCodable.toSIMD2()
+        
+        self.showOutlines = try container.decode(Bool.self, forKey: .showOutlines)
+        self.flipAlternates = try container.decode(Bool.self, forKey: .flipAlternates)
+        self.splitTriangle = try container.decode(Bool.self, forKey: .splitTriangle)
+        self.drawWithReflection = try container.decode(Bool.self, forKey: .drawWithReflection)
+        self.animate = try container.decode(Bool.self, forKey: .animate)
+//        self.showControls = try container.decode(Bool.self, forKey: .showControls)
+        self.polygonSides = try container.decode(Int.self, forKey: .polygonSides)
+        self.rotationSpeed = try container.decode(CGFloat.self, forKey: .rotationSpeed)
+        self.movementSpeed = try container.decode(CGFloat.self, forKey: .movementSpeed)
+        self.selectedScopeType = try container.decode(Int.self, forKey: .selectedScopeType)
+        
+        // Set default values for properties not persisted
+        self.photoManager = PhotoLibraryManager()
+        print("In ScopeState init.from. uuid = \(uuid)")
+    }
+    
+    // MARK: - Encode
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(bookmarkData, forKey: .bookmarkData)
+//        try container.encode(imageURL, forKey: .imageURL)
+        try container.encode(zoom, forKey: .zoom)
+        try container.encode(radiusScale, forKey: .radiusScale)
+        try container.encode(CodableColor(color: backgroundColor), forKey: .backgroundColor)
+        try container.encode(TrianglePointsCodable(trianglePoints), forKey: .trianglePoints)
+        try container.encode(CodableSIMD2(rotationCenter), forKey: .rotationCenter)
+        try container.encode(showOutlines, forKey: .showOutlines)
+        try container.encode(flipAlternates, forKey: .flipAlternates)
+        try container.encode(splitTriangle, forKey: .splitTriangle)
+        try container.encode(drawWithReflection, forKey: .drawWithReflection)
+        try container.encode(animate, forKey: .animate)
+        try container.encode(polygonSides, forKey: .polygonSides)
+        try container.encode(rotationSpeed, forKey: .rotationSpeed)
+        try container.encode(movementSpeed, forKey: .movementSpeed)
+        try container.encode(selectedScopeType, forKey: .selectedScopeType)
+    }
+    
+    // MARK: - Convenience initializer for creating from document values
+    init(
+        imageURL: URL? = nil,
+        zoom: Double = 2.0,
+        radiusScale: Float = 1.0,
+        backgroundColor: Color = Color.white,
+        trianglePoints: TrianglePoints = TrianglePoints(
+            point1: SIMD2<Float>(0.4, 0.25),
+            point2: SIMD2<Float>(0.6, 0.25),
+            point3: SIMD2<Float>(0.5, 0.42320508)
+        ),
+        rotationCenter: SIMD2<Float> = SIMD2<Float>(0.5, 0.5),
+        showOutlines: Bool = false,
+        flipAlternates: Bool = true,
+        splitTriangle: Bool = false,
+        drawWithReflection: Bool = true,
+        animate: Bool = false,
+        showControls: Bool = true,
+        polygonSides: Int = 6,
+        rotationSpeed: CGFloat = 10.0,
+        movementSpeed: CGFloat = 0,
+        selectedScopeType: Int = 0
+    ) {
+        self.imageURL = imageURL
+        self.zoom = zoom
+        self.radiusScale = radiusScale
+        self.backgroundColor = backgroundColor
+        self.trianglePoints = trianglePoints
+        self.rotationCenter = rotationCenter
+        self.showOutlines = showOutlines
+        self.flipAlternates = flipAlternates
+        self.splitTriangle = splitTriangle
+        self.drawWithReflection = drawWithReflection
+        self.animate = animate
+        self.showControls = showControls
+        self.polygonSides = polygonSides
+        self.rotationSpeed = rotationSpeed
+        self.movementSpeed = movementSpeed
+        self.selectedScopeType = selectedScopeType
+        
+        // Initialize other properties to defaults or empty values
+        self.photoManager = PhotoLibraryManager()
+    }
+    
+    deinit {
+        print("In ScopeState deinit. uuid = \(uuid)")
+    }
     
     init(){
-        print("In ScopeState init")
+//        print("In ScopeState init. uuid = \(uuid)")
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
         
     }
     
-    let example = "example"
-    let test2 = "test 2"
-    let portrait = "portrait"
-    let landscape = "landscape"
+    var log: Bool = true
+    
+    var uuid = UUID()
+    
 
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
@@ -47,8 +259,32 @@ class ScopeState: ObservableObject {
         return Float(selectedImageSize.width / selectedImageSize.height)
     }
     // MARK: - Properties to be saved in ScopeWorks document
-    @Published var imageURL: URL? = nil
-//    @Published var textureName = "example"
+    var bookmarkData: Data? {
+        didSet {
+//            guard  let bookmarkData else { return }
+//            var bookmarkDataIsStale: Bool = false
+//            do {
+//                imageURL = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &bookmarkDataIsStale)
+//            } catch {
+//                print("Error resolving bookmark data. error = \(error)")
+//            }
+        }
+    }
+    @Published var imageURL: URL? = nil {
+        didSet {
+            if let imageURL {
+                Task { @MainActor in
+                    do {
+                        selectedImageData = try Data(contentsOf: imageURL)
+                       // bookmarkData = createSecurityScopedBookmark(for: imageURL)
+                    } catch {
+                        print("Error loading image data. error = \(error)")
+                    }
+                }
+            }
+        }
+    }
+    
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
     @Published var backgroundColor = Color.white
@@ -67,7 +303,6 @@ class ScopeState: ObservableObject {
     @Published var splitTriangle: Bool = false
     @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
-    @Published var showControls = true
     @Published var polygonSides = 6 {
         didSet {
             trianglePoints = calcTrianglePoints()
@@ -80,6 +315,11 @@ class ScopeState: ObservableObject {
     @Published var showOpenDialog: Bool = false
 
     @Published var photoManager = PhotoLibraryManager()
+    @Published var showControls = true {
+        didSet {
+//            print("In showControls.didSet. showControls = \(showControls). uuid = \(uuid)")
+        }
+    }
     @Published var showSourceImage: Bool = true
     @Published var imageUUID: UUID? = nil
     @Published var isHEIC: Bool = false
@@ -98,6 +338,7 @@ class ScopeState: ObservableObject {
     @Published var draggingState: DragLocations? = nil
     @Published var lastDragLocation: CGPoint? = nil
     @Published var previousRotation: Float? = nil
+
     
     
     @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
@@ -404,7 +645,9 @@ class ScopeState: ObservableObject {
             }
             let centerMetalPoint = viewPointToMetal(pivotPoint)
             
-
+            if log {
+                print("pivot: \(pivotPoint), triangleCGPoint: \n\(triangleCGPoint)")
+            }
             let deltaX = value.location.x - pivotPoint.x
             let deltaY = value.location.y - pivotPoint.y
             let angle1 = Float(atan2(lastDragLocation.x - pivotPoint.x, lastDragLocation.y - pivotPoint.y))
@@ -427,7 +670,6 @@ class ScopeState: ObservableObject {
             return
         }
     }
-
 }
 
 //class ScopeViewModel: ObservableObject {
@@ -442,6 +684,8 @@ class ScopeState: ObservableObject {
 
 struct ContentView: View {
         
+    @Binding var scopeState: ScopeState
+
     let zoomDetents: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
     let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
@@ -479,8 +723,6 @@ struct ContentView: View {
     @State private var isDragging = false
     @State private var isRotating = false
     
-    @StateObject var scopeState = ScopeState()
-//    @StateObject var scopeViewModel = ScopeViewModel(scopeState: scopeState)
         
     var rotateGesture: some Gesture {
         RotateGesture()
@@ -513,7 +755,7 @@ struct ContentView: View {
                 if !isDragging {
                     //print("Begin dragging in view.")
                     if let target = scopeState.getDragLocation( value.startLocation) {
-                        //print("\nUser tapped in \(target.dragLocation.rawValue)\n")
+                        print("\nUser tapped in \(target.dragLocation.rawValue)\n")
                         scopeState.draggingState = target.dragLocation
                         scopeState.lastDragLocation = value.startLocation
                         self.isDragging = true
@@ -531,9 +773,9 @@ struct ContentView: View {
                 isRotating = false
                 scopeState.lastDragLocation = nil
                 let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
-//                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
-//                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
-//                print("TrianglePoints = \n\(scopeState.trianglePoints)")
+                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
+                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
+                print("TrianglePoints = \n\(scopeState.trianglePoints)")
             }
     }
     
@@ -575,16 +817,36 @@ struct ContentView: View {
                     ScopeViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
-                    Button(scopeState.showControls ? "Hide controls" : "Show controls") {
-                        scopeState.showControls.toggle()
-                    }
-                    .background(Color.black.opacity(0.4))
-                    .foregroundStyle(.white)
-                    .keyboardShortcut("t", modifiers: [.command])
+//                        Button(scopeState.showControls ? "Hide controls" : "Show controls") {
+////                            print("Toggling scopeState.showControls. ScopeState uuid = \(scopeState.uuid)")
+//                            scopeState.showControls.toggle()
+//                        }
+//                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+//                    } else {
+                    
+                        HStack {
+                            Spacer()
+                            Toggle(isOn: $scopeState.showControls) {
+                                Text("Show Controls")
+                                    .frame(alignment: .bottomTrailing)
+                                    .padding(.leading, 10)
+                            }
+                            .onChange(of: scopeState.showControls) { oldValue, newValue in
+                                print("in onChange, newValue = \(newValue)")
+                                let urlPath = scopeState.imageURL?.path ?? "nil"
+                                print("uuid = \(scopeState.uuid). imageURL = \(urlPath)")
+                            }
+                            
+                            .background(Color.black.opacity(0.4))
+                            .foregroundStyle(.white)
+                            .keyboardShortcut("t", modifiers: [.command])
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                        }
+                    
 
 
 
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+
                     
                 }
             }
@@ -764,7 +1026,7 @@ struct ContentView: View {
 struct PhotoPickerView: View {
     
     @State private var selectedItem: PhotosPickerItem?
-    @StateObject var scopeState: ScopeState
+    @ObservedObject var scopeState: ScopeState
     
     
     var body: some View {
@@ -777,11 +1039,12 @@ struct PhotoPickerView: View {
                 if panel.runModal() == .OK,
                 let url = panel.url {
                     scopeState.imageURL = url
+                    scopeState.bookmarkData = createSecurityScopedBookmark(for: url)
+                    print("bookmarkData = \(String(describing: scopeState.bookmarkData))")
                     if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
                         print("typeID = \(typeID)")
                         scopeState.isHEIC =  typeID == UTType.heic.identifier
                     }
-                    scopeState.selectedImageData = try! Data(contentsOf: url)
                 }
 //                scopeState.showOpenDialog = true
             }
@@ -804,6 +1067,9 @@ struct PhotoPickerView: View {
 #endif
     }
 }
+
+
+
 
 
 

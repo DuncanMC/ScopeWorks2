@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>758</string>
+					<string>1020</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>757</string>
+					<string>1019</string>
 					<key>Timestamp</key>
-					<string>797885715.834841</string>
+					<string>798056708.0137939</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>568</string>
+					<string>810</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>567</string>
+					<string>809</string>
 					<key>Timestamp</key>
-					<string>797885715.834814</string>
+					<string>798056708.013772</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>162</string>
+					<string>403</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>161</string>
+					<string>402</string>
 					<key>Timestamp</key>
-					<string>797885715.83485</string>
+					<string>798056708.013778</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>55</string>
+					<string>324</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>54</string>
+					<string>323</string>
 					<key>Timestamp</key>
-					<string>797795802.98087</string>
+					<string>798056708.0137841</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -241,16 +241,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    @Published var trianglePoints = TrianglePoints(
+				<string>    @Published var imageUUID: UUID? = nil
 </string>
 				<key>leading</key>
-				<string>    @Published var radiusScale: Float = 1.0
-    @Published var backgroundColor = Color.white
+				<string>    }
+    @Published var showSourceImage: Bool = true
 </string>
 				<key>trailing</key>
-				<string>        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
-        point2: SIMD2&lt;Float&gt;(0.6, 0.25),
-        point3: SIMD2&lt;Float&gt;(0.5, 0.42320508))
+				<string>    @Published var isHEIC: Bool = false
+    @Published var selectedImageData: Data? = nil {
+        didSet {
 </string>
 			</dict>
 			<key>title</key>
@@ -266,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>337</string>
+					<string>578</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>336</string>
+					<string>577</string>
 					<key>Timestamp</key>
-					<string>797885715.8348579</string>
+					<string>798056708.013756</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -302,6 +302,53 @@
 			</dict>
 			<key>title</key>
 			<string>handleDragging</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>804</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>803</string>
+					<key>Timestamp</key>
+					<string>798056708.0137891</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ContentView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    var body: some View {
+</string>
+				<key>leading</key>
+				<string>        @State private var image: NSImage? = nil
+    #endif
+</string>
+				<key>trailing</key>
+				<string>        VStack {
+            HStack {
+                if scopeState.showSourceImage {
+</string>
+			</dict>
+			<key>title</key>
+			<string>ContentView body</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>

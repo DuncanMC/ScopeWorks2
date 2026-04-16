@@ -4,7 +4,7 @@ import MetalKit
 struct ScopeViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
 
-    @StateObject var scopeState: ScopeState
+    @ObservedObject var scopeState: ScopeState
 
     
     func makeCoordinator() -> ScopeRenderer {

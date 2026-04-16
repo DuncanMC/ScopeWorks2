@@ -10,6 +10,14 @@ import SwiftUI
 @main
 struct ScopeWorks2App: App {
     
+    init () {
+        if let bundlePath = Bundle.main.resourcePath {
+            print("----------------------------")
+            print("BundlePath = \(bundlePath)")
+            print("----------------------------")
+        }
+    }
+    
 //    @UIApplicationDelegateAdaptor private var appDelegate: MyAppDelegate
 
     static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {
@@ -27,7 +35,7 @@ struct ScopeWorks2App: App {
         let folderName = "Kaleidoscope_templates"
         do {
             if let bundlePath = Bundle.main.resourcePath {
-                //print("bundlePath = \(bundlePath)")
+                print("bundlePath = \(bundlePath)")
             } else {
                 print("Can't resolve bundle path")
             }
@@ -55,8 +63,8 @@ struct ScopeWorks2App: App {
     }()
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        DocumentGroup(newDocument: ScopeDocument()) { configuration in
+            ContentView(scopeState: configuration.$document.scopeState)
         }
     }
 
