@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+#if os(macOS)
 func createSecurityScopedBookmark(for url: URL) -> Data? {
     do {
         // Create a bookmark from the selected URL
@@ -18,6 +19,7 @@ func createSecurityScopedBookmark(for url: URL) -> Data? {
         return nil
     }
 }
+#endif
 
 public extension Color {
     func components() -> [Double] {

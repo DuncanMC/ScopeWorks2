@@ -26,6 +26,7 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Codable Keys
     enum CodingKeys: String, CodingKey {
+        case imageURL
         case bookmarkData
         case zoom
         case radiusScale
@@ -131,7 +132,7 @@ class ScopeState: ObservableObject, Codable {
             self.imageURL = try URL(resolvingBookmarkData: data, bookmarkDataIsStale: &bookmarkDataIsStale)
         }
 
-//        self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+        self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
         self.zoom = try container.decode(Double.self, forKey: .zoom)
         self.radiusScale = try container.decode(Float.self, forKey: .radiusScale)
         let colorCodable = try container.decode(CodableColor.self, forKey: .backgroundColor)
@@ -164,7 +165,7 @@ class ScopeState: ObservableObject, Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(bookmarkData, forKey: .bookmarkData)
-//        try container.encode(imageURL, forKey: .imageURL)
+        try container.encode(imageURL, forKey: .imageURL)
         try container.encode(zoom, forKey: .zoom)
         try container.encode(radiusScale, forKey: .radiusScale)
         try container.encode(CodableColor(color: backgroundColor), forKey: .backgroundColor)
@@ -276,7 +277,6 @@ class ScopeState: ObservableObject, Codable {
                 Task { @MainActor in
                     do {
                         selectedImageData = try Data(contentsOf: imageURL)
-                       // bookmarkData = createSecurityScopedBookmark(for: imageURL)
                     } catch {
                         print("Error loading image data. error = \(error)")
                     }
