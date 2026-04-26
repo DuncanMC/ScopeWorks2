@@ -89,6 +89,9 @@ let zeroPoint = simd_float2(0,0)
 
 class ScopeRenderer: NSObject, MTKViewDelegate {
     
+    var scale: Float = 1.0
+
+    var sampleCount: Int = 1
     var imageUUID: UUID? = nil
     static var logPoints: Bool = false
 //    static var indexToDraw: Int? = nil
@@ -103,7 +106,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     private(set) var drawableSize: CGSize = .zero
     
     struct Uniforms {
-        let color: simd_float4
+        let color: simd_float4          //Only used for drawwingwith colors
         let drawWithTetxure: Bool
         let drawTextureTriangles: Bool
         let textureTriangle: TrianglePoints
@@ -116,6 +119,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         self.scopeState = scopeState
         super.init()
         device = MTLCreateSystemDefaultDevice()
+        // xxx
+        if device.supportsTextureSampleCount(4) {
+            sampleCount = 4
+        } else if device.supportsTextureSampleCount(2) {
+            sampleCount = 2
+        }
         commandQueue = device.makeCommandQueue()
         makePipeline()
         loadTexture()
@@ -125,6 +134,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             self.scopeState = scopeState
             super.init()
             device = MTLCreateSystemDefaultDevice()
+            // xxx
+            if device.supportsTextureSampleCount(4) {
+                sampleCount = 4
+            } else if device.supportsTextureSampleCount(2) {
+                sampleCount = 2
+            }
             commandQueue = device.makeCommandQueue()
             makePipeline()
             loadTexture()
@@ -141,6 +156,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
 
         // Enable blending for transparent drawing
+        pipelineDesc.rasterSampleCount = sampleCount // xxx
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
         pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
@@ -248,6 +264,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             return
         }
         
+#if os(macOS)
+        scale = Float(mtkView?.window?.screen?.backingScaleFactor ?? 1.0)
+#else
+        scale = Float(mtkView?.contentScaleFactor ?? 1)
+#endif
+
         let aspect = Float(width / height)
         
           // In your vertex shader, multiply positions by orthoMatrix
@@ -493,10 +515,13 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
     func drawThickLine(encoder: MTLRenderCommandEncoder,
                        p1: simd_float2, p2: simd_float2,
-                       color: SIMD4<Float>, thickness: Float,
+                       color: SIMD4<Float>,
+                       thickness: Float,
                        orthoMatrix: float4x4,
                        texAspect: Float) {
+        let thickness = thickness * scale
         let dir = normalize(p2 - p1)
+
         let normal = simd_float2(-dir.y, dir.x) * thickness / 2
         let v0 = p1 + normal
         let v1 = p1 - normal

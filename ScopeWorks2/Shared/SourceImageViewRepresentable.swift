@@ -13,6 +13,7 @@ struct SourceImageViewRepresentable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
+        mtkView.sampleCount = context.coordinator.sampleCount
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator
         mtkView.colorPixelFormat = .bgra8Unorm
@@ -44,6 +45,7 @@ struct SourceImageViewRepresentable: UIViewRepresentable {
 
     func makeUIView(context: Context) -> MTKView {
         let mtkView = MTKView()
+        mtkView.sampleCount = context.coordinator.sampleCount
         mtkView.isOpaque = true
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator

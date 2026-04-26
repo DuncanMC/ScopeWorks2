@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>1020</string>
+					<string>1059</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>1019</string>
+					<string>1058</string>
 					<key>Timestamp</key>
-					<string>798118569.597828</string>
+					<string>798385953.821214</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>810</string>
+					<string>844</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>809</string>
+					<string>843</string>
 					<key>Timestamp</key>
-					<string>798118569.5979511</string>
+					<string>798385953.821256</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>403</string>
+					<string>437</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>402</string>
+					<string>436</string>
 					<key>Timestamp</key>
-					<string>798118569.5978889</string>
+					<string>798385953.8212481</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>324</string>
+					<string>357</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>323</string>
+					<string>356</string>
 					<key>Timestamp</key>
-					<string>798118569.5973949</string>
+					<string>798385953.821263</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -249,8 +249,8 @@
 </string>
 				<key>trailing</key>
 				<string>    @Published var isHEIC: Bool = false
+    @Published var selectedImageID: String? = nil
     @Published var selectedImageData: Data? = nil {
-        didSet {
 </string>
 			</dict>
 			<key>title</key>
@@ -266,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>578</string>
+					<string>612</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>577</string>
+					<string>611</string>
 					<key>Timestamp</key>
-					<string>798118569.597859</string>
+					<string>798385953.8212709</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -313,13 +313,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>804</string>
+					<string>838</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>803</string>
+					<string>837</string>
 					<key>Timestamp</key>
-					<string>798118569.5979199</string>
+					<string>798385953.821239</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

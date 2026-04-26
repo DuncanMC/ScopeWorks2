@@ -13,6 +13,7 @@ struct ScopeViewRepresentable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
+        mtkView.sampleCount = context.coordinator.sampleCount
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator
         mtkView.colorPixelFormat = .bgra8Unorm
@@ -44,13 +45,15 @@ struct ScopeViewRepresentable: UIViewRepresentable {
 
 extension ScopeViewRepresentable {
     func makeUIView(context: Context) -> MTKView {
-                let mtkView = MTKView()
-                mtkView.isOpaque = true
-                mtkView.device = MTLCreateSystemDefaultDevice()
-                mtkView.delegate = context.coordinator
-                mtkView.colorPixelFormat = .bgra8Unorm
-                context.coordinator.mtkView = mtkView
-                return mtkView
+        let mtkView = MTKView()
+        mtkView.sampleCount = 4
+        
+        mtkView.isOpaque = true
+        mtkView.device = MTLCreateSystemDefaultDevice()
+        mtkView.delegate = context.coordinator
+        mtkView.colorPixelFormat = .bgra8Unorm
+        context.coordinator.mtkView = mtkView
+        return mtkView
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {

@@ -63,8 +63,9 @@ struct ScopeWorks2App: App {
     }()
 
     var body: some Scene {
-        DocumentGroup(newDocument: ScopeDocument()) { configuration in
+        DocumentGroup(newDocument:  ScopeDocument() ) { configuration in
             ContentView(scopeState: configuration.$document.scopeState)
+//            ContentView(scopeState: configuration.$document.scopeState, document: configuration.document)
         }
     }
 

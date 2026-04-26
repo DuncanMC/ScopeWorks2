@@ -3,17 +3,47 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import Combine
+
+// Register custom document UTType
+extension UTType {
+    static var scopeworksDocument: UTType {
+        UTType(exportedAs: "com.wareto.scopeworks2.document")
+    }
+}
 
 struct ScopeDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.scopeworksDocument] }
     
+    private var cancellables = Set<AnyCancellable>()
+
+    @State private var changedDate: Date? = nil
+    
     // The actual document data
     var scopeState: ScopeState
 
+    mutating private func makeDirty() {
+        self.changedDate = Date()
+    }
+    private func doInitSetup() {
+        
+        NotificationCenter.default.addObserver(
+            forName: requestSaveDocument,
+            object: nil,
+            queue: .main
+        ) { _ in
+            self.changedDate = Date()
+        }
+    }
     // MARK: - FileDocument protocol
     init() {
         scopeState = ScopeState()
+        doInitSetup()
+        // Avoid capturing `self` from a struct in escaping closures. If you need to
+        // react to save requests, forward the notification to a free function or
+        // a static handler that does not require `self`.
     }
+    
     
     @MainActor
     init(configuration: ReadConfiguration) throws {
@@ -22,6 +52,7 @@ struct ScopeDocument: FileDocument {
         }
         let decoder = JSONDecoder()
         scopeState = try decoder.decode(ScopeState.self, from: data)
+        doInitSetup()
     }
     
     @MainActor
@@ -32,9 +63,3 @@ struct ScopeDocument: FileDocument {
     }
 }
 
-// Register custom document UTType
-extension UTType {
-    static var scopeworksDocument: UTType {
-        UTType(exportedAs: "com.wareto.scopeworks2.document")
-    }
-}

@@ -2,17 +2,36 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>KSp2</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>ScopeWorks document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.wareto.scopeworks2.document</string>
+			</array>
+		</dict>
+	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>com.wareto.scopeworks2.document</string>
-			<key>UTTypeDescription</key>
-			<string>ScopeWorks document</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.json</string>
 			</array>
+			<key>UTTypeDescription</key>
+			<string>ScopeWorks document</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.wareto.scopeworks2.document</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -24,25 +43,26 @@
 			</dict>
 		</dict>
 	</array>
-	<key>CFBundleDocumentTypes</key>
+	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeName</key>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
 			<string>ScopeWorks document</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.wareto.scopeworks2.document</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>KSp2</string>
-				<string></string>
-				<string></string>
-			</array>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.wareto.scopeworks2.document</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>KSp2</string>
+				</array>
+			</dict>
 		</dict>
 	</array>
 </dict>

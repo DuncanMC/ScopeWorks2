@@ -26,6 +26,7 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Codable Keys
     enum CodingKeys: String, CodingKey {
+        case imageID
         case imageURL
         case bookmarkData
         case zoom
@@ -126,13 +127,39 @@ class ScopeState: ObservableObject, Codable {
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
+        #if os(macOS)
         self.bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
         if let data = self.bookmarkData {
             var bookmarkDataIsStale: Bool = false
-            self.imageURL = try URL(resolvingBookmarkData: data, bookmarkDataIsStale: &bookmarkDataIsStale)
+            if let imageURL = try? URL(resolvingBookmarkData: data, bookmarkDataIsStale: &bookmarkDataIsStale) {
+                self.imageURL = imageURL
+            } else {
+                self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+            }
+        }
+        #else
+        if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
+            print("in ScopeState.init(from:), found imageID: \(imageID)")
+            self.selectedImageID = imageID
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
+            if let asset = assets.firstObject {
+                let imageManager = PHImageManager.default()
+                imageManager.requestImageDataAndOrientation(for: asset, options: nil) { data, uti, orientation, info in
+                    if let data {
+                        self.selectedImageData = data
+                    }
+                }
+            } else {
+                self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+            }
+                                                    
+        } else {
+            print("in ScopeState.init(from:), imageID = nil")
+
         }
 
-        self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+        #endif
+
         self.zoom = try container.decode(Double.self, forKey: .zoom)
         self.radiusScale = try container.decode(Float.self, forKey: .radiusScale)
         let colorCodable = try container.decode(CodableColor.self, forKey: .backgroundColor)
@@ -162,9 +189,13 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Encode
     func encode(to encoder: Encoder) throws {
+        print("----------------------")
+//        print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
+        print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(bookmarkData, forKey: .bookmarkData)
+        try container.encode(selectedImageID, forKey: .imageID)
         try container.encode(imageURL, forKey: .imageURL)
         try container.encode(zoom, forKey: .zoom)
         try container.encode(radiusScale, forKey: .radiusScale)
@@ -238,7 +269,7 @@ class ScopeState: ObservableObject, Codable {
         
     }
     
-    var log: Bool = true
+    var log: Bool = false
     
     var uuid = UUID()
     
@@ -285,6 +316,8 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
+    public var document: ScopeDocument?
+        
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
     @Published var backgroundColor = Color.white
@@ -323,6 +356,7 @@ class ScopeState: ObservableObject, Codable {
     @Published var showSourceImage: Bool = true
     @Published var imageUUID: UUID? = nil
     @Published var isHEIC: Bool = false
+    @Published var selectedImageID: String? = nil
     @Published var selectedImageData: Data? = nil {
         didSet {
             imageUUID = UUID()
@@ -755,7 +789,7 @@ struct ContentView: View {
                 if !isDragging {
                     //print("Begin dragging in view.")
                     if let target = scopeState.getDragLocation( value.startLocation) {
-                        print("\nUser tapped in \(target.dragLocation.rawValue)\n")
+//                        print("\nUser tapped in \(target.dragLocation.rawValue)\n")
                         scopeState.draggingState = target.dragLocation
                         scopeState.lastDragLocation = value.startLocation
                         self.isDragging = true
@@ -773,9 +807,9 @@ struct ContentView: View {
                 isRotating = false
                 scopeState.lastDragLocation = nil
                 let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
-                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
-                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
-                print("TrianglePoints = \n\(scopeState.trianglePoints)")
+//                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
+//                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
+//                print("TrianglePoints = \n\(scopeState.trianglePoints)")
             }
     }
     
@@ -811,42 +845,42 @@ struct ContentView: View {
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .border(.blue, width: 2)
                         .gesture(ExclusiveGesture(dragGesture, rotateGesture))
-//                        .gesture(rotateGesture)
+                    //                        .gesture(rotateGesture)
                 }
                 ZStack {
                     ScopeViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
-//                        Button(scopeState.showControls ? "Hide controls" : "Show controls") {
-////                            print("Toggling scopeState.showControls. ScopeState uuid = \(scopeState.uuid)")
-//                            scopeState.showControls.toggle()
-//                        }
-//                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-//                    } else {
+                    //                        Button(scopeState.showControls ? "Hide controls" : "Show controls") {
+                    ////                            print("Toggling scopeState.showControls. ScopeState uuid = \(scopeState.uuid)")
+                    //                            scopeState.showControls.toggle()
+                    //                        }
+                    //                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    //                    } else {
                     
-                        HStack {
-                            Spacer()
-                            Toggle(isOn: $scopeState.showControls) {
-                                Text("Show Controls")
-                                    .frame(alignment: .bottomTrailing)
-                                    .padding(.leading, 10)
-                            }
-                            .onChange(of: scopeState.showControls) { oldValue, newValue in
-                                print("in onChange, newValue = \(newValue)")
-                                let urlPath = scopeState.imageURL?.path ?? "nil"
-                                print("uuid = \(scopeState.uuid). imageURL = \(urlPath)")
-                            }
-                            
-                            .background(Color.black.opacity(0.4))
-                            .foregroundStyle(.white)
-                            .keyboardShortcut("t", modifiers: [.command])
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    HStack {
+                        Spacer()
+                        Toggle(isOn: $scopeState.showControls) {
+                            Text("Show Controls")
+                                .frame(alignment: .bottomTrailing)
+                                .padding(.leading, 10)
                         }
+                        .onChange(of: scopeState.showControls) { oldValue, newValue in
+                            print("in onChange, newValue = \(newValue)")
+                            let urlPath = scopeState.imageURL?.path ?? "nil"
+                            print("uuid = \(scopeState.uuid). imageURL = \(urlPath)")
+                        }
+                        
+                        .background(Color.black.opacity(0.4))
+                        .foregroundStyle(.white)
+                        .keyboardShortcut("t", modifiers: [.command])
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    }
                     
-
-
-
-
+                    
+                    
+                    
+                    
                     
                 }
             }
@@ -860,7 +894,7 @@ struct ContentView: View {
                             
                             ScopeTypePicker(title: "Kaledioscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
                                 .frame(width: 360)
-
+                            
                                 .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
                                     //print("selectedScopeType = \(newValue)")
                                 }
@@ -889,15 +923,15 @@ struct ContentView: View {
                                 .focused($isFocused)
                                 .onChange(of: isFocused) {
                                     if isFocused {
-                                        #if os(iOS)
-                                            Task { @MainActor in
-                                                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
-                                            }
-                                        #elseif os(macOS)
-                                            Task { @MainActor in
-                                                NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
-                                            }
-                                        #endif
+#if os(iOS)
+                                        Task { @MainActor in
+                                            UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                                        }
+#elseif os(macOS)
+                                        Task { @MainActor in
+                                            NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+                                        }
+#endif
                                         selection = .init(range: site.startIndex..<site.endIndex)
                                     }
                                 }
@@ -920,101 +954,106 @@ struct ContentView: View {
                                     .frame(maxWidth: .infinity, alignment: toggleAlignment)
                             }
                             .keyboardShortcut("i", modifiers: [.command])
-
+                            
                             ColorPicker("Background color", selection: $scopeState.backgroundColor)
-    //                        Toggle(isOn: $scopeState.useBlackBackground) {
-    //                            Text("Use black background")
-    //                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-    //                        }
+                            //                        Toggle(isOn: $scopeState.useBlackBackground) {
+                            //                            Text("Use black background")
+                            //                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            //                        }
                             Spacer()
-
+                            
                             // Visual detents and snapping for iOS 18+/macOS 26+
                             VStack {
                                 Text("Zoom \(zoomString)")
                                 Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
                             }
-    //                        , neutralValue: { editing in
-    //                                if !editing {
-    //                                    let threshold = 0.1
-    //                                    if let nearest = zoomDetents.min(by: { abs($0 - scopeState.zoom) < abs($1 - scopeState.zoom) }),
-    //                                       abs(nearest - scopeState.zoom) < threshold {
-    //                                        scopeState.zoom = nearest
-    //                                    }
-    //                                }
-    //                            }) {
-    //                                Text("Zoom")
-    //                            } label: {
-    //                                SliderTickContentForEach(zoomDetents, id: \.self) { val in
-    //                                    SliderTick(val) {
-    //                                        Text(String(format: "%.1f", val))
-    //                                    }
-    //                                }
-    //                            }
-    //                        }
+                            //                        , neutralValue: { editing in
+                            //                                if !editing {
+                            //                                    let threshold = 0.1
+                            //                                    if let nearest = zoomDetents.min(by: { abs($0 - scopeState.zoom) < abs($1 - scopeState.zoom) }),
+                            //                                       abs(nearest - scopeState.zoom) < threshold {
+                            //                                        scopeState.zoom = nearest
+                            //                                    }
+                            //                                }
+                            //                            }) {
+                            //                                Text("Zoom")
+                            //                            } label: {
+                            //                                SliderTickContentForEach(zoomDetents, id: \.self) { val in
+                            //                                    SliderTick(val) {
+                            //                                        Text(String(format: "%.1f", val))
+                            //                                    }
+                            //                                }
+                            //                            }
+                            //                        }
                             Spacer()
                             VStack {
                                 Text("Radius \(radiusString)")
                                 Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
-    //                            , onEditingChanged: { editing in
-    //                                if !editing {
-    //                                    let threshold = 0.05
-    //                                    if let nearest = radiusDetents.min(by: { abs($0 - scopeState.radiusScale) < abs($1 - scopeState.radiusScale) }),
-    //                                        abs(nearest - scopeState.radiusScale) < threshold {
-    //                                        scopeState.radiusScale = nearest
-    //                                    }
-    //                                }
-    //                            }) {
-    //                                Text("Radius")
-    //                            } ticks: {
-    //                                SliderTickContentForEach(radiusDetents, id: \.self) { val in
-    //                                    SliderTick(val) {
-    //                                        Text(String(format: "%.2f", val))
-    //                                    }
-    //                                }
-    //                            }
+                                //                            , onEditingChanged: { editing in
+                                //                                if !editing {
+                                //                                    let threshold = 0.05
+                                //                                    if let nearest = radiusDetents.min(by: { abs($0 - scopeState.radiusScale) < abs($1 - scopeState.radiusScale) }),
+                                //                                        abs(nearest - scopeState.radiusScale) < threshold {
+                                //                                        scopeState.radiusScale = nearest
+                                //                                    }
+                                //                                }
+                                //                            }) {
+                                //                                Text("Radius")
+                                //                            } ticks: {
+                                //                                SliderTickContentForEach(radiusDetents, id: \.self) { val in
+                                //                                    SliderTick(val) {
+                                //                                        Text(String(format: "%.2f", val))
+                                //                                    }
+                                //                                }
+                                //                            }
                             }
                             //radiusScale
                         }
-                    HStack(alignment: .center,spacing: 20) {
-                        Spacer()
-
-                        Toggle(isOn: $scopeState.flipAlternates) {
-                            Text("Flip alternates")
-                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                        HStack(alignment: .center,spacing: 20) {
+                            Spacer()
+                            
+                            Toggle(isOn: $scopeState.flipAlternates) {
+                                Text("Flip alternates")
+                                    .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            }
+                            Toggle(isOn: $scopeState.drawWithReflection) {
+                                Text("Draw with reflection")
+                                    .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            }
+                            VStack {
+                                Text("Rotation speed \(rotationString)")
+                                Slider(value: $scopeState.rotationSpeed, in: 0 ... 15.0)
+                            }
+                            
+                            Button(scopeState.animate ? "Stop" : "Animate") {
+                                scopeState.animate.toggle()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .keyboardShortcut(.defaultAction)
+                            //                    Toggle(isOn: $scopeState.animate) {
+                            //                        Text("Animate")
+                            //                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
+                            //                    }
+                            .onChange(of: scopeState.animate) { oldValue, newValue in
+                                scopeState.changeAnimationState()
+                            }
+                            Button("Reverse animation") {
+                                scopeState.rotationSpeed *= -1
+                                scopeState.movementSpeed *= -1
+                            }
+                            .keyboardShortcut("r", modifiers: [.command])
+                            
+                            Button("Save") {
+                                NotificationCenter.default.post(name: requestSaveDocument, object: nil)
+                            }
+                            .keyboardShortcut("s", modifiers: [.command])
+                            
+                            Spacer()
                         }
-                        Toggle(isOn: $scopeState.drawWithReflection) {
-                            Text("Draw with reflection")
-                                .frame(maxWidth: .infinity, alignment: toggleAlignment)
-                        }
-                        VStack {
-                            Text("Rotation speed \(rotationString)")
-                            Slider(value: $scopeState.rotationSpeed, in: 0 ... 15.0)
-                        }
-
-                        Button(scopeState.animate ? "Stop" : "Animate") {
-                            scopeState.animate.toggle()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .keyboardShortcut(.defaultAction)
-    //                    Toggle(isOn: $scopeState.animate) {
-    //                        Text("Animate")
-    //                            .frame(maxWidth: .infinity, alignment: toggleAlignment)
-    //                    }
-                        .onChange(of: scopeState.animate) { oldValue, newValue in
-                            scopeState.changeAnimationState()
-                        }
-                        Button("Reverse animation") {
-                            scopeState.rotationSpeed *= -1
-                            scopeState.movementSpeed *= -1
-                        }
-                        .keyboardShortcut("r", modifiers: [.command])
-
-                        Spacer()
                     }
                 }
-                }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
-
+                
             }
             //xxx
         }
@@ -1050,23 +1089,28 @@ struct PhotoPickerView: View {
             }
         
         #else
-        PhotosPicker("Choose image", selection: $selectedItem, matching: .images)
-            .onChange(of: selectedItem) {
-                Task {
-                    if let newValue = selectedItem {
-                        scopeState.isHEIC =  newValue.supportedContentTypes.contains(UTType.heic)
-                        
-                        let data = try? await newValue.loadTransferable(type: Data.self)
-                        print("newValue = \(newValue)")
-                        print("newValue.supportedContentTypes = \(newValue.supportedContentTypes)")
-                        scopeState.selectedImageData = data
+        PhotosPicker("Choose image", selection: $selectedItem, matching: .images, photoLibrary: .shared())
+                .onChange(of: selectedItem) {
+                    Task { @MainActor in
+                        if let newValue = selectedItem {
+                            scopeState.isHEIC =  newValue.supportedContentTypes.contains(UTType.heic)
+                            
+                            let data = try? await newValue.loadTransferable(type: Data.self)
+                            print("newValue = \(newValue)")
+                            print("newValue.supportedContentTypes = \(newValue.supportedContentTypes)")
+                            scopeState.selectedImageID = newValue.itemIdentifier
+                            print("----------------------")
+                            print("itemIdentifier = \(newValue.itemIdentifier)")
+                            print("----------------------")
+
+                            scopeState.selectedImageData = data
+                        }
                     }
                 }
-            }
-        
-#endif
+        #endif
     }
 }
+
 
 
 
