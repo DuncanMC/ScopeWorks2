@@ -59,7 +59,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         }
         commandQueue = device.makeCommandQueue()
         makePipeline()
-//        loadTexture()
     }
 #elseif os(macOS)
         init(scopeState: ScopeState) {
@@ -116,71 +115,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
     }
 
     func updateImageData() {
-//        if imageData != self.imageData {
-//            self.imageData = imageData
-//            loadTexture()
-//        }
     }
-
-//    func loadTexture() {
-//        let textureLoadingOptions = [MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft as NSObject]
-//#if os(macOS)
-//        guard scopeState.imageURL != nil,
-//        let imageData else { return }
-////           let imageData = try? Data(contentsOf: url) {
-//            
-//            Task { @MainActor in
-//                scopeState.selectedImageData = imageData
-//            }
-//            let loader = MTKTextureLoader(device: device)
-//            do {
-//                let options: [MTKTextureLoader.Option: Any] =
-//                [.origin:MTKTextureLoader.Origin.bottomLeft,
-//                 .generateMipmaps: true]
-//                texture = try loader.newTexture(data: imageData, options: textureLoadingOptions)
-//                if let tex = texture {
-//                    let hasAlpha =
-//                    tex.pixelFormat == .rgba8Unorm ||
-//                    tex.pixelFormat == .rgba8Unorm_srgb ||
-//                    tex.pixelFormat == .bgra8Unorm ||
-//                    tex.pixelFormat == .bgra8Unorm_srgb ||
-//                    tex.pixelFormat == .rgba16Float ||
-//                    tex.pixelFormat == .rgba32Float
-//                } else {
-//                    print("[ScopeRenderer] Failed to load texture.")
-//                }
-//            } catch {
-//                print("Error loading texture: \(error)")
-//            }
-//#else
-//            let loader = MTKTextureLoader(device: device)
-////            texture = try loader.newTexture(cgImage: img.cgImage!, options: [MTKTextureLoaderOptionOrigin: MTKTextureLoaderOriginTopLeft as NSObject])
-//                do {
-//                    guard let imageData,
-//                          let image = UIImage(data: imageData)
-//                    else { return }
-//                    let options: [MTKTextureLoader.Option: Any] =
-//                    [.origin:MTKTextureLoader.Origin.bottomLeft,
-//                     .generateMipmaps: true]
-//                    texture = try loader.newTexture(cgImage: image.cgImage!, options: textureLoadingOptions)
-//
-//                    if let tex = texture {
-//                        let hasAlpha =
-//                        tex.pixelFormat == .rgba8Unorm ||
-//                        tex.pixelFormat == .rgba8Unorm_srgb ||
-//                        tex.pixelFormat == .bgra8Unorm ||
-//                        tex.pixelFormat == .bgra8Unorm_srgb ||
-//                        tex.pixelFormat == .rgba16Float ||
-//                        tex.pixelFormat == .rgba32Float
-//                    } else {
-//                        print("[ScopeRenderer] Failed to load texture.")
-//                    }
-//                } catch {
-//                    print("Error loading texture: \(error)")
-//                }
-//#endif
-//    }
-
     
     func draw(in view: MTKView) {
         
@@ -219,7 +154,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         
         // Model-View-Projection matrix example
         let orthoMatrix = matrix_identity_float4x4
-//        orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
         
         
         let commandBuffer = commandQueue.makeCommandBuffer()!
@@ -355,11 +289,11 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         
         let arcRadius: Float = 32
         let arrowPoint1: simd_float2
-        let arrowPoint2: simd_float2
-        let arrowPoint3: simd_float2
-        let arrowPoint1Outer: simd_float2
-        let arrowPoint2Outer: simd_float2
-        let arrowPoint3Outer: simd_float2
+//        let arrowPoint2: simd_float2
+//        let arrowPoint3: simd_float2
+//        let arrowPoint1Outer: simd_float2
+//        let arrowPoint2Outer: simd_float2
+//        let arrowPoint3Outer: simd_float2
 
         let arrowheadSize = 10 * scale / Float(view.drawableSize.width)
         let outerArrowheadSize = arrowheadSize * 1.2
@@ -376,7 +310,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             startAngle: 0,
             endAngle: 90,
             steps: 10,
-            lineThickness: 12)
+            lineThickness: 10)
         
 
         
@@ -385,37 +319,49 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let clockwise = scopeState.rotationSpeed < 0
         if clockwise {
             arrowPoint1 = simd_float2(x: rotationCenter.x + arcOffset, y: rotationCenter.y)
-            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-            arrowPoint3 = simd_float2(x: arrowPoint1.x - arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-            arrowPoint1Outer = simd_float2(x: arrowPoint1.x, y: arrowPoint1.y -  2 * scale / Float(view.drawableSize.width) )
-            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
-            arrowPoint3Outer = simd_float2(x: arrowPoint1.x - outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+//            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+//            arrowPoint3 = simd_float2(x: arrowPoint1.x - arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+//            arrowPoint1Outer = simd_float2(x: arrowPoint1.x, y: arrowPoint1.y -  2 * scale / Float(view.drawableSize.width) )
+//            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+//            arrowPoint3Outer = simd_float2(x: arrowPoint1.x - outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
         } else {
             //counterclockwise
             arrowPoint1 = simd_float2(x: rotationCenter.x, y: rotationCenter.y + arcOffset)
-            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y - arrowheadSize )
-            arrowPoint3 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-            arrowPoint1Outer = simd_float2(x: rotationCenter.x -  2 * scale / Float(view.drawableSize.width), y: rotationCenter.y + arcOffset)
-
-            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y - outerArrowheadSize )
-            arrowPoint3Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
+//            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y - arrowheadSize )
+//            arrowPoint3 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
+//            arrowPoint1Outer = simd_float2(x: rotationCenter.x -  2 * scale / Float(view.drawableSize.width), y: rotationCenter.y + arcOffset)
+//
+//            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y - outerArrowheadSize )
+//            arrowPoint3Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
         }
-        // Outer black arrowhead lines
-        drawThickLine(encoder: encoder,
-                      p1: arrowPoint1Outer, p2: arrowPoint2Outer,
-                      color: black,
-                      thickness:  8 / Float(drawableSize.width),
-                      orthoMatrix: orthoMatrix,
-                      texAspect: texAspect)
+        let arrowHeadDirection: ArrowHeadDirection = clockwise ? .down : .left
+        drawArrowHead(
+            in: view,
+            encoder: encoder,
+            point: arrowPoint1,
+            size: 16,
+            direction: arrowHeadDirection,
+            color: black,
+            thickness: 8,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect)
 
-        drawThickLine(encoder: encoder,
-                      p1: arrowPoint1Outer, p2: arrowPoint3Outer,
-                      color: black,
-                      thickness:  8 / Float(drawableSize.width),
-                      orthoMatrix: orthoMatrix,
-                      texAspect: texAspect)
+//        // MARK: - Outer black arrowhead lines
+//        drawThickLine(encoder: encoder,
+//                      p1: arrowPoint1Outer, p2: arrowPoint2Outer,
+//                      color: black,
+//                      thickness:  8 / Float(drawableSize.width),
+//                      orthoMatrix: orthoMatrix,
+//                      texAspect: texAspect)
+//
+//        drawThickLine(encoder: encoder,
+//                      p1: arrowPoint1Outer, p2: arrowPoint3Outer,
+//                      color: black,
+//                      thickness:  8 / Float(drawableSize.width),
+//                      orthoMatrix: orthoMatrix,
+//                      texAspect: texAspect)
+//         */
   
-// 
         // Inner white arc
         drawArc(
             in: view,
@@ -426,29 +372,28 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             texAspect: texAspect,
             radius: arcRadius,
             startAngle: 4,
-            endAngle: clockwise ? 88 : 98,
+            endAngle: 86,
             steps: 10,
             lineThickness: 4)
 
         // Inner white arrowhead lines
-        drawThickLine(encoder: encoder,
-                      p1: arrowPoint1, p2: arrowPoint2,
-                      color: white,
-                      thickness:  3.0 / Float(drawableSize.width),
-                      orthoMatrix: orthoMatrix,
-                      texAspect: texAspect)
-        drawThickLine(encoder: encoder,
-                      p1: arrowPoint1, p2: arrowPoint3,
-                      color: white,
-                      thickness:  3 / Float(drawableSize.width),
-                      orthoMatrix: orthoMatrix,
-                      texAspect: texAspect)
-
+        drawArrowHead(
+            in: view,
+            encoder: encoder,
+            point: arrowPoint1,
+            size: 12,
+            direction: arrowHeadDirection,
+            color: white,
+            thickness: 3,
+            orthoMatrix: orthoMatrix,
+            texAspect: texAspect)
 
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
     }
+    
+    
     func drawCircle(in view: MTKView,
                     encoder: MTLRenderCommandEncoder,
                     center: simd_float2,
@@ -494,10 +439,10 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         verticies.reserveCapacity(steps * 2)
         let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
         
-
-        for step in 0 ..< (notFullCircle ? steps - 1 : steps) {
+        let loopSteps = notFullCircle ? steps - 1 : steps
+        for step in 0 ..< loopSteps {
             let angle = startAngleRadians + Float(step) / Float(steps) * arcDelta
-            let angle2 = Float((step+1) % steps) / Float(steps) * arcDelta
+            let angle2 = startAngleRadians + Float((step+1) % steps) / Float(loopSteps) * arcDelta
             
             var deltaX = cos(angle) * widthPerPixel / scopeState.texAspect * (radius - lineThickness / 2)
             var deltaY = sin(angle) * widthPerPixel * (radius - lineThickness / 2)
@@ -651,11 +596,11 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let tipXOffset = (direction == .left ? -widthPerPixel * thickness / 2 : 0) / scopeState.texAspect
         let tipYOffset = (direction == .down ? -widthPerPixel * thickness / 2 : 0)
         
-        let deltaX = Float(sqrt(2)) / 2 * size * widthPerPixel / scopeState.texAspect
-        let deltaY = Float(sqrt(2)) / 2 * size * widthPerPixel
+        let deltaX = Float(sqrt(2)) / 2 * size * scale * widthPerPixel / scopeState.texAspect
+        let deltaY = Float(sqrt(2)) / 2 * size * scale * widthPerPixel
         let pointTip = simd_float2(
-            point.x + tipXOffset,
-            point.y + tipYOffset
+            point.x + tipXOffset * (direction == .down ? 1 : 2),
+            point.y + tipYOffset * (direction == .left ? 1 : 2)
         )
         let trailingPoint = simd_float2(
             point.x - tipXOffset,
@@ -676,13 +621,29 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         )
 
         let trailingInsidePoint = simd_float2(
-            leadingInsidePoint.x + tipXOffset * 2,
-            leadingInsidePoint.y + tipYOffset * 2
+            leadingInsidePoint.x + tipXOffset * 2 * (direction == .down ? 1 : -1),
+            leadingInsidePoint.y + tipYOffset * 2 * (direction == .down ? -1 : 1)
         )
-        var verticies: [simd_float2] = [leadingOutsidePoint, trailingOutsidePoint,
-                          pointTip, trailingPoint,
-                          leadingInsidePoint, trailingInsidePoint]
-
+        let verticies: [simd_float2] = [leadingOutsidePoint,
+                                        trailingOutsidePoint,
+                                        pointTip,
+                                        trailingPoint,
+                                        leadingInsidePoint,
+                                        trailingInsidePoint,
+        ]
+        let names = [
+            "leadingOutsidePoint",
+            "trailingOutsidePoint",
+            "pointTip",
+            "trailingPoint",
+            "leadingInsidePoint",
+            "trailingInsidePoint",
+        ]
+        if SourceImageRenderer.logPoints {
+            verticies.enumerated().forEach { index, point in
+                print("\(names[index])\t\(point.myDescription)")
+            }
+        }
         let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
 
         var uniforms: Uniforms = Uniforms(
