@@ -22,6 +22,8 @@ typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
+    var cancellables = Set<AnyCancellable>()
+
     var useButton: Bool = true
     
     // MARK: - Codable Keys
@@ -123,6 +125,17 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
+    func doInitSetup() {
+        objectWillChange.sink { _ in
+            let documentController: NSDocumentController = .shared
+            if let document = documentController.currentDocument {
+                document.updateChangeCount(.changeDone)
+              }
+        }
+        .store(in: &cancellables)
+
+
+    }
     // MARK: - Initializer for decoding
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -184,6 +197,8 @@ class ScopeState: ObservableObject, Codable {
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
+        doInitSetup()
+
         print("In ScopeState init.from. uuid = \(uuid)")
     }
     
@@ -255,6 +270,7 @@ class ScopeState: ObservableObject, Codable {
         
         // Initialize other properties to defaults or empty values
         self.photoManager = PhotoLibraryManager()
+        doInitSetup()
     }
     
     deinit {
@@ -266,12 +282,12 @@ class ScopeState: ObservableObject, Codable {
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
-        
+     doInitSetup()
     }
     
     var log: Bool = false
     
-    var uuid = UUID()
+    @Published var uuid = UUID()
     
 
     var selectedImageSize: CGSize {
@@ -345,6 +361,8 @@ class ScopeState: ObservableObject, Codable {
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
 
     // MARK: - other published properties
+    @Published var animateButtonTitle: String = "Animate"
+    
     @Published var showOpenDialog: Bool = false
 
     @Published var photoManager = PhotoLibraryManager()
@@ -366,7 +384,7 @@ class ScopeState: ObservableObject, Codable {
 
     @Published var selectedScopeType: Int = 0
 
-    @Published var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
+    var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
     @Published var texAspect: Float = 1
     @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
     @Published var draggingState: DragLocations? = nil
@@ -376,7 +394,7 @@ class ScopeState: ObservableObject, Codable {
     
     
     @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
-    @Published var imageViewSize: CGSize = CGSizeZero {
+    var imageViewSize: CGSize = CGSizeZero {
         willSet {
             //print("about to change imageViewSize")
         }
@@ -384,6 +402,7 @@ class ScopeState: ObservableObject, Codable {
             //print("imageViewSize = \(imageViewSize)")
         }
     }
+    // DMC:
     @Published var texture: MTLTexture? {
         didSet {
             Task { @MainActor in
@@ -807,9 +826,9 @@ struct ContentView: View {
                 isRotating = false
                 scopeState.lastDragLocation = nil
                 let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
-                print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
-                print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
-                print("TrianglePoints = \n\(scopeState.trianglePoints)")
+                //print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
+                //print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
+                //print("TrianglePoints = \n\(scopeState.trianglePoints)")
             }
     }
     
@@ -852,36 +871,41 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                     //                        Button(scopeState.showControls ? "Hide controls" : "Show controls") {
-                    ////                            print("Toggling scopeState.showControls. ScopeState uuid = \(scopeState.uuid)")
+                    //                            print("Toggling scopeState.showControls. ScopeState uuid = \(scopeState.uuid)")
                     //                            scopeState.showControls.toggle()
                     //                        }
                     //                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     //                    } else {
-                    
-                    HStack {
+                    VStack {
                         Spacer()
-                        Toggle(isOn: $scopeState.showControls) {
-                            Text("Show Controls")
-                                .frame(alignment: .bottomTrailing)
-                                .padding(.leading, 10)
+                            .frame(maxHeight: .infinity)
+                        HStack(alignment: .center) {
+                            Spacer()
+                                .frame(maxWidth: .infinity)
+                            HStack {
+                                Spacer()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
+                                Toggle(isOn: $scopeState.showControls) {
+                                    Text("Show controls")
+
+                                        .lineLimit(1)
+                                        .frame(minWidth: 120, alignment: .trailing)
+                                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 5))
+                                }
+                                .padding(EdgeInsets(top: 3, leading: 5, bottom: 3, trailing: 5))
+                                .background(Color.white.opacity(0.75))
+                                .onChange(of: scopeState.showControls) { oldValue, newValue in
+                                    print("in onChange, newValue = \(newValue)")
+                                    let urlPath = scopeState.imageURL?.path ?? "nil"
+                                    print("uuid = \(scopeState.uuid). imageURL = \(urlPath)")
+                                }
+                                
+                                .keyboardShortcut("t", modifiers: [.command])
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                            }
                         }
-                        .onChange(of: scopeState.showControls) { oldValue, newValue in
-                            print("in onChange, newValue = \(newValue)")
-                            let urlPath = scopeState.imageURL?.path ?? "nil"
-                            print("uuid = \(scopeState.uuid). imageURL = \(urlPath)")
-                        }
-                        
-                        .background(Color.black.opacity(0.4))
-                        .foregroundStyle(.white)
-                        .keyboardShortcut("t", modifiers: [.command])
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     }
-                    
-                    
-                    
-                    
-                    
-                    
                 }
             }
             if scopeState.showControls {
@@ -892,7 +916,7 @@ struct ContentView: View {
                             Spacer()
                             PhotoPickerView(scopeState: scopeState)
                             
-                            ScopeTypePicker(title: "Kaledioscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
+                            ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
                                 .frame(width: 360)
                             
                                 .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
@@ -1027,6 +1051,7 @@ struct ContentView: View {
                             
                             Button(scopeState.animate ? "Stop" : "Animate") {
                                 scopeState.animate.toggle()
+//                                scopeState.animateButtonTitle = scopeState.animate ? "Stop" : "Animate"
                             }
                             .buttonStyle(.borderedProminent)
                             .keyboardShortcut(.defaultAction)

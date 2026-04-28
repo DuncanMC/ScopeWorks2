@@ -9,20 +9,21 @@ import SwiftUI
 
 struct ScopeTypePicker: View {
     
+    
     var title: String
     var options: [(title: String, index: Int)]
     @Binding var selection: Int
 
     var body: some View {
-            List {
+            HStack {
                 Picker(title, selection: $selection) {
                     ForEach(options, id: \.self.index) { option in
                         Text("\(option.title)")
+                            .frame(minWidth: 100)
                     }
                 }
             }
-            .frame(height: 100)
-            .border(.black, width: 2)
+            .frame(maxHeight: 50)
             .frame(minWidth: 250)
 
 
@@ -51,10 +52,6 @@ struct ScopeTypePicker: View {
             }
             .pickerStyle(MenuPickerStyle())
             */
-//            .overlay(
-//                RoundedRectangle(cornerRadius: 16)
-//                    .stroke(.blue, lineWidth: 2)
-//            )
             
 
         

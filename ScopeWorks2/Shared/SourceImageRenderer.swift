@@ -599,8 +599,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let deltaX = Float(sqrt(2)) / 2 * size * scale * widthPerPixel / scopeState.texAspect
         let deltaY = Float(sqrt(2)) / 2 * size * scale * widthPerPixel
         let pointTip = simd_float2(
-            point.x + tipXOffset * (direction == .down ? 1 : 2),
-            point.y + tipYOffset * (direction == .left ? 1 : 2)
+            point.x + tipXOffset * (direction == .down ? 0.5 : 1),
+            point.y + tipYOffset * (direction == .left ? 0.5 : 1)
         )
         let trailingPoint = simd_float2(
             point.x - tipXOffset,
@@ -631,19 +631,19 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                                         leadingInsidePoint,
                                         trailingInsidePoint,
         ]
-        let names = [
-            "leadingOutsidePoint",
-            "trailingOutsidePoint",
-            "pointTip",
-            "trailingPoint",
-            "leadingInsidePoint",
-            "trailingInsidePoint",
-        ]
-        if SourceImageRenderer.logPoints {
-            verticies.enumerated().forEach { index, point in
-                print("\(names[index])\t\(point.myDescription)")
-            }
-        }
+//        let names = [
+//            "leadingOutsidePoint",
+//            "trailingOutsidePoint",
+//            "pointTip",
+//            "trailingPoint",
+//            "leadingInsidePoint",
+//            "trailingInsidePoint",
+//        ]
+//        if SourceImageRenderer.logPoints {
+//            verticies.enumerated().forEach { index, point in
+//                print("\(names[index])\t\(point.myDescription)")
+//            }
+//        }
         let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
 
         var uniforms: Uniforms = Uniforms(

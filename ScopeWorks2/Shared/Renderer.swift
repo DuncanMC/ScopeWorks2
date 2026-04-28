@@ -244,6 +244,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     }
 
     public func animateKaleidoscope() {
+        guard scopeState.animate else { return }
         let elapsed = CACurrentMediaTime() - scopeState.lastAnimationStepTime
         let degrees = Float(elapsed * Double(scopeState.rotationSpeed))
         let radians = degrees.degreesToRadians

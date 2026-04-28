@@ -33,6 +33,12 @@ struct ScopeDocument: FileDocument {
             queue: .main
         ) { _ in
             self.changedDate = Date()
+            let documentController: NSDocumentController = .shared
+            if let document = documentController.currentDocument {
+                document.updateChangeCount(.changeDone)
+              }
+
+
         }
     }
     // MARK: - FileDocument protocol
