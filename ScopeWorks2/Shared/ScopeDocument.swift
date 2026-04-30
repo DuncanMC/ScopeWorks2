@@ -22,8 +22,15 @@ struct ScopeDocument: FileDocument {
     // The actual document data
     var scopeState: ScopeState
 
-    mutating private func makeDirty() {
+    private func makeDirty() {
         self.changedDate = Date()
+        #if os(macOS)
+            let documentController: NSDocumentController = .shared
+            if let document = documentController.currentDocument {
+                document.updateChangeCount(.changeDone)
+            }
+        #endif
+        
     }
     private func doInitSetup() {
         
@@ -32,13 +39,7 @@ struct ScopeDocument: FileDocument {
             object: nil,
             queue: .main
         ) { _ in
-            self.changedDate = Date()
-            let documentController: NSDocumentController = .shared
-            if let document = documentController.currentDocument {
-                document.updateChangeCount(.changeDone)
-              }
-
-
+            makeDirty()
         }
     }
     // MARK: - FileDocument protocol

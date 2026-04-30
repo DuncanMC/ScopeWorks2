@@ -12,7 +12,16 @@ import SwiftUI
 func createSecurityScopedBookmark(for url: URL) -> Data? {
     do {
         // Create a bookmark from the selected URL
-        let bookmarkData = try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+        var fileURL: URL? = nil
+        let documentController: NSDocumentController = .shared
+        if let document = documentController.currentDocument {
+            fileURL = document.fileURL
+        }
+        let bookmarkData = try url.bookmarkData(
+            options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+            includingResourceValuesForKeys: nil,
+//            relativeTo: fileURL
+        )
         return bookmarkData
     } catch {
         print("createSecurityScopedBookmark error \(error)")

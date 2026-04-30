@@ -289,14 +289,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         
         let arcRadius: Float = 32
         let arrowPoint1: simd_float2
-//        let arrowPoint2: simd_float2
-//        let arrowPoint3: simd_float2
-//        let arrowPoint1Outer: simd_float2
-//        let arrowPoint2Outer: simd_float2
-//        let arrowPoint3Outer: simd_float2
 
         let arrowheadSize = 10 * scale / Float(view.drawableSize.width)
-        let outerArrowheadSize = arrowheadSize * 1.2
 
         // Outer black arc
         drawArc(
@@ -319,21 +313,12 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let clockwise = scopeState.rotationSpeed < 0
         if clockwise {
             arrowPoint1 = simd_float2(x: rotationCenter.x + arcOffset, y: rotationCenter.y)
-//            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-//            arrowPoint3 = simd_float2(x: arrowPoint1.x - arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-//            arrowPoint1Outer = simd_float2(x: arrowPoint1.x, y: arrowPoint1.y -  2 * scale / Float(view.drawableSize.width) )
-//            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
-//            arrowPoint3Outer = simd_float2(x: arrowPoint1.x - outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
         } else {
             //counterclockwise
             arrowPoint1 = simd_float2(x: rotationCenter.x, y: rotationCenter.y + arcOffset)
-//            arrowPoint2 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y - arrowheadSize )
-//            arrowPoint3 = simd_float2(x: arrowPoint1.x + arrowheadSize, y:arrowPoint1.y + arrowheadSize )
-//            arrowPoint1Outer = simd_float2(x: rotationCenter.x -  2 * scale / Float(view.drawableSize.width), y: rotationCenter.y + arcOffset)
-//
-//            arrowPoint2Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y - outerArrowheadSize )
-//            arrowPoint3Outer = simd_float2(x: arrowPoint1.x + outerArrowheadSize, y:arrowPoint1.y + outerArrowheadSize )
         }
+        
+        // Outer black arrowhead
         let arrowHeadDirection: ArrowHeadDirection = clockwise ? .down : .left
         drawArrowHead(
             in: view,
@@ -346,21 +331,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
 
-//        // MARK: - Outer black arrowhead lines
-//        drawThickLine(encoder: encoder,
-//                      p1: arrowPoint1Outer, p2: arrowPoint2Outer,
-//                      color: black,
-//                      thickness:  8 / Float(drawableSize.width),
-//                      orthoMatrix: orthoMatrix,
-//                      texAspect: texAspect)
-//
-//        drawThickLine(encoder: encoder,
-//                      p1: arrowPoint1Outer, p2: arrowPoint3Outer,
-//                      color: black,
-//                      thickness:  8 / Float(drawableSize.width),
-//                      orthoMatrix: orthoMatrix,
-//                      texAspect: texAspect)
-//         */
   
         // Inner white arc
         drawArc(
@@ -401,7 +371,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     orthoMatrix: float4x4,
                     texAspect: Float,
                     radius: Float,
-                    steps: Int = 12,
+                    steps: Int = 24,
                     lineThickness: Float,
     ) {
         drawArc(in: view,
@@ -482,44 +452,6 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: verticies.count)
     }
-/*
-    func drawArc(in view: MTKView,
-                 encoder: MTLRenderCommandEncoder,
-                 center: simd_float2,
-                 color: SIMD4<Float>,
-                 orthoMatrix: float4x4,
-                 texAspect: Float,
-                 radius: Float,
-                 startAngle: Float = 0,
-                 endAngle: Float = 360.0,
-                 steps: Int = 12,
-                 lineThickness: Float,
-                 asDiamond: Bool = false) {
-        
-        let radius = radius * scale
-        let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
-        let center: simd_float2 = simd_float2(x: center.x, y: center.y)
-        let startAngleRadians = startAngle.degreesToRadians
-        let arcDelta = endAngle.degreesToRadians - startAngleRadians
-        let notFullCircle = startAngle != 0.0 || endAngle != 360.0
-        for step in 0 ..< (notFullCircle ? steps - 1 : steps) {
-            let angle = startAngleRadians + Float(step) / Float(steps) * arcDelta
-            let angle2 = Float((step+1) % steps) / Float(steps) * arcDelta
-            var deltaX = cos(angle) * widthPerPixel / scopeState.texAspect * radius
-            var deltaY = sin(angle) * widthPerPixel * radius
-            let p1 = simd_float2(x: center.x + deltaX, y: center.y + deltaY)
-            deltaX = cos(angle2) * widthPerPixel / scopeState.texAspect * radius
-            deltaY = sin(angle2) * widthPerPixel * radius
-            let p2 = simd_float2(x: center.x + deltaX, y: center.y + deltaY)
-            drawThickLine(encoder: encoder,
-                          p1: p1,
-                          p2: p2,
-                          color: color,
-                          thickness: lineThickness/Float(drawableSize.width),
-                          orthoMatrix: orthoMatrix, texAspect: texAspect)
-        }
-    }
-*/
     
     func drawSquare(in view: MTKView,
                     encoder: MTLRenderCommandEncoder,
