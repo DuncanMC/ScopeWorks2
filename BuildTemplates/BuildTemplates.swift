@@ -303,7 +303,7 @@ struct BuildTemplates: AsyncParsableCommand {
             let fileURL = folderURL.appendingPathComponent("\(filename).json")
             print("About to write \(fileURL.path)")
             let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data: Data
             do {
                 data = try encoder.encode(thisTemplate)

@@ -11,6 +11,8 @@
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>ScopeWorks document</string>
+			<key>NSUbiquitousDocumentUserActivityType</key>
+			<string>com.wareto.scopeworks2.document</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>

@@ -20,7 +20,7 @@ func createSecurityScopedBookmark(for url: URL) -> Data? {
         let bookmarkData = try url.bookmarkData(
             options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
             includingResourceValuesForKeys: nil,
-//            relativeTo: fileURL
+            relativeTo: fileURL
         )
         return bookmarkData
     } catch {

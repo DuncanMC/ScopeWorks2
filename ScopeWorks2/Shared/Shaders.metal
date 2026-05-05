@@ -27,7 +27,6 @@ vertex VertexOut vertex_main(const device float2* position [[buffer(0)]],
                              uint vid [[vertex_id]]) {
     VertexOut out;
     float2 pos = position[vid];
-//    pos.x /= uniforms.texAspect;
     out.position = uniforms.orthoMatrix * float4(pos, 0, 1);
 
 

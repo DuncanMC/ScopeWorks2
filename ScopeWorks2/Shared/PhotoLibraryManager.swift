@@ -110,8 +110,10 @@ class PhotoLibraryManager {
                 }
             }
         }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
-        guard let imageInfo = try? JSONEncoder().encode(self.imageInfo) else { return }
+        guard let imageInfo = try? encoder.encode(self.imageInfo) else { return }
         UserDefaults.standard.set(imageInfo, forKey: "imageInfo")
         UserDefaults.standard.set(true, forKey: "albumCreated")
 #endif

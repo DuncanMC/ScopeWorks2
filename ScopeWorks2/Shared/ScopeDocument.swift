@@ -14,7 +14,9 @@ extension UTType {
 
 struct ScopeDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.scopeworksDocument] }
-    
+
+    static var writeableContentTypes: [UTType] { [.scopeworksDocument] }
+
     private var cancellables = Set<AnyCancellable>()
 
     @State private var changedDate: Date? = nil
@@ -65,6 +67,7 @@ struct ScopeDocument: FileDocument {
     @MainActor
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(scopeState)
         return .init(regularFileWithContents: data)
     }

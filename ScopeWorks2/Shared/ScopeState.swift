@@ -225,9 +225,9 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Encode
     func encode(to encoder: Encoder) throws {
-        print("----------------------")
+//        print("----------------------")
 //        print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
-        print("----------------------")
+//        print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(bookmarkData, forKey: .bookmarkData)

@@ -106,7 +106,7 @@ struct ContentView: View {
                 self.isDragging = false
                 isRotating = false
                 scopeState.lastDragLocation = nil
-                let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
+//                let draggingStateString = scopeState.draggingState?.rawValue ?? "nil"
                 //print("\ndragGesture ended. scopeState.draggingState = \(draggingStateString). texAspect = \(scopeState.texAspect).")
                 //print("rotationCenter = \(scopeState.rotationCenter.myDescription)")
                 //print("TrianglePoints = \n\(scopeState.trianglePoints)")

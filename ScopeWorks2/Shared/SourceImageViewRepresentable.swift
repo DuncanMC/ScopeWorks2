@@ -34,7 +34,6 @@ struct SourceImageViewRepresentable: UIViewRepresentable {
     typealias UIViewType = MTKView
     
 
-    typealias ViewType = MTKView
 
     @StateObject var scopeState: ScopeState
 
