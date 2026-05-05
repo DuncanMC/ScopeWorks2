@@ -172,16 +172,16 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(texture, index: 0)
         var verts: [simd_float2]
-
+        
         let p1 = simd_float2(x: -1, y:  1)
         let p2 = simd_float2(x:  1, y:  1)
         let p3 = simd_float2(x:  1, y: -1)
         let p4 = simd_float2(x: -1, y: -1)
-
+        
         verts = [p1, p2, p3]
-
+        
         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-
+        
         var uniforms: Uniforms = Uniforms(
             color: simd_float4(1, 1, 1, 1),
             drawWithTetxure: true,
@@ -191,19 +191,19 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             orthoMatrix: orthoMatrix
             // In your vertex shader, multiply positions by orthoMatrix
         )
-
+        
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
+        
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-
+        
         verts = [p1, p3, p4]
-
+        
         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
+        
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-
+        
         let imagePoints: TrianglePoints = TrianglePoints(
             point1: simd_float2(x: scopeState.trianglePoints.point1.x * 2 / scopeState.texAspect - 1, y: scopeState.trianglePoints.point1.y * 2 - 1),
             point2: simd_float2(x: scopeState.trianglePoints.point2.x * 2 / scopeState.texAspect - 1, y: scopeState.trianglePoints.point2.y * 2 - 1),
@@ -215,64 +215,66 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             thickness:  6.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         drawThickLine(
             p1: imagePoints.point2, p2: imagePoints  .point3,
             color: black,
             thickness:  6.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         drawThickLine(
             p1: imagePoints.point3, p2: imagePoints.point1,
             color: black,
             thickness:  6.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         drawThickLine(
             p1: imagePoints.point1 , p2: imagePoints.point2,
             color: white,
             thickness:  2.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         drawThickLine(
             p1: imagePoints.point2, p2: imagePoints.point3,
             color: white,
             thickness:  2.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         drawThickLine(
             p1: imagePoints.point3, p2: imagePoints.point1,
             color: white,
             thickness:  3.0 / Float(drawableSize.width),
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
-
+        
         let outsideWidth: Float = 10
         let insideWidth: Float = 8
-
+        
         // Draw the center point of the polygon as a "donut" shape so it stands out.
         drawCircle(center: imagePoints.point1, color: black, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 10)
         drawCircle(center: imagePoints.point1, color: yellow, orthoMatrix: orthoMatrix, texAspect: texAspect, radius: 12, lineThickness: 4)
         drawSquare(center: imagePoints.point2, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
         drawSquare(center: imagePoints.point2, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
-
+        
         drawSquare(center: imagePoints.point3, color: black, width: outsideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
         drawSquare(center: imagePoints.point3, color: yellow, width: insideWidth, orthoMatrix: orthoMatrix, texAspect: texAspect)
-
+        
         // MARK: - Draw the rotation center
         let rotationCenter = simd_float2(x:scopeState.rotationCenter.x * 2 / scopeState.texAspect - 1, y: scopeState.rotationCenter.y * 2 - 1)
-
+        
+        let rotationRadius: Float = 10
+        
         // Outer rotation circle (black)
         drawCircle(
             center: rotationCenter,
             color: black,
             orthoMatrix: orthoMatrix,
             texAspect: texAspect,
-            radius: 14,
+            radius: rotationRadius,
             lineThickness: 12)
         // inner rotation circle (white)
         drawCircle(
@@ -280,12 +282,12 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             color: white,
             orthoMatrix: orthoMatrix,
             texAspect: texAspect,
-            radius: 14,
+            radius: rotationRadius,
             lineThickness: 4)
-
-        let arcRadius: Float = 34
+        
+        let arcRadius: Float = 27
         let arrowPoint1: simd_float2
-
+        
         // Outer black arc
         drawArc(
             center: rotationCenter,
@@ -296,7 +298,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             startAngle: 0,
             endAngle: 90,
             steps: 10,
-            lineThickness: 10)
+            lineThickness: 12)
         
         
         
@@ -330,7 +332,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             texAspect: texAspect,
             radius: arcRadius,
             startAngle: 4,
-            endAngle: 86,
+            endAngle: arrowHeadDirection == .down ? 86 : 88,
             steps: 10,
             lineThickness: 4)
         
@@ -340,7 +342,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             size: 13,
             direction: arrowHeadDirection,
             color: white,
-            thickness: 3.5,
+            thickness: 3,
             orthoMatrix: orthoMatrix,
             texAspect: texAspect)
         
@@ -440,54 +442,54 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             orthoMatrix: float4x4,
             texAspect: Float,
             asDiamond: Bool = false) {
-            
-            let width = width * scale
-            let center: simd_float2 = simd_float2(x: center.x, y: center.y)
-            let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
-            let yOffset = (widthPerPixel * width)
-            let xOffset = (widthPerPixel * width / scopeState.texAspect)
-            let p1: simd_float2
-            let p2: simd_float2
-            let p3: simd_float2
-            let p4: simd_float2
-            if !asDiamond {
-                p1 = simd_float2(x: center.x - xOffset, y: center.y + yOffset)
-                p2 = simd_float2(x: center.x + xOffset, y: center.y + yOffset)
-                p3 = simd_float2(x: center.x + xOffset, y: center.y - yOffset)
-                p4 = simd_float2(x: center.x - xOffset, y: center.y - yOffset)
                 
-            } else {
-                p1 = simd_float2(x: center.x, y: center.y + yOffset)
-                p2 = simd_float2(x: center.x + xOffset, y: center.y)
-                p3 = simd_float2(x: center.x, y: center.y - yOffset)
-                p4 = simd_float2(x: center.x - xOffset, y: center.y)
+                let width = width * scale
+                let center: simd_float2 = simd_float2(x: center.x, y: center.y)
+                let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
+                let yOffset = (widthPerPixel * width)
+                let xOffset = (widthPerPixel * width / scopeState.texAspect)
+                let p1: simd_float2
+                let p2: simd_float2
+                let p3: simd_float2
+                let p4: simd_float2
+                if !asDiamond {
+                    p1 = simd_float2(x: center.x - xOffset, y: center.y + yOffset)
+                    p2 = simd_float2(x: center.x + xOffset, y: center.y + yOffset)
+                    p3 = simd_float2(x: center.x + xOffset, y: center.y - yOffset)
+                    p4 = simd_float2(x: center.x - xOffset, y: center.y - yOffset)
+                    
+                } else {
+                    p1 = simd_float2(x: center.x, y: center.y + yOffset)
+                    p2 = simd_float2(x: center.x + xOffset, y: center.y)
+                    p3 = simd_float2(x: center.x, y: center.y - yOffset)
+                    p4 = simd_float2(x: center.x - xOffset, y: center.y)
+                }
+                
+                var verts: [simd_float2] = [p1, p2, p3]
+                
+                let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+                
+                var uniforms: Uniforms = Uniforms(
+                    color: color,
+                    drawWithTetxure: false,
+                    drawTextureTriangles: false,
+                    textureTriangle:  trianglePoints,
+                    texAspect: texAspect,
+                    orthoMatrix: orthoMatrix
+                )
+                
+                encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                
+                verts = [p1, p3, p4]
+                
+                encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                
             }
-            
-            var verts: [simd_float2] = [p1, p2, p3]
-            
-            let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
-            
-            var uniforms: Uniforms = Uniforms(
-                color: color,
-                drawWithTetxure: false,
-                drawTextureTriangles: false,
-                textureTriangle:  trianglePoints,
-                texAspect: texAspect,
-                orthoMatrix: orthoMatrix
-            )
-            
-            encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-            
-            verts = [p1, p3, p4]
-            
-            encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-            
-        }
         func drawArrowHead(
             point: simd_float2,
             size: Float,
@@ -496,64 +498,66 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             thickness: Float,
             orthoMatrix: float4x4,
             texAspect: Float) {
-            let thickness = thickness * scale
-            let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
-            
-            let tipXOffset = (direction == .left ? -widthPerPixel * thickness / 2 : 0) / scopeState.texAspect
-            let tipYOffset = (direction == .down ? -widthPerPixel * thickness / 2 : 0)
-            
-            let deltaX = Float(sqrt(2)) / 2 * size * scale * widthPerPixel / scopeState.texAspect
-            let deltaY = Float(sqrt(2)) / 2 * size * scale * widthPerPixel
-            let pointTip = simd_float2(
-                point.x + tipXOffset * (direction == .down ? 0.5 : 1),
-                point.y + tipYOffset * (direction == .left ? 0.5 : 1)
-            )
-            let trailingPoint = simd_float2(
-                point.x - tipXOffset,
-                point.y - tipYOffset
-            )
-            let leadingOutsidePoint = simd_float2(
-                pointTip.x + deltaX,
-                pointTip.y + deltaY
-            )
-            let trailingOutsidePoint = simd_float2(
-                leadingOutsidePoint.x - tipXOffset * 2,
-                leadingOutsidePoint.y - tipYOffset * 2
-            )
-            
-            let leadingInsidePoint = simd_float2(
-                pointTip.x + deltaX * (direction == .down ? -1 : 1),
-                pointTip.y + deltaY * (direction == .down ? 1 : -1)
-            )
-            
-            let trailingInsidePoint = simd_float2(
-                leadingInsidePoint.x + tipXOffset * 2 * (direction == .down ? 1 : -1),
-                leadingInsidePoint.y + tipYOffset * 2 * (direction == .down ? -1 : 1)
-            )
-            let verticies: [simd_float2] = [leadingOutsidePoint,
-                                            trailingOutsidePoint,
-                                            pointTip,
-                                            trailingPoint,
-                                            leadingInsidePoint,
-                                            trailingInsidePoint,
-            ]
-            let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
-            
-            var uniforms: Uniforms = Uniforms(
-                color: color,
-                drawWithTetxure: false,
-                drawTextureTriangles: false,
-                textureTriangle:  trianglePoints,
-                texAspect: texAspect,
-                orthoMatrix: orthoMatrix
-            )
-            encoder.setVertexBytes(verticies, length: MemoryLayout<simd_float2>.stride * verticies.count, index: 0)
-            
-            encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: verticies.count)
-            
-        }
+                let thickness = thickness * scale
+                let widthPerPixel: Float = 1 / Float(view.drawableSize.width)
+                
+                let tipXOffset = (direction == .left ? -widthPerPixel * thickness / 2 : 0) / scopeState.texAspect
+                let tipYOffset = (direction == .down ? -widthPerPixel * thickness / 2 : 0)
+                
+                let point = simd_float2(point.x + (direction == .left ? tipXOffset / 2 : 0), point.y + (direction == .down ? tipYOffset / 2 : 0))
+                
+                let deltaX = Float(sqrt(2)) / 2 * size * scale * widthPerPixel / scopeState.texAspect
+                let deltaY = Float(sqrt(2)) / 2 * size * scale * widthPerPixel
+                let pointTip = simd_float2(
+                    point.x + tipXOffset * (direction == .down ? 0 : 1),
+                    point.y + tipYOffset * (direction == .left ? 0 : 1)
+                )
+                let trailingPoint = simd_float2(
+                    point.x - tipXOffset,
+                    point.y - tipYOffset
+                )
+                let leadingOutsidePoint = simd_float2(
+                    pointTip.x + deltaX,
+                    pointTip.y + deltaY
+                )
+                let trailingOutsidePoint = simd_float2(
+                    leadingOutsidePoint.x - tipXOffset * 2,
+                    leadingOutsidePoint.y - tipYOffset * 2
+                )
+                
+                let leadingInsidePoint = simd_float2(
+                    pointTip.x + deltaX * (direction == .down ? -1 : 1),
+                    pointTip.y + deltaY * (direction == .down ? 1 : -1)
+                )
+                
+                let trailingInsidePoint = simd_float2(
+                    leadingInsidePoint.x + tipXOffset * 2 * (direction == .down ? 1 : -1),
+                    leadingInsidePoint.y + tipYOffset * 2 * (direction == .down ? -1 : 1)
+                )
+                let verticies: [simd_float2] = [leadingOutsidePoint,
+                                                trailingOutsidePoint,
+                                                pointTip,
+                                                trailingPoint,
+                                                leadingInsidePoint,
+                                                trailingInsidePoint,
+                ]
+                let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+                
+                var uniforms: Uniforms = Uniforms(
+                    color: color,
+                    drawWithTetxure: false,
+                    drawTextureTriangles: false,
+                    textureTriangle:  trianglePoints,
+                    texAspect: texAspect,
+                    orthoMatrix: orthoMatrix
+                )
+                encoder.setVertexBytes(verticies, length: MemoryLayout<simd_float2>.stride * verticies.count, index: 0)
+                
+                encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: verticies.count)
+                
+            }
         
         func drawThickLine(
             p1: simd_float2,
@@ -562,31 +566,32 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             thickness: Float,
             orthoMatrix: float4x4,
             texAspect: Float) {
-            
-            let thickness = thickness * scale
-            let dir = normalize(p2 - p1)
-            let normal = simd_float2(-dir.y, dir.x) * thickness / 2
-            let v0 = p1 + normal
-            let v1 = p1 - normal
-            let v2 = p2 + normal
-            let v3 = p2 - normal
-            let vertices = [v0, v1, v2, v3]
-            encoder.setVertexBytes(vertices, length: MemoryLayout<simd_float2>.stride * 4, index: 0)
-            let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
-            
-            var uniforms: Uniforms = Uniforms(
-                color: color,
-                drawWithTetxure: false,
-                drawTextureTriangles: false,
-                textureTriangle:  trianglePoints,
-                texAspect: texAspect,
-                orthoMatrix: orthoMatrix
-            )
-            encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-            encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
-        }
+                
+                let thickness = thickness * scale
+                let dir = normalize(p2 - p1)
+                let normal = simd_float2(-dir.y, dir.x) * thickness / 2
+                let v0 = p1 + normal
+                let v1 = p1 - normal
+                let v2 = p2 + normal
+                let v3 = p2 - normal
+                let vertices = [v0, v1, v2, v3]
+                encoder.setVertexBytes(vertices, length: MemoryLayout<simd_float2>.stride * 4, index: 0)
+                let trianglePoints = TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint)
+                
+                var uniforms: Uniforms = Uniforms(
+                    color: color,
+                    drawWithTetxure: false,
+                    drawTextureTriangles: false,
+                    textureTriangle:  trianglePoints,
+                    texAspect: texAspect,
+                    orthoMatrix: orthoMatrix
+                )
+                encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+            }
     }
+    
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
 
 
