@@ -490,6 +490,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                 
             }
+        
         func drawArrowHead(
             point: simd_float2,
             size: Float,
