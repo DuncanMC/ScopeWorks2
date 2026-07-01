@@ -18,7 +18,8 @@ import PhotosUI
 
 struct ContentView: View {
         
-    @Binding var scopeState: ScopeState
+    @ObservedObject var scopeState: ScopeState
+    @Environment(\.undoManager) var undoManager
 
     let zoomDetents: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
     let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -349,11 +350,6 @@ struct ContentView: View {
                             }
                             .keyboardShortcut("r", modifiers: [.command])
                             
-                            Button("Save") {
-                                NotificationCenter.default.post(name: requestSaveDocument, object: nil)
-                            }
-                            .keyboardShortcut("s", modifiers: [.command])
-                            
                             Spacer()
                         }
                     }
@@ -362,6 +358,9 @@ struct ContentView: View {
                 
             }
             //xxx
+        }
+        .onReceive(scopeState.objectWillChange) { _ in
+            undoManager?.registerUndo(withTarget: scopeState) { _ in }
         }
     }
 }
@@ -384,7 +383,12 @@ struct PhotoPickerView: View {
                 if panel.runModal() == .OK,
                 let url = panel.url {
                     scopeState.imageURL = url
-                    scopeState.bookmarkData = createSecurityScopedBookmark(for: url)
+                    do {
+                        scopeState.bookmarkData = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess], includingResourceValuesForKeys: nil, relativeTo: nil)
+                        //                    scopeState.bookmarkData = createSecurityScopedBookmark(for: url)
+                    } catch {
+                        print("Error \(error) creating bookmarkl")
+                    }
                     print("bookmarkData = \(String(describing: scopeState.bookmarkData))")
                     if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
                         print("typeID = \(typeID)")
@@ -416,6 +420,7 @@ struct PhotoPickerView: View {
         #endif
     }
 }
+
 
 
 

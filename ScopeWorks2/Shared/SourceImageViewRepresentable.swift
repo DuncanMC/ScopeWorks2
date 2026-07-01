@@ -56,7 +56,7 @@ struct SourceImageViewRepresentable: UIViewRepresentable {
     func updateUIView(_ nsView: MTKView, context: Context) {
 
 //        if let imageData = scopeState.selectedImageData {
-//            context.coordinator.updateImageData(imageData)
+//            context.coordinator.updateImageData()
 //
 //        }
     }

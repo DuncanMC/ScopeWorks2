@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>365</string>
+					<string>361</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>364</string>
+					<string>360</string>
 					<key>Timestamp</key>
-					<string>799074039.488161</string>
+					<string>804626162.656021</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -41,9 +41,9 @@
             //xxx
 </string>
 				<key>trailing</key>
-				<string>    }
-}
-
+				<string>        .onReceive(scopeState.objectWillChange) { _ in
+            undoManager?.registerUndo(withTarget: scopeState) { _ in }
+        }
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>144</string>
+					<string>145</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>143</string>
+					<string>144</string>
 					<key>Timestamp</key>
-					<string>799074039.488206</string>
+					<string>804626162.656056</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -310,13 +310,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>138</string>
+					<string>139</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>137</string>
+					<string>138</string>
 					<key>Timestamp</key>
-					<string>799074039.4881999</string>
+					<string>804626162.655844</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
