@@ -28,7 +28,7 @@ typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
-    var cancellables = Set<AnyCancellable>()
+
 
     var useButton: Bool = true
     
@@ -132,15 +132,6 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func doInitSetup() {
-        objectWillChange.sink { _ in
-            #if os(macOS)
-            let documentController: NSDocumentController = .shared
-            if let document = documentController.currentDocument {
-                document.updateChangeCount(.changeDone)
-              }
-            #endif
-        }
-        .store(in: &cancellables)
 
 
     }
@@ -163,7 +154,12 @@ class ScopeState: ObservableObject, Codable {
                                        options: .withSecurityScope,
                                        //                                           relativeTo: fileURL,
                                        bookmarkDataIsStale: &bookmarkDataIsStale)
+                imageURL.startAccessingSecurityScopedResource()
+                if bookmarkDataIsStale {
+                    // TODO: Add code to handle bookmarkDataIsStale ==  true
+                }
                 self.imageURL = imageURL
+            
             } catch {
                 print("Error loading bookmark: \(error)")
             }
@@ -194,6 +190,8 @@ class ScopeState: ObservableObject, Codable {
 
         #endif
 
+        self.polygonSides = try container.decode(Int.self, forKey: .polygonSides)
+
         self.zoom = try container.decode(Double.self, forKey: .zoom)
         self.radiusScale = try container.decode(Float.self, forKey: .radiusScale)
         let colorCodable = try container.decode(CodableColor.self, forKey: .backgroundColor)
@@ -211,7 +209,6 @@ class ScopeState: ObservableObject, Codable {
         self.drawWithReflection = try container.decode(Bool.self, forKey: .drawWithReflection)
         self.animate = try container.decode(Bool.self, forKey: .animate)
 //        self.showControls = try container.decode(Bool.self, forKey: .showControls)
-        self.polygonSides = try container.decode(Int.self, forKey: .polygonSides)
         self.rotationSpeed = try container.decode(CGFloat.self, forKey: .rotationSpeed)
         self.movementSpeed = try container.decode(CGFloat.self, forKey: .movementSpeed)
         self.selectedScopeType = try container.decode(Int.self, forKey: .selectedScopeType)
@@ -225,9 +222,10 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Encode
     func encode(to encoder: Encoder) throws {
-//        print("----------------------")
-//        print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
-//        print("----------------------")
+        print("----------------------")
+        //print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
+        //print("trianglePoints = \(trianglePoints)")
+        //print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(bookmarkData, forKey: .bookmarkData)
@@ -330,13 +328,13 @@ class ScopeState: ObservableObject, Codable {
     // MARK: - Properties to be saved in ScopeWorks document
     var bookmarkData: Data? {
         didSet {
-//            guard  let bookmarkData else { return }
-//            var bookmarkDataIsStale: Bool = false
-//            do {
-//                imageURL = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &bookmarkDataIsStale)
-//            } catch {
-//                print("Error resolving bookmark data. error = \(error)")
-//            }
+            guard  let bookmarkData else { return }
+            var bookmarkDataIsStale: Bool = false
+            do {
+                imageURL = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &bookmarkDataIsStale)
+            } catch {
+                print("Error resolving bookmark data. error = \(error)")
+            }
         }
     }
     @Published var imageURL: URL? = nil {

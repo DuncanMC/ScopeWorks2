@@ -7,55 +7,41 @@ import Combine
 
 // Register custom document UTType
 extension UTType {
-    static var scopeworksDocument: UTType {
+    nonisolated static var scopeworksDocument: UTType {
         UTType(exportedAs: "com.wareto.scopeworks2.document")
     }
 }
 
-struct ScopeDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.scopeworksDocument] }
+@MainActor
+final class ScopeDocument: ReferenceFileDocument {
+    typealias Snapshot = Data
 
-    static var writeableContentTypes: [UTType] { [.scopeworksDocument] }
+    nonisolated static var readableContentTypes: [UTType] { [.scopeworksDocument] }
+
+    nonisolated static var writableContentTypes: [UTType] { [.scopeworksDocument] }
 
     private var cancellables = Set<AnyCancellable>()
 
-    @State private var changedDate: Date? = nil
-    
     // The actual document data
     var scopeState: ScopeState
 
-    private func makeDirty() {
-        self.changedDate = Date()
-        #if os(macOS)
-            let documentController: NSDocumentController = .shared
-            if let document = documentController.currentDocument {
-                document.updateChangeCount(.changeDone)
-            }
-        #endif
-        
-    }
     private func doInitSetup() {
-        
-        NotificationCenter.default.addObserver(
-            forName: requestSaveDocument,
-            object: nil,
-            queue: .main
-        ) { _ in
-            makeDirty()
-        }
+        scopeState.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
     // MARK: - FileDocument protocol
-    init() {
+    nonisolated init() {
         scopeState = ScopeState()
-        doInitSetup()
-        // Avoid capturing `self` from a struct in escaping closures. If you need to
-        // react to save requests, forward the notification to a free function or
-        // a static handler that does not require `self`.
+        Task { @MainActor [self] in
+            doInitSetup()
+        }
     }
     
     
-    @MainActor
-    init(configuration: ReadConfiguration) throws {
+    required init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
@@ -64,12 +50,17 @@ struct ScopeDocument: FileDocument {
         doInitSetup()
     }
     
-    @MainActor
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+    func snapshot(contentType: UTType) throws -> Data {
+        //print("In function \(#function)")
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(scopeState)
-        return .init(regularFileWithContents: data)
+        return try encoder.encode(scopeState)
     }
+
+    
+    nonisolated func fileWrapper(snapshot: Data, configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: snapshot)
+    }
+
 }
 
