@@ -66,6 +66,9 @@ struct ScopeWorks2App: App {
         DocumentGroup(newDocument: { ScopeDocument() }) { configuration in
             ContentView(scopeState: configuration.document.scopeState)
         }
+        .commands {
+            ScopeWorksCommands()
+        }
     }
 
 

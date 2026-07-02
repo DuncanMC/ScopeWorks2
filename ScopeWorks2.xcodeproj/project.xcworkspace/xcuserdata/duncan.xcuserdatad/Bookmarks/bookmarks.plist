@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>361</string>
+					<string>331</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>360</string>
+					<string>330</string>
 					<key>Timestamp</key>
-					<string>804626162.656021</string>
+					<string>804699791.195255</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,16 +34,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>        }
+				<string>        .onReceive(scopeState.objectWillChange) { _ in
 </string>
 				<key>leading</key>
-				<string>            }
-            //xxx
+				<string>        .focusedSceneObject(scopeState)
+
 </string>
 				<key>trailing</key>
-				<string>        .onReceive(scopeState.objectWillChange) { _ in
-            undoManager?.registerUndo(withTarget: scopeState) { _ in }
+				<string>            undoManager?.registerUndo(withTarget: scopeState) { _ in }
         }
+#if os(iOS)
 </string>
 			</dict>
 			<key>title</key>
@@ -335,8 +335,8 @@
 				<string>    var body: some View {
 </string>
 				<key>leading</key>
-				<string>        @State private var image: NSImage? = nil
-    #endif
+				<string>    @State private var image: NSImage? = nil
+#endif
 </string>
 				<key>trailing</key>
 				<string>        VStack {
