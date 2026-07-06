@@ -40,6 +40,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         let textureTriangle: TrianglePoints
         let texAspect: Float
         let orthoMatrix: float4x4
+        let flipTextureY: Bool
     }
 //    weak var imageData: Data?
 
@@ -188,8 +189,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
             drawTextureTriangles: false,
             textureTriangle: scopeState.trianglePoints,
             texAspect: 1,
-            orthoMatrix: orthoMatrix
-            // In your vertex shader, multiply positions by orthoMatrix
+            orthoMatrix: orthoMatrix,
+            flipTextureY: scopeState.flipTextureY
         )
         
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -425,7 +426,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     drawTextureTriangles: false,
                     textureTriangle:  trianglePoints,
                     texAspect: texAspect,
-                    orthoMatrix: orthoMatrix
+                    orthoMatrix: orthoMatrix,
+                    flipTextureY: false
                 )
                 
                 encoder.setVertexBytes(verticies, length: MemoryLayout<simd_float2>.stride * verticies.count, index: 0)
@@ -475,7 +477,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     drawTextureTriangles: false,
                     textureTriangle:  trianglePoints,
                     texAspect: texAspect,
-                    orthoMatrix: orthoMatrix
+                    orthoMatrix: orthoMatrix,
+                    flipTextureY: false
                 )
                 
                 encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
@@ -550,7 +553,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     drawTextureTriangles: false,
                     textureTriangle:  trianglePoints,
                     texAspect: texAspect,
-                    orthoMatrix: orthoMatrix
+                    orthoMatrix: orthoMatrix,
+                    flipTextureY: false
                 )
                 encoder.setVertexBytes(verticies, length: MemoryLayout<simd_float2>.stride * verticies.count, index: 0)
                 
@@ -585,7 +589,8 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
                     drawTextureTriangles: false,
                     textureTriangle:  trianglePoints,
                     texAspect: texAspect,
-                    orthoMatrix: orthoMatrix
+                    orthoMatrix: orthoMatrix,
+                    flipTextureY: false
                 )
                 encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                 encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)

@@ -21,6 +21,11 @@ enum DragLocations: String {
 
 typealias DragPointTuple = (point: CGPoint, dragLocation: DragLocations)
 
+enum ImageSourceMode: Equatable {
+    case staticImage
+    case camera(deviceID: String?)
+}
+
 // MARK: - Persisted document properties:
 // bookmarkData, imageURL, zoom, radiusScale, backgroundColor, trianglePoints,
 // rotationCenter, showOutlines, flipAlternates, splitTriangle,
@@ -31,6 +36,15 @@ class ScopeState: ObservableObject, Codable {
 
 
     var useButton: Bool = true
+    
+    // MARK: - Camera support (transient, not persisted)
+    var cameraManager: CameraManager?
+    var imageSourceMode: ImageSourceMode = .staticImage
+    // Camera textures have top-left origin; static images use bottom-left (via MTKTextureLoader)
+    var flipTextureY: Bool = false
+
+    // MARK: - External display (transient, not persisted)
+    var externalDisplayManager: ExternalDisplayManager?
     
     // MARK: - Codable Keys
     enum CodingKeys: String, CodingKey {
@@ -207,7 +221,7 @@ class ScopeState: ObservableObject, Codable {
         self.flipAlternates = try container.decode(Bool.self, forKey: .flipAlternates)
         self.splitTriangle = try container.decode(Bool.self, forKey: .splitTriangle)
         self.drawWithReflection = try container.decode(Bool.self, forKey: .drawWithReflection)
-        self.animate = try container.decode(Bool.self, forKey: .animate)
+        self.animate = false //try container.decode(Bool.self, forKey: .animate)
 //        self.showControls = try container.decode(Bool.self, forKey: .showControls)
         self.rotationSpeed = try container.decode(CGFloat.self, forKey: .rotationSpeed)
         self.movementSpeed = try container.decode(CGFloat.self, forKey: .movementSpeed)
@@ -304,6 +318,31 @@ class ScopeState: ObservableObject, Codable {
      doInitSetup()
     }
     
+    // MARK: - Camera lifecycle
+    func startCamera(deviceID: String? = nil) async {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        if cameraManager == nil {
+            cameraManager = CameraManager(metalDevice: device, scopeState: self)
+        }
+        imageSourceMode = .camera(deviceID: deviceID)
+        flipTextureY = true
+        await cameraManager?.startCamera(deviceID: deviceID)
+    }
+
+    func stopCamera() {
+        cameraManager?.stopCamera()
+        imageSourceMode = .staticImage
+        flipTextureY = false
+    }
+
+    func switchToStaticImage() {
+        stopCamera()
+        // Restore the static image texture if we have image data
+        if selectedImageData != nil {
+            imageUUID = UUID()
+        }
+    }
+    
     var log: Bool = false
     
     @Published var uuid = UUID()
@@ -357,12 +396,12 @@ class ScopeState: ObservableObject, Codable {
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
     @Published var backgroundColor = Color.white
-    @Published var trianglePoints = TrianglePoints(
+    var trianglePoints = TrianglePoints(
         point1: SIMD2<Float>(0.4, 0.25),
         point2: SIMD2<Float>(0.6, 0.25),
         point3: SIMD2<Float>(0.5, 0.42320508))
     
-    @Published var rotationCenter: SIMD2<Float> = [0.5, 0.5] {
+    var rotationCenter: SIMD2<Float> = [0.5, 0.5] {
         didSet {
             //print("rotationCenter changed")
         }
@@ -423,16 +462,18 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     // DMC:
-    @Published var texture: MTLTexture? {
+    var texture: MTLTexture? {
         didSet {
-            Task { @MainActor in
-                guard let texture else { return }
-                trianglePoints = calcTrianglePoints()
-                let texWidth = CGFloat(texture.width)
-                let texHeight = CGFloat(texture.height)
-                texSize = CGSize(width: texWidth, height: texHeight)
-                texAspect = Float(texWidth / texHeight)
-            }
+            guard let texture else { return }
+            let texWidth = CGFloat(texture.width)
+            let texHeight = CGFloat(texture.height)
+            let newSize = CGSize(width: texWidth, height: texHeight)
+            guard newSize != texSize else { return }
+            // Only fire objectWillChange when dimensions actually change
+            objectWillChange.send()
+            trianglePoints = calcTrianglePoints()
+            texSize = newSize
+            texAspect = Float(texWidth / texHeight)
         }
     }
 
@@ -473,7 +514,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func calcTrianglePoints() -> TrianglePoints {
-        guard selectedImageData != nil else {
+        guard selectedImageData != nil || imageSourceMode != .staticImage else {
             return TrianglePoints(
                 point1: SIMD2<Float>(0.4, 0.25),
                 point2: SIMD2<Float>(0.6, 0.25),

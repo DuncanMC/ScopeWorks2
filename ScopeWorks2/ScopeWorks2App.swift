@@ -66,6 +66,8 @@ struct ScopeWorks2App: App {
         DocumentGroup(newDocument: { ScopeDocument() }) { configuration in
             ContentView(scopeState: configuration.document.scopeState)
         }
+        .defaultSize(width: 1800, height: 1125)
+
         .commands {
             ScopeWorksCommands()
         }

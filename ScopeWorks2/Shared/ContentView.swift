@@ -6,20 +6,79 @@ import PhotosUI
 
 
 
-//class ScopeViewModel: ObservableObject {
-//    var scopeState: ScopeState
-//    
-//    init(scopeState: ScopeState) {
-//        self.scopeState = scopeState
-//    }
-//    
-//    
-//}
+enum ActiveModal: Identifiable {
+    case imageSource
+    case settings
+//    case detail(itemId: String)
+    
+    var id: String {
+        switch self {
+        case .imageSource: "imageSource"
+        case .settings: "settings"
+//        case .detail(let id): "detail-\(id)"
+        }
+    }
+}
 
 struct ContentView: View {
     
+    @State private var presentedModal: ActiveModal?
+
+    var imageSourceLeading: CGFloat {
+        #if os(macOS)
+            return 7
+        #else
+            return 10
+        #endif
+    }
+
+    var polygonSidesLeading: CGFloat {
+        #if os(macOS)
+            return 0
+        #else
+            return 6
+        #endif
+    }
+    var kaleidoscopeTypeLeading: CGFloat {
+    #if os(macOS)
+        return 12
+    #else
+        return 10
+        
+#endif
+    }
+    
+    var reverseAnimationLeading: CGFloat {
+        #if os(macOS)
+            return 75
+        #else
+            return 110
+        #endif
+    }
+
+    var backgroundColorLeading: CGFloat {
+        #if os(macOS)
+            return 0
+        #else
+            return 12
+        #endif
+    }
+
+    let sliderWidth = 350.0
     @ObservedObject var scopeState: ScopeState
+    @StateObject private var externalDisplayManager: ExternalDisplayManager
     @Environment(\.undoManager) var undoManager
+
+    init(scopeState: ScopeState) {
+        self.scopeState = scopeState
+        if let existing = scopeState.externalDisplayManager {
+            _externalDisplayManager = StateObject(wrappedValue: existing)
+        } else {
+            let manager = ExternalDisplayManager(scopeState: scopeState)
+            scopeState.externalDisplayManager = manager
+            _externalDisplayManager = StateObject(wrappedValue: manager)
+        }
+    }
     
     let zoomDetents: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
     let radiusDetents: [Double] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -57,6 +116,7 @@ struct ContentView: View {
     
     @State private var isDragging = false
     @State private var isRotating = false
+    @State private var isFullScreen = false
     
     
     var rotateGesture: some Gesture {
@@ -139,7 +199,7 @@ struct ContentView: View {
     var body: some View {
         VStack {
             HStack {
-                if scopeState.showSourceImage {
+                if scopeState.showSourceImage && !isFullScreen {
                     SourceImageViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
@@ -190,114 +250,168 @@ struct ContentView: View {
                     }
                 }
             }
-            if scopeState.showControls {
+            // xxx
+            if scopeState.showControls && !isFullScreen {
                 Spacer()
                 ScrollView(.horizontal) {
-                    VStack(spacing: 10) {
-                        HStack(alignment: .center, spacing: 20) {
-                            Spacer()
-                            PhotoPickerView(scopeState: scopeState)
-                            
+                    HStack(spacing: 30) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            HStack {
+                                //Image source button
+                                Button("Image source") {
+                                    presentedModal = .imageSource
+                                }
+
+                                Button("Reverse animation (⌘R)") {
+                                    scopeState.rotationSpeed *= -1
+                                    scopeState.movementSpeed *= -1
+                                }
+                                .padding(.leading, reverseAnimationLeading)
+                                .keyboardShortcut("r", modifiers: [.command])
+
+
+                            }
+                            .padding(.leading, 0)
+//                            .border(.blue, width: 1)
+
+                            // External display picker
+                            if !externalDisplayManager.availableDisplays.isEmpty {
+                                HStack {
+                                    Picker("Display:", selection: $externalDisplayManager.selectedDisplayID) {
+                                        Text("None").tag(String?.none)
+                                        ForEach(externalDisplayManager.availableDisplays) { display in
+                                            Text(display.name).tag(Optional(display.id))
+                                        }
+                                    }
+                                    .frame(minWidth: 200)
+                                }
+                            }
+
+                            //Kaleidoscope type picker
                             ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
-                                .frame(width: 360)
+                                .frame(width: 460)
                             
                                 .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
                                     //print("selectedScopeType = \(newValue)")
                                 }
+                                .padding(.leading, kaleidoscopeTypeLeading)
                             
-                            
-                            LabeledContent(content: {
-                                TextField("",
-                                          text: $polygonSidesString,
-                                          onEditingChanged: { isEditing in
+                            HStack {
+                                //Polygon sides
+                                LabeledContent(content: {
+                                    TextField("",
+                                              text: $polygonSidesString,
+                                              onEditingChanged: { isEditing in
+                                    },
+                                              onCommit: {
+                                        guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
+                                            Task { @MainActor in
+                                                self.polygonSidesString = "\(scopeState.polygonSides)"
+                                            }
+                                            return
+                                        }
+                                        scopeState.polygonSides = value.intValue
+                                        isFocused = false
+                                    }
+                                              
+                                    )
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(minWidth: 30, maxWidth: 50)
+                                    .focused($isFocused)
+                                    .onAppear() {
+#if os(macOS)
+                                        Task { @MainActor in
+                                            let _ = NSApp.keyWindow?.makeFirstResponder(nil)
+                                        }
+#endif
+                                    }
+                                    
+                                    .onChange(of: isFocused) {
+                                        if isFocused {
+                                            Task { @MainActor in
+#if os(macOS)
+                                                NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+#else
+                                                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+#endif
+                                            }
+                                            selection = .init(range: site.startIndex..<site.endIndex)
+                                        }
+                                    }
+                                    .onAppear() {
+                                        polygonSidesString = "\(scopeState.polygonSides)"
+                                    }
                                 },
-                                          onCommit: {
-                                    guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
-                                        Task { @MainActor in
-                                            self.polygonSidesString = "\(scopeState.polygonSides)"
-                                        }
-                                        return
-                                    }
-                                    scopeState.polygonSides = value.intValue
-                                    isFocused = false
-                                }
-                                          
-                                )
-                                .textFieldStyle(.roundedBorder)
-                                .frame(minWidth: 30, maxWidth: 50)
-                                .focused($isFocused)
-                                .onAppear() {
-                                    #if os(macOS)
-                                        Task { @MainActor in
-                                            let test = NSApp.keyWindow?.makeFirstResponder(nil)
-                                        }
-                                    #endif
-                                }
+                                               label: {
+                                    Text("Polygon sides")
+                                        .frame(minWidth: 130)
 
-                                .onChange(of: isFocused) {
-                                    if isFocused {
-                                        Task { @MainActor in
-                                            #if os(macOS)
-                                            NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
-                                            #else
-                                            UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
-                                            #endif
-                                        }
-                                        selection = .init(range: site.startIndex..<site.endIndex)
-                                    }
-                                }
-                                .onAppear() {
-                                    polygonSidesString = "\(scopeState.polygonSides)"
-                                }
-                            },
-                                           label: {
-                                Text("Polygon sides")
-                                    .frame(minWidth: 90)
+                                })
+                                .padding(.leading, polygonSidesLeading)
+                                //.border(.black, width: 1)
                                 
-                            })
-                            .padding()
-                            
-                            
-                            ColorPicker("Background color", selection: $scopeState.backgroundColor)
-                            Spacer()
-                            
-                            VStack {
-                                Text("Zoom \(zoomString)")
-                                Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                                //background color well
+                                ColorPicker("Background color", selection: $scopeState.backgroundColor)
+                                    .frame(minWidth: 200)
+//                                .border(.black, width: 1)
+                                .padding(.leading, backgroundColorLeading)
+
                             }
-                            Spacer()
-                            VStack {
-                                Text("Radius \(radiusString)")
-                                Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
-                            }
-                            //radiusScale
+
                         }
-                        HStack(alignment: .center,spacing: 20) {
-                            Spacer()
-                            
-                            VStack {
-                                Text("Rotation speed \(rotationString)")
+
+                        .padding(.leading, 10)
+                        VStack(alignment: .leading, spacing: 20) { //Sliders
+                            // Rotation speed
+                            HStack {
+                                Text("Rotation speed: \(rotationString)")
+                                    .frame(minWidth: 200, alignment: .leading)
+//                                    .border(.black, width: 1)
                                 Slider(value: $scopeState.rotationSpeed, in: -15.0 ... 15.0, step: 1.0)
+                                    .frame(width: sliderWidth )
+                                    .frame(minWidth: 150 )
                             }
-                            
-                            .onChange(of: scopeState.animate) { oldValue, newValue in
-                                scopeState.changeAnimationState()
+
+                            // Zoom
+                            HStack {
+                                Text("Zoom: \(zoomString)")
+                                    .frame(minWidth: 200, alignment: .leading)
+//                                    .border(.black, width: 1)
+
+                                Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                                    .frame(width: sliderWidth )
+                                    .frame(minWidth: 150 )
+
                             }
-                            Button("Reverse animation (⌘R)") {
-                                scopeState.rotationSpeed *= -1
-                                scopeState.movementSpeed *= -1
+                            // Radius
+                            HStack {
+                                Text("Radius: \(radiusString)")
+                                    .frame(minWidth: 200, alignment: .leading)
+//                                    .border(.black, width: 1)
+                                Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
+                                    .frame(width: sliderWidth )
+                                    .frame(minWidth: 150 )
+
                             }
-                            .keyboardShortcut("r", modifiers: [.command])
-                            
-                            Spacer()
                         }
                     }
                 }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
                 
             }
-            //xxx
         }
+        .sheet(item: $presentedModal) { modalType in
+            switch modalType {
+            case .settings:
+                SettingsView()
+            case .imageSource:
+                ImageSouceView(scopeState: scopeState,
+                               dismissClosure: {
+                    presentedModal = nil
+                })
+            }
+        }
+
 #if os(iOS)
 // MARK: hidden iOS menubar for keyboard shortcuts.
         .background {
@@ -327,9 +441,23 @@ struct ContentView: View {
         }
 #endif
         .focusedSceneObject(scopeState)
-
+#if os(macOS)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willEnterFullScreenNotification)) { _ in
+            isFullScreen = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willExitFullScreenNotification)) { _ in
+            isFullScreen = false
+        }
+#endif
         .onReceive(scopeState.objectWillChange) { _ in
-            undoManager?.registerUndo(withTarget: scopeState) { _ in }
+            if !scopeState.animate && scopeState.imageSourceMode == .staticImage {
+                undoManager?.registerUndo(withTarget: scopeState) { _ in }
+            }
+        }
+        .onChange(of: scopeState.animate) { _, newValue in
+            if !newValue {
+                undoManager?.registerUndo(withTarget: scopeState) { _ in }
+            }
         }
 #if os(iOS)
         .toolbar {
@@ -367,10 +495,12 @@ struct PhotoPickerView: View {
     @State private var selectedItem: PhotosPickerItem?
     @ObservedObject var scopeState: ScopeState
     
+    var dismissClosure: (() -> Void)
+
     
     var body: some View {
         #if os(macOS)
-            Button("Image Source") {
+            Button("Select Image") {
                 let panel = NSOpenPanel()
                 panel.allowedContentTypes = [UTType(filenameExtension: "jpg"),
                                              UTType(filenameExtension: "png"),
@@ -389,17 +519,17 @@ struct PhotoPickerView: View {
                     } catch {
                         print("Error \(error) creating bookmarkl")
                     }
+                    dismissClosure()
                     print("bookmarkData = \(String(describing: scopeState.bookmarkData))")
                     if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
                         print("typeID = \(typeID)")
                         scopeState.isHEIC =  typeID == UTType.heic.identifier
                     }
                 }
-//                scopeState.showOpenDialog = true
             }
         
         #else
-        PhotosPicker("Image Source", selection: $selectedItem, matching: .images, photoLibrary: .shared())
+        PhotosPicker("Select Image", selection: $selectedItem, matching: .images, photoLibrary: .shared())
                 .onChange(of: selectedItem) {
                     Task { @MainActor in
                         if let newValue = selectedItem {
@@ -414,6 +544,8 @@ struct PhotoPickerView: View {
                             print("----------------------")
 
                             scopeState.selectedImageData = data
+                            dismissClosure()
+
                         }
                     }
                 }

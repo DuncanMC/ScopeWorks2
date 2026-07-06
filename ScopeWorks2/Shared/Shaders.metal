@@ -19,6 +19,7 @@ struct Uniforms {
     TrianglePoints trianglePoints;
     float texAspect;
     float4x4 orthoMatrix;
+    bool flipTextureY;
 };
 
 
@@ -49,8 +50,9 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     if (uniforms.drawWithTexture) {
         float2 coord = in.texCoord;
         coord.x /= uniforms.texAspect;
-        // Texture co-ord is flipped vertically. flip it back.
-//        coord[1] = 1.0 - coord[1];
+        if (uniforms.flipTextureY) {
+            coord.y = 1.0 - coord.y;
+        }
         return tex.sample(s, coord);
     } else {
         return uniforms.color;

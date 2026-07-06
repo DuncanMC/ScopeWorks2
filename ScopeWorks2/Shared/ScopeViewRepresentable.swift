@@ -22,9 +22,8 @@ struct ScopeViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
-        if scopeState.selectedImageData != nil {
+        if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()
-
         }
     }
 }
@@ -57,9 +56,8 @@ extension ScopeViewRepresentable {
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {
-        if scopeState.selectedImageData != nil {
+        if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()
-
         }
     }
 }

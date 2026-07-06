@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>331</string>
+					<string>419</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>330</string>
+					<string>418</string>
 					<key>Timestamp</key>
-					<string>804699791.195255</string>
+					<string>804794194.752741</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -41,9 +41,9 @@
 
 </string>
 				<key>trailing</key>
-				<string>            undoManager?.registerUndo(withTarget: scopeState) { _ in }
-        }
-#if os(iOS)
+				<string>            if !scopeState.animate {
+                undoManager?.registerUndo(withTarget: scopeState) { _ in }
+            }
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>145</string>
+					<string>192</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>144</string>
+					<string>191</string>
 					<key>Timestamp</key>
-					<string>804626162.656056</string>
+					<string>804788192.3853019</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -202,7 +202,7 @@
 				<key>trailing</key>
 				<string>
 
-//class ScopeViewModel: ObservableObject {
+enum ActiveModal: Identifiable {
 </string>
 			</dict>
 			<key>title</key>
@@ -248,7 +248,7 @@
 				<key>trailing</key>
 				<string>
 
-//class ScopeViewModel: ObservableObject {
+enum ActiveModal: Identifiable {
 </string>
 			</dict>
 			<key>title</key>
@@ -294,7 +294,7 @@
 				<key>trailing</key>
 				<string>
 
-//class ScopeViewModel: ObservableObject {
+enum ActiveModal: Identifiable {
 </string>
 			</dict>
 			<key>title</key>
@@ -310,13 +310,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>139</string>
+					<string>186</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>138</string>
+					<string>185</string>
 					<key>Timestamp</key>
-					<string>804626162.655844</string>
+					<string>804788192.385325</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

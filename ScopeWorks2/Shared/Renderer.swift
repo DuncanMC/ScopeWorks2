@@ -112,6 +112,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let textureTriangle: TrianglePoints
         let texAspect: Float
         let orthoMatrix: float4x4
+        let flipTextureY: Bool
     }
 
 #if os(iOS)
@@ -169,6 +170,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     }
 
     func updateImageData() {
+        // Skip if in camera mode -- CameraManager updates texture directly
+        guard scopeState.imageSourceMode == .staticImage else { return }
         if true {
             if let scopeImageUUID = scopeState.imageUUID,
                imageUUID != scopeImageUUID {
@@ -390,8 +393,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         drawTextureTriangles: true,
                         textureTriangle: scopeState.trianglePoints,
                         texAspect: texAspect,
-                        orthoMatrix: orthoMatrix
-                          // In your vertex shader, multiply positions by orthoMatrix
+                        orthoMatrix: orthoMatrix,
+                        flipTextureY: scopeState.flipTextureY
                     )
                     
                     encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -421,7 +424,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                 drawTextureTriangles: true,
                                 textureTriangle: scopeState.trianglePoints,
                                 texAspect: texAspect,
-                                orthoMatrix: orthoMatrix
+                                orthoMatrix: orthoMatrix,
+                                flipTextureY: scopeState.flipTextureY
                             )
                             encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                             encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -538,7 +542,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             drawTextureTriangles: false,
             textureTriangle:  trianglePoints,
             texAspect: texAspect,
-            orthoMatrix: orthoMatrix
+            orthoMatrix: orthoMatrix,
+            flipTextureY: false
         )
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)

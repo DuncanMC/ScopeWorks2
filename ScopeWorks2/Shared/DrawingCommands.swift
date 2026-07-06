@@ -74,7 +74,13 @@ struct ScopeWorksCommands: Commands {
             .keyboardShortcut(.return, modifiers: [])
             .disabled(scopeState == nil)
 
-//scopeState.animate
+            Divider()
+
+            Button("Close External Display") {
+                scopeState?.externalDisplayManager?.selectedDisplayID = nil
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(scopeState?.externalDisplayManager?.selectedDisplayID == nil)
         }
     }
 }
