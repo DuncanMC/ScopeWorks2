@@ -24,6 +24,7 @@ struct ContentView: View {
     
     @State private var presentedModal: ActiveModal?
 
+
     var imageSourceLeading: CGFloat {
         #if os(macOS)
             return 7
@@ -34,14 +35,14 @@ struct ContentView: View {
 
     var polygonSidesLeading: CGFloat {
         #if os(macOS)
-            return 0
+            return 12
         #else
             return 6
         #endif
     }
     var kaleidoscopeTypeLeading: CGFloat {
     #if os(macOS)
-        return 12
+        return 0
     #else
         return 10
         
@@ -50,7 +51,7 @@ struct ContentView: View {
     
     var reverseAnimationLeading: CGFloat {
         #if os(macOS)
-            return 75
+            return 61
         #else
             return 110
         #endif
@@ -261,6 +262,7 @@ struct ContentView: View {
                                 Button("Image source") {
                                     presentedModal = .imageSource
                                 }
+                                .padding(.leading, 0)
 
                                 Button("Reverse animation (⌘R)") {
                                     scopeState.rotationSpeed *= -1
@@ -277,13 +279,23 @@ struct ContentView: View {
                             // External display picker
                             if !externalDisplayManager.availableDisplays.isEmpty {
                                 HStack {
-                                    Picker("Display:", selection: $externalDisplayManager.selectedDisplayID) {
+                                    Text("Fullscreen Display:")
+                                    #if os(macOS)
+                                        .padding(.leading, 12)
+                                    #else
+                                    #endif
+                                    Picker("", selection: $externalDisplayManager.selectedDisplayID) {
                                         Text("None").tag(String?.none)
                                         ForEach(externalDisplayManager.availableDisplays) { display in
                                             Text(display.name).tag(Optional(display.id))
                                         }
                                     }
                                     .frame(minWidth: 200)
+                                    #if os(macOS)
+                                    .padding(.leading, 26)
+                                    #else
+                                    #endif
+
                                 }
                             }
 
@@ -315,8 +327,12 @@ struct ContentView: View {
                                     }
                                               
                                     )
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(minWidth: 30, maxWidth: 50)
+                                    #if os(macOS)
+                                        .padding(.leading, 25)
+                                    #endif
+                                        .textFieldStyle(.customRoundedBorderTextFieldStyle(borderColor: .gray))
+//                                    .textFieldStyle(.roundedBorder)
+                                    .frame(minWidth: 50, maxWidth: 60)
                                     .focused($isFocused)
                                     .onAppear() {
 #if os(macOS)
@@ -344,11 +360,10 @@ struct ContentView: View {
                                 },
                                                label: {
                                     Text("Polygon sides")
-                                        .frame(minWidth: 130)
+                                        .frame(minWidth: 130, alignment: .leading)
 
                                 })
                                 .padding(.leading, polygonSidesLeading)
-                                //.border(.black, width: 1)
                                 
                                 //background color well
                                 ColorPicker("Background color", selection: $scopeState.backgroundColor)

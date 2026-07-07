@@ -15,7 +15,7 @@ struct ImageSouceView: View {
 
     var imageSourceLeading: CGFloat {
         #if os(macOS)
-            return 7
+            return 1
         #else
             return 10
         #endif

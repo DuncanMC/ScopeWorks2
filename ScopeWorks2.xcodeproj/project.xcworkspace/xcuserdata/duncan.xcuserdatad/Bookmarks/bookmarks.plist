@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>419</string>
+					<string>434</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>418</string>
+					<string>433</string>
 					<key>Timestamp</key>
-					<string>804794194.752741</string>
+					<string>805131089.903119</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,16 +34,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>        .onReceive(scopeState.objectWillChange) { _ in
+				<string>                Toggle("Show controls", isOn: $scopeState.showControls)
 </string>
 				<key>leading</key>
-				<string>        .focusedSceneObject(scopeState)
-
+				<string>        .background {
+            VStack {
 </string>
 				<key>trailing</key>
-				<string>            if !scopeState.animate {
-                undoManager?.registerUndo(withTarget: scopeState) { _ in }
-            }
+				<string>                    .keyboardShortcut("c", modifiers: .option)
+                Toggle("Show source image", isOn: $scopeState.showSourceImage)
+                .keyboardShortcut("i", modifiers: .option)
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>192</string>
+					<string>193</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>191</string>
+					<string>192</string>
 					<key>Timestamp</key>
-					<string>804788192.3853019</string>
+					<string>805122352.137585</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -147,16 +147,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                        .background(Color.white)
+				<string>    }
 </string>
 				<key>leading</key>
-				<string>                    SourceImageViewRepresentable(scopeState: scopeState)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+				<string>    private func label(for value: Double) -&gt; some View {
+        Text(String(format: "%.2f", value))
 </string>
 				<key>trailing</key>
-				<string>                        .aspectRatio(scopeState.texSize, contentMode: .fit)
-                        .border(.blue, width: 2)
-                        .gesture(ExclusiveGesture(dragGesture, rotateGesture))
+				<string>    
+#if os(iOS)
+    @State private var image: UIImage? = nil
 </string>
 			</dict>
 			<key>title</key>
@@ -310,13 +310,13 @@ enum ActiveModal: Identifiable {
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>186</string>
+					<string>187</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>185</string>
+					<string>186</string>
 					<key>Timestamp</key>
-					<string>804788192.385325</string>
+					<string>805122352.137575</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -332,16 +332,16 @@ enum ActiveModal: Identifiable {
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    var body: some View {
+				<string>#endif
 </string>
 				<key>leading</key>
-				<string>    @State private var image: NSImage? = nil
-#endif
+				<string>#else
+        return .trailing
 </string>
 				<key>trailing</key>
-				<string>        VStack {
-            HStack {
-                if scopeState.showSourceImage {
+				<string>        
+    }
+    
 </string>
 			</dict>
 			<key>title</key>
