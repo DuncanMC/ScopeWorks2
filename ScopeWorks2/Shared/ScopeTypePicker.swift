@@ -13,7 +13,15 @@ struct ScopeTypePicker: View {
         #if os(macOS)
             return 14
         #else
-            return 50
+            return 45
+        #endif
+    }
+
+    var scopeTypeTitleLeading: CGFloat {
+        #if os(macOS)
+            return 12
+        #else
+            return 7
         #endif
     }
     var title: String
@@ -24,7 +32,7 @@ struct ScopeTypePicker: View {
         HStack {
             Text(title)
                 .frame(minWidth: 140, alignment: .leading)
-                .padding(.leading, 12)
+                .padding(.leading, scopeTypeTitleLeading)
             Picker(title, selection: $selection) {
                 ForEach(options, id: \.self.index) { option in
                     Text("\(option.title)")

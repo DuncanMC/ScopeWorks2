@@ -57,35 +57,56 @@ struct FullScreenOverlayView: View {
 
     var body: some View {
         ZStack {
-            ScopeViewRepresentable(scopeState: scopeState)
+            ScopeViewRepresentable(scopeState: scopeState, allowImageExport: true)
                 .ignoresSafeArea()
 
             if overlayState.showButton {
                 VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            overlayState.exitAction?()
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.white)
+                    VStack(spacing: 10) {
+                        HStack {
+                            Spacer()
+                            Button {
+                                overlayState.exitAction?()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.white)
 #if os(macOS)
-                                Text("Exit Full Screen (Esc)")
-                                    .foregroundStyle(.white)
+                                    Text("Exit Full Screen (Esc)")
+                                        .foregroundStyle(.white)
 #else
-                                Text("Exit Full Screen")
-                                    .foregroundStyle(.white)
+                                    Text("Exit Full Screen")
+                                        .foregroundStyle(.white)
 #endif
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.black.opacity(0.7))
+                                .clipShape(Capsule())
                             }
-                            .font(.system(size: 14, weight: .medium))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.black.opacity(0.7))
-                            .clipShape(Capsule())
+                            .buttonStyle(.plain)
+                            .padding(20)
                         }
-                        .buttonStyle(.plain)
-                        .padding(20)
+                        HStack {
+                            Spacer()
+                            Button {
+                                scopeState.handleSnapshot()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text("Take Snapshot")
+                                        .foregroundStyle(.white)
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.black.opacity(0.7))
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(20)
+
+                        }
                     }
                     Spacer()
                 }

@@ -9,6 +9,10 @@ import SwiftUI
 import Combine
 import simd
 import PhotosUI
+import MetalKit
+import UniformTypeIdentifiers
+import ImageIO
+
 
 enum DragLocations: String {
     case inRotationCenter
@@ -25,6 +29,10 @@ enum ImageSourceMode: Equatable {
     case staticImage
     case camera(deviceID: String?)
 }
+
+// MARK: Private vars
+
+private var notificationToken: NSObjectProtocol?
 
 // MARK: - Persisted document properties:
 // bookmarkData, imageURL, zoom, radiusScale, backgroundColor, trianglePoints,
@@ -45,6 +53,7 @@ class ScopeState: ObservableObject, Codable {
 
     // MARK: - External display (transient, not persisted)
     var externalDisplayManager: ExternalDisplayManager?
+    weak var metalView: MTKView? = nil
     
     // MARK: - Codable Keys
     enum CodingKeys: String, CodingKey {
@@ -146,8 +155,17 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func doInitSetup() {
-
-
+        notificationToken = NotificationCenter.default
+            .addObserver(forName: settingsChangedNotification,
+                         object: nil,
+                         queue: nil) { notification in
+                            let userInfo = notification.userInfo
+                            if let snapshotFileType = userInfo?[UserDefaultsKeys.snapshotFileType.rawValue] as? Int {
+                                ScopeState.snapshotFileTypeIndex = snapshotFileType
+                }
+        }
+        
+        resolveICloudURL()
     }
     // MARK: - Initializer for decoding
     required init(from decoder: Decoder) throws {
@@ -784,4 +802,281 @@ class ScopeState: ObservableObject, Codable {
             return
         }
     }
+    
+    
+    func snapshotImage() -> CGImage? {
+        guard let metalView = self.metalView else { return nil }
+        guard let drawableTexture = metalView.currentDrawable?.texture else { return nil }
+        
+        let ciContext = CIContext()
+        // The texture format is .bgra8Unorm (not _srgb), so the framebuffer stores
+        // sRGB-encoded values without automatic conversion. Tell CIImage the values
+        // are sRGB to prevent a double gamma curve that washes out colors.
+        guard let ciImage = CIImage(mtlTexture: drawableTexture, options: [
+            .colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!
+        ]) else {
+            return nil
+        }
+        
+        return ciContext.createCGImage(ciImage, from: ciImage.extent)
+    }
+    /// Cached iCloud Documents URL, resolved once on a background queue at startup.
+    private var _iCloudDocumentsURL: URL?
+    private var _iCloudURLResolved = false
+    
+    /// Resolves the iCloud ubiquity container on a background queue and caches the result.
+    /// Must be called early (e.g. from doInitSetup).
+    private func resolveICloudURL() {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            // This call can block — Apple requires it off the main thread.
+            let containerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)
+            let documentsURL = containerURL?.appendingPathComponent("Documents")
+            
+            // Ensure the Documents subdirectory exists inside the container
+            if let documentsURL {
+                try? FileManager.default.createDirectory(at: documentsURL, withIntermediateDirectories: true)
+            }
+            
+            DispatchQueue.main.async {
+                self?._iCloudDocumentsURL = documentsURL
+                self?._iCloudURLResolved = true
+                if let documentsURL {
+                    print("iCloud container resolved: \(documentsURL.path)")
+                } else {
+                    print("iCloud container not available")
+                }
+            }
+        }
+    }
+    
+    /// Returns the shared iCloud ubiquity container Documents URL.
+    /// Both Mac and iOS use the same container so files sync across devices.
+    private var iCloudDocumentsURL: URL? {
+        return _iCloudDocumentsURL
+    }
+    
+    func saveSnapshotImage(_ image: CGImage, autoSaveToiCloud: Bool = true) {
+        
+        guard let filetype = Self.snapshotFileType else {
+            print("Unknown file type")
+            return
+        }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
+        let timestamp = formatter.string(from: Date())
+        let defaultFilename = "ScopeWorks snapshot \(timestamp)"
+        let fileExtension = filetype.preferredFilenameExtension ?? "png"
+        let filename = "\(defaultFilename).\(fileExtension)"
+        
+        if autoSaveToiCloud {
+            // Both platforms: use a security-scoped bookmark so files go to the
+            // user-visible iCloud Drive folder. Prompts once on first use.
+            autoSaveToBookmarkedFolder(image: image, filename: filename, filetype: filetype)
+        } else {
+            // Manual save: show a save panel (macOS) or document picker (iOS).
+            showSavePanel(image: image, defaultFilename: defaultFilename, directoryURL: nil, filetype: filetype)
+        }
+    }
+    
+    // MARK: - Auto-save with security-scoped bookmark (both platforms)
+    private static let iCloudFolderBookmarkKey = "iCloudScopeWorksFolderBookmark"
+    #if os(iOS)
+    private var folderPickerDelegate: FolderPickerDelegate?
+    #endif
+    
+    /// Auto-saves to a bookmarked folder. On first use, prompts the user
+    /// to select the ScopeWorks2 folder (one-time). Subsequent saves go directly.
+    private func autoSaveToBookmarkedFolder(image: CGImage, filename: String, filetype: UTType) {
+        // Try to resolve a previously saved bookmark
+        if let data = UserDefaults.standard.data(forKey: Self.iCloudFolderBookmarkKey) {
+            var isStale = false
+            #if os(macOS)
+            let options: URL.BookmarkResolutionOptions = [.withSecurityScope]
+            #else
+            let options: URL.BookmarkResolutionOptions = []
+            #endif
+            if let folderURL = try? URL(resolvingBookmarkData: data, options: options, bookmarkDataIsStale: &isStale) {
+                let accessing = folderURL.startAccessingSecurityScopedResource()
+                defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
+                
+                if isStale {
+                    #if os(macOS)
+                    let bmOptions: URL.BookmarkCreationOptions = [.withSecurityScope]
+                    #else
+                    let bmOptions: URL.BookmarkCreationOptions = []
+                    #endif
+                    if let newData = try? folderURL.bookmarkData(options: bmOptions) {
+                        UserDefaults.standard.set(newData, forKey: Self.iCloudFolderBookmarkKey)
+                    }
+                }
+                
+                let fileURL = folderURL.appendingPathComponent(filename)
+                writeImage(image, to: fileURL, type: filetype)
+                return
+            }
+        }
+        
+        // No valid bookmark — ask the user to pick the folder once
+        promptForSnapshotFolder(image: image, filename: filename, filetype: filetype)
+    }
+    
+    /// Presents a folder picker so the user can select the iCloud ScopeWorks2 folder.
+    /// Saves a security-scoped bookmark for future auto-saves.
+    private func promptForSnapshotFolder(image: CGImage, filename: String, filetype: UTType) {
+        #if os(macOS)
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.message = "Select the folder for auto-saving snapshots (e.g. ScopeWorks2 on iCloud Drive)"
+        openPanel.prompt = "Select Folder"
+        
+        openPanel.begin { [weak self] result in
+            guard let self, result == .OK, let folderURL = openPanel.url else { return }
+            
+            if let bookmarkData = try? folderURL.bookmarkData(options: [.withSecurityScope]) {
+                UserDefaults.standard.set(bookmarkData, forKey: Self.iCloudFolderBookmarkKey)
+                print("Saved folder bookmark for auto-save: \(folderURL.path)")
+            }
+            
+            let fileURL = folderURL.appendingPathComponent(filename)
+            self.writeImage(image, to: fileURL, type: filetype)
+        }
+        #elseif os(iOS)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder])
+        
+        let delegate = FolderPickerDelegate()
+        delegate.onPick = { [weak self] folderURL in
+            guard let self else { return }
+            let accessing = folderURL.startAccessingSecurityScopedResource()
+            defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
+            
+            if let bookmarkData = try? folderURL.bookmarkData() {
+                UserDefaults.standard.set(bookmarkData, forKey: Self.iCloudFolderBookmarkKey)
+                print("Saved folder bookmark for auto-save")
+            }
+            
+            let fileURL = folderURL.appendingPathComponent(filename)
+            self.writeImage(image, to: fileURL, type: filetype)
+            self.folderPickerDelegate = nil
+        }
+        self.folderPickerDelegate = delegate
+        picker.delegate = delegate
+        
+        if let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
+           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
+           let rootVC = keyWindow.rootViewController {
+            var presentingVC = rootVC
+            while let presented = presentingVC.presentedViewController {
+                presentingVC = presented
+            }
+            presentingVC.present(picker, animated: true)
+        }
+        #endif
+    }
+    
+    private func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
+        #if os(macOS)
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [filetype]
+        savePanel.nameFieldStringValue = defaultFilename
+        savePanel.directoryURL = directoryURL
+        
+        savePanel.begin { result in
+            if result == .OK, let url = savePanel.url {
+                self.writeImage(image, to: url, type: filetype)
+            }
+        }
+        #elseif os(iOS)
+        let fileExtension = filetype.preferredFilenameExtension ?? "png"
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(defaultFilename).\(fileExtension)")
+        writeImage(image, to: tempURL, type: filetype)
+        
+        let picker = UIDocumentPickerViewController(forExporting: [tempURL])
+        if let directoryURL {
+            picker.directoryURL = directoryURL
+        }
+        
+        // Present on the key window's view controller. This ensures the picker
+        // appears above any full-screen overlay window (which has an elevated windowLevel).
+        if let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
+           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
+           let rootVC = keyWindow.rootViewController {
+            var presentingVC = rootVC
+            while let presented = presentingVC.presentedViewController {
+                presentingVC = presented
+            }
+            presentingVC.present(picker, animated: true)
+        }
+        #endif
+    }
+    
+    @discardableResult
+    private func writeImage(_ image: CGImage, to url: URL, type: UTType) -> Bool {
+        // Encode image data in memory, then write to disk.
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            data as CFMutableData, type.identifier as CFString, 1, nil
+        ) else {
+            print("Failed to create image destination for type \(type.identifier)")
+            return false
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            print("Failed to finalize image data")
+            return false
+        }
+        
+        do {
+            try (data as Data).write(to: url)
+            print("Saved snapshot to \(url.path)")
+            return true
+        } catch {
+            print("Failed to write image to \(url.path): \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    func handleSnapshot() {
+        guard metalView != nil else {
+            print("In \(#function), metalView = nil")
+            return
+        }
+        print("Snapshot button pressed.")
+        guard let snapshotImage = snapshotImage() else {
+            print("snapshotImage returned nil")
+            return
+        }
+        saveSnapshotImage(snapshotImage)
+    }
+    
+    static var snapshotFileType: UTType? {
+        SnapshotFormat.allCases[Self.snapshotFileTypeIndex].fileType
+    }
+    
+    static  var snapshotFileTypeIndex: Int = Int(UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue))
+
 }
+
+// MARK: - iOS Folder Picker Delegate
+#if os(iOS)
+/// Delegate for the one-time folder picker used to establish a security-scoped bookmark.
+private class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
+    var onPick: ((URL) -> Void)?
+    
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else { return }
+        onPick?(url)
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        onPick = nil
+    }
+}
+#endif
+
+

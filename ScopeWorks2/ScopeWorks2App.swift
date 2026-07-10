@@ -65,12 +65,19 @@ struct ScopeWorks2App: App {
     var body: some Scene {
         DocumentGroup(newDocument: { ScopeDocument() }) { configuration in
             ContentView(scopeState: configuration.document.scopeState)
+                .focusable()
+                .focusedSceneValue(\.scopeState, configuration.document.scopeState)
         }
         .defaultSize(width: 1800, height: 1125)
 
         .commands {
             ScopeWorksCommands()
         }
+#if os(macOS)
+        Settings {
+            SettingsView(doneButtonAction: {} )
+        }
+#endif
     }
 
 

@@ -9,12 +9,30 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Focused value key for ScopeState
+struct FocusedScopeStateKey: FocusedValueKey {
+    typealias Value = ScopeState
+}
+
+extension FocusedValues {
+    var scopeState: ScopeState? {
+        get { self[FocusedScopeStateKey.self] }
+        set { self[FocusedScopeStateKey.self] = newValue }
+    }
+}
+
 // MARK: macOS menubar
 struct ScopeWorksCommands: Commands {
-    @FocusedObject var scopeState: ScopeState?
-    @Environment(\.openWindow) var open
+    @FocusedValue(\.scopeState) var scopeState
     var body: some Commands {
         
+        CommandGroup(before: .saveItem) {
+            Button("Save Image as") {
+                print("Snork button pressed.")
+            }
+            .keyboardShortcut("s", modifiers: .option)
+            .disabled(scopeState == nil)
+        }
         CommandGroup(before: .toolbar) {
             Toggle("Show controls", isOn:
                     Binding(
@@ -34,7 +52,8 @@ struct ScopeWorksCommands: Commands {
             Toggle("Show outlines", isOn:
                     Binding(
                         get: { scopeState?.showOutlines ?? false },
-                        set: { newValue in scopeState?.showOutlines = newValue }
+                        set: {
+                            newValue in scopeState?.showOutlines = newValue }
                     ))
             .keyboardShortcut("o", modifiers: .option)
             .disabled(scopeState == nil)

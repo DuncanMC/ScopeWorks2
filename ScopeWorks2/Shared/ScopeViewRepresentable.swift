@@ -4,8 +4,16 @@ import MetalKit
 struct ScopeViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
 
+    var allowImageExport: Bool
+    weak var metalView: MTKView? = nil
     @ObservedObject var scopeState: ScopeState
 
+    init (scopeState: ScopeState, allowImageExport: Bool = false) {
+        self.scopeState = scopeState
+        self.allowImageExport = allowImageExport
+    }
+    
+        
     
     func makeCoordinator() -> ScopeRenderer {
         ScopeRenderer(scopeState: scopeState)
@@ -17,7 +25,11 @@ struct ScopeViewRepresentable: NSViewRepresentable {
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator
         mtkView.colorPixelFormat = .bgra8Unorm
+        mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
+        if allowImageExport {
+            scopeState.metalView = mtkView
+        }
         return mtkView
     }
 
@@ -34,9 +46,17 @@ struct ScopeViewRepresentable: UIViewRepresentable {
 
     typealias ViewType = MTKView
 
-    @StateObject var scopeState: ScopeState
+    var allowImageExport: Bool
+    weak var metalView: MTKView? = nil
 
+    @ObservedObject var scopeState: ScopeState
 
+    init (scopeState: ScopeState, allowImageExport: Bool = false) {
+        self.scopeState = scopeState
+        self.allowImageExport = allowImageExport
+    }
+
+    
     func makeCoordinator() -> ScopeRenderer {
         ScopeRenderer(scopeState: scopeState)
     }
@@ -51,7 +71,11 @@ extension ScopeViewRepresentable {
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.delegate = context.coordinator
         mtkView.colorPixelFormat = .bgra8Unorm
+        mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
+        if allowImageExport {
+            scopeState.metalView = mtkView
+        }
         return mtkView
     }
     
