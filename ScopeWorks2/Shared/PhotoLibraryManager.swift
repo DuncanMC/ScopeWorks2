@@ -55,69 +55,10 @@ class PhotoLibraryManager {
 
 
     func setupAlbumOnFirstLaunch() async throws {
-        // Check if already done
-        
-        if let bundlePath = Bundle.main.resourceURL?.path as String? {
-            print("Bundle path: \(bundlePath)")
-        }
-        #if os(macOS)
-            // TODO: Make this code create the "ScopeWorks Source images" folder in Documents.
-            return
-        #else
-//        UserDefaults.standard.set(false, forKey: "albumCreated")
-
-        guard !UserDefaults.standard.bool(forKey: "albumCreated") else { return }
-        do {
-            if let data = UserDefaults.standard.data(forKey: "imageInfo") {
-                imageInfo = try JSONDecoder().decode([ImageLibraryInfo].self, from: data)
-            }
-        } catch {
-            print("Error reading image data. Error = \(error)")
-        }
-
-        // Request authorization
-        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-        guard status == .authorized || status == .limited else {
-            throw PhotoError.notAuthorized
-        }
-
-        // Create album if it doesn't exist
-        let album = try await getOrCreateAlbum(named: albumName)
-
-        let imageURLs = imageURLSFromBundle()
-        // Add images to album
-        try await PHPhotoLibrary.shared().performChanges {
-            let addRequest = PHAssetCollectionChangeRequest(for: album)
-            for imageURL in imageURLs {
-                guard let imageData = try? Data(contentsOf: imageURL)  else { continue }
-
-                #if os(macOS)
-                    guard let image = NSImage(data: imageData) else { continue }
-                #else
-                    guard let image = UIImage(data: imageData) else { continue }
-                #endif
-                let creationRequest = PHAssetChangeRequest.creationRequestForAsset(from: image)
-                if let placeholder = creationRequest.placeholderForCreatedAsset {
-                    addRequest?.addAssets([placeholder] as NSArray)
-                    let identifier = placeholder.localIdentifier
-                    // TODO: add the filename, modified date, and identifier for this image to UserDefaults
-                    
-                    let imageInfo = ImageLibraryInfo(
-                        filename: imageURL.lastPathComponent,
-                        fileID: identifier,
-                        modDate: Date())
-                    self.imageInfo.append(imageInfo)
-                }
-            }
-        }
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        guard let imageInfo = try? encoder.encode(self.imageInfo) else { return }
-        UserDefaults.standard.set(imageInfo, forKey: "imageInfo")
-        UserDefaults.standard.set(true, forKey: "albumCreated")
-#endif
-
+        // The first-launch source image setup is now handled by FolderBookmarkManager.
+        // This method is kept for backward compatibility with existing ScopeState init code.
+        // On both platforms, bundle images are copied to the user-selected source images
+        // folder during the FirstLaunchSetupView flow.
     }
 
     private func getOrCreateAlbum(named name: String) async throws -> PHAssetCollection {

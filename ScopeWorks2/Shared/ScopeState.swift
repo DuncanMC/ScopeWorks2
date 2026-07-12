@@ -47,8 +47,27 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Camera support (transient, not persisted)
     var cameraManager: CameraManager?
-    var imageSourceMode: ImageSourceMode = .staticImage
+    var imageSourceMode: ImageSourceMode = .staticImage {
+        didSet {
+            updateImageSourceDescription()
+        }
+    }
+    
+    func updateImageSourceDescription() {
+        if imageSourceMode == .staticImage {
+            guard let fileName = imageSourceInfo.fullURL?.lastPathComponent else {
+                imageSourceDescription = ""
+                return
+            }
+            imageSourceDescription =  "Filename: \"\(fileName)\""
+        } else {
+            imageSourceDescription =  "Image source: \(cameraDescription)"
+        }
+
+    }
+
     // Camera textures have top-left origin; static images use bottom-left (via MTKTextureLoader)
+    var cameraDescription: String = ""
     var flipTextureY: Bool = false
 
     // MARK: - External display (transient, not persisted)
@@ -60,6 +79,7 @@ class ScopeState: ObservableObject, Codable {
         case imageID
         case imageURL
         case bookmarkData
+        case imageSourceInfo
         case zoom
         case radiusScale
         case backgroundColor
@@ -166,61 +186,258 @@ class ScopeState: ObservableObject, Codable {
         }
         
         resolveICloudURL()
+        
+        // If we have an imageSourceInfo from a decoded document, resolve it now
+        if imageSourceInfo.sourceType != .none && selectedImageData == nil {
+            resolveImageFromSourceInfo()
+        }
     }
+    
+    /// Attempts to load the image described by imageSourceInfo.
+    /// Tries bookmark → full URL → relative path from source images folder.
+    /// Sets needsImageRelocation if all resolution attempts fail.
+    func resolveImageFromSourceInfo() {
+        defer {
+            updateImageSourceDescription()
+        }
+        switch imageSourceInfo.sourceType {
+        case .file:
+            // 1. Try bookmark data (macOS security-scoped)
+            #if os(macOS)
+            if let bmData = imageSourceInfo.bookmarkData {
+                var isStale = false
+                if let url = try? URL(resolvingBookmarkData: bmData,
+                                      options: [.withSecurityScope],
+                                      bookmarkDataIsStale: &isStale) {
+                    _ = url.startAccessingSecurityScopedResource()
+                    self.imageURL = url
+                    return
+                }
+            }
+            #endif
+            
+            // 2. Try full URL
+            if let url = imageSourceInfo.fullURL,
+               FileManager.default.fileExists(atPath: url.path) {
+                self.imageURL = url
+                return
+            }
+            
+            // 3. Try relative path from source images folder
+            if let relativePath = imageSourceInfo.relativePathFromSourceImages,
+               let url = FolderBookmarkManager.shared.resolveRelativePath(relativePath) {
+                self.imageURL = url
+                return
+            }
+            
+            // 4. Could not resolve — search via Spotlight and flag for relocation
+            print("Image not found: \(imageSourceInfo.filename ?? "unknown"). Needs relocation.")
+            needsImageRelocation = true
+            searchForMissingImage()
+            
+        case .photoLibrary:
+            #if os(iOS)
+            if let imageID = imageSourceInfo.photoLibraryID {
+                self.selectedImageID = imageID
+                let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
+                if let asset = assets.firstObject {
+                    PHImageManager.default().requestImageDataAndOrientation(for: asset, options: nil) { data, _, _, _ in
+                        if let data { self.selectedImageData = data }
+                    }
+                    return
+                }
+            }
+            #endif
+            // On macOS (or if photo not found on iOS), try relative path as fallback
+            if let relativePath = imageSourceInfo.relativePathFromSourceImages,
+               let url = FolderBookmarkManager.shared.resolveRelativePath(relativePath) {
+                self.imageURL = url
+                return
+            }
+            
+            print("Photo library image not found. Needs relocation.")
+            needsImageRelocation = true
+            searchForMissingImage()
+            
+        case .bundleDefault:
+            if let filename = imageSourceInfo.filename,
+               let url = Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: "ScopeWorks source images") {
+                self.imageURL = url
+                return
+            }
+            
+        case .none:
+            break
+        }
+    }
+    
+    // MARK: - Image relocation via Spotlight search
+    
+    /// Searches for the missing image file and shows the relocation alert.
+    /// On macOS, uses Spotlight (NSMetadataQuery) to try to find the file first.
+    /// On iOS, shows the alert immediately (Spotlight can't search the broad file system).
+    func searchForMissingImage() {
+        guard let filename = imageSourceInfo.filename else {
+            postRelocationReady()
+            return
+        }
+        
+        #if os(macOS)
+        // Defer to main run loop — query.start() requires an active run loop,
+        // and this may be called during init(from:) decoding.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            let query = NSMetadataQuery()
+            query.predicate = NSPredicate(format: "%K ==[cd] %@", NSMetadataItemFSNameKey, filename)
+            query.searchScopes = [
+                NSMetadataQueryLocalComputerScope,
+                NSMetadataQueryIndexedLocalComputerScope
+            ]
+            
+            NotificationCenter.default.addObserver(
+                forName: .NSMetadataQueryDidFinishGathering,
+                object: query,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self else { return }
+                query.stop()
+                
+                print("Spotlight search completed. Results: \(query.resultCount)")
+                if query.resultCount > 0,
+                   let item = query.result(at: 0) as? NSMetadataItem {
+                    if let path = item.value(forAttribute: NSMetadataItemPathKey) as? String {
+                        self.relocatedImageCandidate = URL(fileURLWithPath: path)
+                        print("Spotlight found missing image at: \(path)")
+                    } else if let url = item.value(forAttribute: NSMetadataItemURLKey) as? URL {
+                        self.relocatedImageCandidate = url
+                        print("Spotlight found missing image (via URL) at: \(url.path)")
+                    } else {
+                        self.relocatedImageCandidate = nil
+                        print("Spotlight found a result but could not extract its path")
+                    }
+                } else {
+                    self.relocatedImageCandidate = nil
+                    print("Spotlight did not find '\(filename)'")
+                }
+                
+                self.metadataQuery = nil
+                self.postRelocationReady()
+            }
+            
+            self.metadataQuery = query
+            let started = query.start()
+            print("Spotlight search for '\(filename)' started: \(started)")
+            
+            // Fallback timeout
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                guard let self, self.metadataQuery != nil else { return }
+                print("Spotlight search timed out for '\(filename)'")
+                self.metadataQuery?.stop()
+                self.metadataQuery = nil
+                self.postRelocationReady()
+            }
+        }
+        #else
+        // On iOS, show the alert after a brief delay so the view has time to attach.
+        print("Image '\(filename)' not found. Prompting user to locate it.")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.postRelocationReady()
+        }
+        #endif
+    }
+    
+    private func postRelocationReady() {
+        NotificationCenter.default.post(name: ScopeState.relocationReadyNotification, object: self)
+    }
+    
+    /// Applies a user-selected or Spotlight-found image URL as the document's source image.
+    /// Reads file data while security-scoped access is active, then updates all relevant state.
+    func applyRelocatedImage(url: URL) {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        
+        guard let data = try? Data(contentsOf: url) else {
+            print("Failed to read relocated image data from \(url.lastPathComponent)")
+            return
+        }
+        
+        self.imageURL = url
+        self.selectedImageData = data
+        
+        #if os(macOS)
+        let bmData = try? url.bookmarkData(
+            options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess])
+        #else
+        let bmData = try? url.bookmarkData()
+        #endif
+        self.bookmarkData = bmData
+        
+        if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
+            self.isHEIC = typeID == UTType.heic.identifier
+        }
+        
+        self.imageSourceInfo = .fromFile(url: url, bookmarkData: bmData)
+        self.needsImageRelocation = false
+        self.relocatedImageCandidate = nil
+        
+        self.switchToStaticImage()
+    }
+    
     // MARK: - Initializer for decoding
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        #if os(macOS)
-        self.bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
-        if let data = self.bookmarkData {
-            //                var fileURL: URL? = nil
-            //                let documentController: NSDocumentController = .shared
-            //                if let document = documentController.currentDocument {
-            //                    fileURL = document.fileURL
-            //                }
-            //
-            var bookmarkDataIsStale: Bool = false
-            do {
-                let imageURL = try URL(resolvingBookmarkData: data,
-                                       options: .withSecurityScope,
-                                       //                                           relativeTo: fileURL,
-                                       bookmarkDataIsStale: &bookmarkDataIsStale)
-                imageURL.startAccessingSecurityScopedResource()
-                if bookmarkDataIsStale {
-                    // TODO: Add code to handle bookmarkDataIsStale ==  true
+        // Try new-format imageSourceInfo first; fall back to legacy fields
+        if let info = try container.decodeIfPresent(ImageSourceInfo.self, forKey: .imageSourceInfo),
+           info.sourceType != .none {
+            self.imageSourceInfo = info
+            // Defer image resolution to after all properties are set (called below via doInitSetup)
+        } else {
+            // Legacy fallback: read old bookmarkData / imageURL / imageID fields
+            // and backfill imageSourceInfo
+            #if os(macOS)
+            self.bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
+            if let data = self.bookmarkData {
+                var bookmarkDataIsStale: Bool = false
+                do {
+                    let resolvedURL = try URL(resolvingBookmarkData: data,
+                                              options: .withSecurityScope,
+                                              bookmarkDataIsStale: &bookmarkDataIsStale)
+                    _ = resolvedURL.startAccessingSecurityScopedResource()
+                    self.imageURL = resolvedURL
+                } catch {
+                    print("Error loading bookmark: \(error)")
                 }
-                self.imageURL = imageURL
-            
-            } catch {
-                print("Error loading bookmark: \(error)")
             }
-        }
-        if self.imageURL == nil {
-            self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
-        }
-        #else
-        if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
-            print("in ScopeState.init(from:), found imageID: \(imageID)")
-            self.selectedImageID = imageID
-            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
-            if let asset = assets.firstObject {
-                let imageManager = PHImageManager.default()
-                imageManager.requestImageDataAndOrientation(for: asset, options: nil) { data, uti, orientation, info in
-                    if let data {
-                        self.selectedImageData = data
-                    }
-                }
-            } else {
+            if self.imageURL == nil {
                 self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
             }
-                                                    
-        } else {
-            print("in ScopeState.init(from:), imageID = nil")
-
+            // Backfill imageSourceInfo from legacy fields
+            if let url = self.imageURL {
+                self.imageSourceInfo = .fromFile(url: url, bookmarkData: self.bookmarkData)
+            }
+            #else
+            if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
+                print("in ScopeState.init(from:), found imageID: \(imageID)")
+                self.selectedImageID = imageID
+                self.imageSourceInfo = .fromPhotoLibrary(id: imageID)
+                let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
+                if let asset = assets.firstObject {
+                    let imageManager = PHImageManager.default()
+                    imageManager.requestImageDataAndOrientation(for: asset, options: nil) { data, uti, orientation, info in
+                        if let data {
+                            self.selectedImageData = data
+                        }
+                    }
+                } else {
+                    self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+                }
+            } else {
+                print("in ScopeState.init(from:), imageID = nil")
+            }
+            #endif
         }
-
-        #endif
 
         self.polygonSides = try container.decode(Int.self, forKey: .polygonSides)
 
@@ -260,6 +477,9 @@ class ScopeState: ObservableObject, Codable {
         //print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
+        // New format
+        try container.encode(imageSourceInfo, forKey: .imageSourceInfo)
+        // Legacy fields for backward compat with older app versions
         try container.encode(bookmarkData, forKey: .bookmarkData)
         try container.encode(selectedImageID, forKey: .imageID)
         try container.encode(imageURL, forKey: .imageURL)
@@ -399,9 +619,7 @@ class ScopeState: ObservableObject, Codable {
             if let imageURL {
                 do {
                     let data = try Data(contentsOf: imageURL)
-                    Task { @MainActor in
-                        selectedImageData = data
-                    }
+                    selectedImageData = data
                 } catch {
                     print("Error loading image data. error = \(error)")
                 }
@@ -457,6 +675,26 @@ class ScopeState: ObservableObject, Codable {
             imageUUID = UUID()
         }
     }
+    
+    /// Consolidated image source metadata, persisted in each .KSp2 document.
+    var imageSourceInfo = ImageSourceInfo() {
+        didSet {
+            print("In ScopeState.imageSourceInfo.didSet")
+        }
+    }
+    @Published var imageSourceDescription: String = ""
+    
+            
+    
+    /// Set to true when a document's image could not be resolved and needs user help.
+    var needsImageRelocation = false
+    /// URL found by Spotlight search, if any. Used to pre-navigate the file picker.
+    var relocatedImageCandidate: URL?
+    /// Retained NSMetadataQuery for Spotlight file search.
+    private var metadataQuery: NSMetadataQuery?
+    
+    /// Notification posted when the relocation search finishes and the alert should be shown.
+    static let relocationReadyNotification = Notification.Name("ScopeStateRelocationReady")
 
 
     @Published var selectedScopeType: Int = 0
@@ -471,6 +709,8 @@ class ScopeState: ObservableObject, Codable {
     
     
     @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
+    
+    var aspectAdjustment: CGSize = .zero
     var imageViewSize: CGSize = CGSizeZero {
         willSet {
             //print("about to change imageViewSize")
@@ -492,6 +732,14 @@ class ScopeState: ObservableObject, Codable {
             trianglePoints = calcTrianglePoints()
             texSize = newSize
             texAspect = Float(texWidth / texHeight)
+            if texAspect > 1 {
+                aspectAdjustment.width = texWidth / texHeight
+                aspectAdjustment.height = 1.0
+            } else {
+                aspectAdjustment.width = texWidth / texHeight
+                aspectAdjustment.height = 1.0
+            }
+
         }
     }
 
@@ -557,8 +805,8 @@ class ScopeState: ObservableObject, Codable {
 
     func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {
         return CGPoint(
-            x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(imageViewSize.width))),
-            y: imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(imageViewSize.height))))
+            x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(imageViewSize.width)) * 1),
+            y: (imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(imageViewSize.height)) )) * CGFloat(1))
     }
 
     func viewPointToMetal(_ viewPoint: CGPoint ) -> SIMD2<Float> {
@@ -645,7 +893,7 @@ class ScopeState: ObservableObject, Codable {
             print("trianglePoint3 = \(trianglePoint3)")
         }
         let aspect = imageViewSize.width / imageViewSize.height
-        let adjusted = CGPoint(x: startLocation.x * aspect, y: startLocation.y)
+        let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
         //print("Adjusted tap point = \(adjusted)")
         let result = matchPoint(adjusted, inPoints: points)
         return result
@@ -879,102 +1127,25 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
-    // MARK: - Auto-save with security-scoped bookmark (both platforms)
-    private static let iCloudFolderBookmarkKey = "iCloudScopeWorksFolderBookmark"
-    #if os(iOS)
-    private var folderPickerDelegate: FolderPickerDelegate?
-    #endif
+    // MARK: - Auto-save using FolderBookmarkManager
     
-    /// Auto-saves to a bookmarked folder. On first use, prompts the user
-    /// to select the ScopeWorks2 folder (one-time). Subsequent saves go directly.
+    /// Auto-saves to the "ScopeWorks images" folder configured during first launch.
+    /// Falls back to a save panel if the snapshots folder bookmark is unavailable.
     private func autoSaveToBookmarkedFolder(image: CGImage, filename: String, filetype: UTType) {
-        // Try to resolve a previously saved bookmark
-        if let data = UserDefaults.standard.data(forKey: Self.iCloudFolderBookmarkKey) {
-            var isStale = false
-            #if os(macOS)
-            let options: URL.BookmarkResolutionOptions = [.withSecurityScope]
-            #else
-            let options: URL.BookmarkResolutionOptions = []
-            #endif
-            if let folderURL = try? URL(resolvingBookmarkData: data, options: options, bookmarkDataIsStale: &isStale) {
-                let accessing = folderURL.startAccessingSecurityScopedResource()
-                defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
-                
-                if isStale {
-                    #if os(macOS)
-                    let bmOptions: URL.BookmarkCreationOptions = [.withSecurityScope]
-                    #else
-                    let bmOptions: URL.BookmarkCreationOptions = []
-                    #endif
-                    if let newData = try? folderURL.bookmarkData(options: bmOptions) {
-                        UserDefaults.standard.set(newData, forKey: Self.iCloudFolderBookmarkKey)
-                    }
-                }
-                
-                let fileURL = folderURL.appendingPathComponent(filename)
-                writeImage(image, to: fileURL, type: filetype)
-                return
-            }
-        }
+        let manager = FolderBookmarkManager.shared
         
-        // No valid bookmark — ask the user to pick the folder once
-        promptForSnapshotFolder(image: image, filename: filename, filetype: filetype)
-    }
-    
-    /// Presents a folder picker so the user can select the iCloud ScopeWorks2 folder.
-    /// Saves a security-scoped bookmark for future auto-saves.
-    private func promptForSnapshotFolder(image: CGImage, filename: String, filetype: UTType) {
-        #if os(macOS)
-        let openPanel = NSOpenPanel()
-        openPanel.canChooseFiles = false
-        openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
-        openPanel.message = "Select the folder for auto-saving snapshots (e.g. ScopeWorks2 on iCloud Drive)"
-        openPanel.prompt = "Select Folder"
-        
-        openPanel.begin { [weak self] result in
-            guard let self, result == .OK, let folderURL = openPanel.url else { return }
+        if let snapshotsURL = manager.snapshotsURL {
+            let accessing = snapshotsURL.startAccessingSecurityScopedResource()
+            defer { if accessing { snapshotsURL.stopAccessingSecurityScopedResource() } }
             
-            if let bookmarkData = try? folderURL.bookmarkData(options: [.withSecurityScope]) {
-                UserDefaults.standard.set(bookmarkData, forKey: Self.iCloudFolderBookmarkKey)
-                print("Saved folder bookmark for auto-save: \(folderURL.path)")
-            }
-            
-            let fileURL = folderURL.appendingPathComponent(filename)
-            self.writeImage(image, to: fileURL, type: filetype)
+            let fileURL = snapshotsURL.appendingPathComponent(filename)
+            writeImage(image, to: fileURL, type: filetype)
+        } else {
+            // Snapshots folder not configured — fall back to save panel
+            print("Snapshots folder not configured — falling back to save panel")
+            let defaultFilename = (filename as NSString).deletingPathExtension
+            showSavePanel(image: image, defaultFilename: defaultFilename, directoryURL: nil, filetype: filetype)
         }
-        #elseif os(iOS)
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder])
-        
-        let delegate = FolderPickerDelegate()
-        delegate.onPick = { [weak self] folderURL in
-            guard let self else { return }
-            let accessing = folderURL.startAccessingSecurityScopedResource()
-            defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
-            
-            if let bookmarkData = try? folderURL.bookmarkData() {
-                UserDefaults.standard.set(bookmarkData, forKey: Self.iCloudFolderBookmarkKey)
-                print("Saved folder bookmark for auto-save")
-            }
-            
-            let fileURL = folderURL.appendingPathComponent(filename)
-            self.writeImage(image, to: fileURL, type: filetype)
-            self.folderPickerDelegate = nil
-        }
-        self.folderPickerDelegate = delegate
-        picker.delegate = delegate
-        
-        if let windowScene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
-           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
-           let rootVC = keyWindow.rootViewController {
-            var presentingVC = rootVC
-            while let presented = presentingVC.presentedViewController {
-                presentingVC = presented
-            }
-            presentingVC.present(picker, animated: true)
-        }
-        #endif
     }
     
     private func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
@@ -1061,22 +1232,5 @@ class ScopeState: ObservableObject, Codable {
     static  var snapshotFileTypeIndex: Int = Int(UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue))
 
 }
-
-// MARK: - iOS Folder Picker Delegate
-#if os(iOS)
-/// Delegate for the one-time folder picker used to establish a security-scoped bookmark.
-private class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
-    var onPick: ((URL) -> Void)?
-    
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first else { return }
-        onPick?(url)
-    }
-    
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        onPick = nil
-    }
-}
-#endif
 
 

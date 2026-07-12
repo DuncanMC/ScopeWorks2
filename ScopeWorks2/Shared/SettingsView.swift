@@ -22,6 +22,8 @@ var settingsChangedNotification = Notification.Name(rawValue: "settingsChanged")
 
 enum UserDefaultsKeys: String {
     case snapshotFileType
+    case folderSetupComplete
+    case lastUsedImageDirectoryBookmark
 }
 
 
@@ -36,6 +38,7 @@ struct SettingsView: View {
     }
     
     var doneButtonAction: () -> Void
+    @State private var showingFolderSetup = false
     
     
     @AppStorage(UserDefaultsKeys.snapshotFileType.rawValue) var snapshotFileType: Int = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
@@ -74,7 +77,8 @@ struct SettingsView: View {
                 #endif
                 Spacer()
                 VStack(alignment: .leading, spacing: 30) {
-                    Text("Snork")
+                    Text("Snapshots")
+                        .font(.headline)
                         .padding([.leading, .trailing], 50)
                     HStack {
                         Text("Snapshot filetype")
@@ -95,12 +99,30 @@ struct SettingsView: View {
                         }
                         .labelsHidden()
                         .frame(minWidth: 150, alignment: .leading)
-                        .padding(.leading, snapshotTypePickerLeading) //xxx
+                        .padding(.leading, snapshotTypePickerLeading)
                         Spacer()
                     }
                         .frame(maxHeight: 25)
                         .frame(minWidth: 250)
 
+                    Divider()
+                        .padding(.horizontal, 20)
+
+                    Text("Folders")
+                        .font(.headline)
+                        .padding([.leading, .trailing], 50)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        folderStatusRow(label: "Source Images", url: FolderBookmarkManager.shared.sourceImagesURL)
+                        folderStatusRow(label: "Documents", url: FolderBookmarkManager.shared.documentsURL)
+                        folderStatusRow(label: "Snapshots", url: FolderBookmarkManager.shared.snapshotsURL)
+                    }
+                    .padding(.leading, snapshotTypeTitleLeading)
+
+                    Button("Re-configure Folders...") {
+                        showingFolderSetup = true
+                    }
+                    .padding(.leading, snapshotTypeTitleLeading)
                 }
                 Spacer()
                 Spacer()
@@ -115,7 +137,43 @@ struct SettingsView: View {
             }
 #endif
 
-        }    }
+        }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showingFolderSetup) {
+            FirstLaunchSetupView(
+                folderManager: FolderBookmarkManager.shared,
+                onComplete: {
+                    showingFolderSetup = false
+                }
+            )
+        }
+        #else
+        .sheet(isPresented: $showingFolderSetup) {
+            FirstLaunchSetupView(
+                folderManager: FolderBookmarkManager.shared,
+                onComplete: {
+                    showingFolderSetup = false
+                }
+            )
+            .frame(minWidth: 500, minHeight: 400)
+        }
+        #endif
+    }
+
+    private func folderStatusRow(label: String, url: URL?) -> some View {
+        HStack {
+            Text(label)
+                .frame(minWidth: 120, alignment: .leading)
+            if let url = url {
+                Text(url.lastPathComponent)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            } else {
+                Text("Not configured")
+                    .foregroundStyle(.red)
+            }
+        }
+    }
 }
 
 //#Preview {

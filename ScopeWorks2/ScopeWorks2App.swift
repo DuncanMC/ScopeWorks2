@@ -16,6 +16,14 @@ struct ScopeWorks2App: App {
             print("BundlePath = \(bundlePath)")
             print("----------------------------")
         }
+        
+        // On subsequent launches, resolve all folder bookmarks so they're
+        // ready before any document opens.
+        if UserDefaults.standard.bool(forKey: "folderSetupComplete") {
+            FolderBookmarkManager.shared.resolveAllBookmarks()
+            // Copy any new bundle images added in app updates
+            FolderBookmarkManager.shared.copyBundleImagesToSourceFolder()
+        }
     }
     
 //    @UIApplicationDelegateAdaptor private var appDelegate: MyAppDelegate
@@ -69,7 +77,6 @@ struct ScopeWorks2App: App {
                 .focusedSceneValue(\.scopeState, configuration.document.scopeState)
         }
         .defaultSize(width: 1800, height: 1125)
-
         .commands {
             ScopeWorksCommands()
         }

@@ -21,6 +21,12 @@ enum ActiveModal: Identifiable {
 struct ContentView: View {
     
     @State private var presentedModal: ActiveModal?
+    @AppStorage("folderSetupComplete") private var folderSetupComplete = false
+    @State private var showRelocationAlert = false
+    @State private var showRelocationPicker = false
+    #if os(iOS)
+    @State private var relocationPickerDelegate: RelocationFilePickerDelegate?
+    #endif
 
 
     var imageSourceLeading: CGFloat {
@@ -204,6 +210,7 @@ struct ContentView: View {
                         .background(Color.white)
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .gesture(ExclusiveGesture(dragGesture, rotateGesture))
+                        .border(.blue, width: 1)
                     //                        .gesture(rotateGesture)
                 }
                 ZStack {
@@ -222,7 +229,6 @@ struct ContentView: View {
             }
             // xxx
             if scopeState.showControls && !isFullScreen {
-                ZStack {
                     HStack(spacing: 30) {
                         VStack(alignment: .leading, spacing: 20) {
                             
@@ -349,7 +355,8 @@ struct ContentView: View {
                         }
                         
                         .padding(.leading, 10)
-                        VStack(alignment: .leading, spacing: 20) { //Sliders
+                        // MARK: - Sliders
+                        VStack(alignment: .leading, spacing: 20) {
                             // Rotation speed
                             HStack {
                                 Text("Rotation speed: \(rotationString)")
@@ -381,33 +388,52 @@ struct ContentView: View {
                                     .frame(minWidth: 150 )
                                 
                             }
+                            // Put filename here
+                            Text(scopeState.imageSourceDescription)
+                                .frame(height: 25)
+//                            Spacer()
                         }
                         Spacer()
                     }
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+#if os(iOS)
+                    .overlay(alignment: .bottomTrailing) {
+                                                    Button {
+                                                        print("Settings button tapped")
+                                                        presentedModal = .settings
+                        
+                                                    } label:  {
+                                                        Image(systemName: "gear")
+                                                            .resizable(resizingMode: .stretch)
+                                                            .frame(width: 30, height: 30)
+                                                    }
+                                                    .padding([.trailing, .bottom])
+                                                    .padding(.top, 25)
+                                                    .buttonStyle(.borderless)
+                    }
+            #endif
                     #if os(iOS)
                     //Settings button
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Button {
-                                print("Settings button tapped")
-                                presentedModal = .settings
-
-                            } label:  {
-                                Image(systemName: "gear")
-                                    .resizable(resizingMode: .stretch)
-                                    .frame(width: 30, height: 30)
-                            }
-                            .padding([.trailing, .bottom])
-                            .buttonStyle(.borderless)
-
-                        }
-                    }
+//                    VStack {
+//                        Spacer()
+//                        HStack {
+//                            Spacer()
+//                            Button {
+//                                print("Settings button tapped")
+//                                presentedModal = .settings
+//
+//                            } label:  {
+//                                Image(systemName: "gear")
+//                                    .resizable(resizingMode: .stretch)
+//                                    .frame(width: 30, height: 30)
+//                            }
+//                            .padding([.trailing, .bottom])
+//                            .buttonStyle(.borderless)
+//
+//                        }
+//                    }
 
                     #endif
-                }
                 
             }
         }
@@ -424,6 +450,40 @@ struct ContentView: View {
                 })
             }
         }
+        .sheet(isPresented: Binding(
+            get: { !folderSetupComplete },
+            set: { if !$0 { folderSetupComplete = true } }
+        )) {
+            FirstLaunchSetupView(
+                folderManager: FolderBookmarkManager.shared,
+                onComplete: { folderSetupComplete = true }
+            )
+            .interactiveDismissDisabled()
+            #if os(macOS)
+            .frame(minWidth: 500, minHeight: 400)
+            #endif
+        }
+        .alert("Image Not Found", isPresented: $showRelocationAlert) {
+            Button("Locate...") {
+                openRelocationPicker()
+            }
+            Button("Skip", role: .cancel) {
+                scopeState.needsImageRelocation = false
+                scopeState.relocatedImageCandidate = nil
+            }
+        } message: {
+            if let candidate = scopeState.relocatedImageCandidate {
+                Text("The source image '\(scopeState.imageSourceInfo.filename ?? "unknown")' was found in \(candidate.deletingLastPathComponent().lastPathComponent). Click Locate to open it.")
+            } else {
+                Text("The source image '\(scopeState.imageSourceInfo.filename ?? "unknown")' could not be found. Click Locate to find it.")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ScopeState.relocationReadyNotification)) { notification in
+            if let state = notification.object as? ScopeState, state === scopeState {
+                showRelocationAlert = true
+            }
+        }
+
 
 #if os(iOS)
 // MARK: hidden iOS menubar for keyboard shortcuts.
@@ -441,12 +501,6 @@ struct ContentView: View {
                     .keyboardShortcut("r", modifiers: .option)
                 Toggle("ANimate (↩)", isOn: $scopeState.animate)
                     .keyboardShortcut(.defaultAction)
-
-                /*
-                Toggle("xxx (⌥xxx)", isOn: $scopeState.xxx)
-                 */
-
-
             }
             .frame(width: 0, height: 0)
             .opacity(0)
@@ -501,17 +555,79 @@ struct ContentView: View {
                     Toggle("Show outlines (⌥O)", isOn: $scopeState.showOutlines)
                     Toggle("Flip alternates (⌥f)", isOn: $scopeState.flipAlternates)
                     Toggle("Draw with reflection (⌥r)", isOn: $scopeState.drawWithReflection)
-                    /*
-                    Toggle("xxx (⌥xxx)", isOn: $scopeState.xxx)
-                     */
                 }
             }
         }
 #endif
 
     }
+    
+    // MARK: - Image relocation file picker
+    
+    private func openRelocationPicker() {
+        let startDirectory: URL? = scopeState.relocatedImageCandidate?.deletingLastPathComponent()
+            ?? FolderBookmarkManager.shared.sourceImagesURL
+        
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.jpeg, .png, .tiff, .heic].compactMap { $0 }
+        panel.allowsMultipleSelection = false
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.directoryURL = startDirectory
+        panel.contentMinSize = NSSize(width: 800, height: 500)
+        panel.message = "Select '\(scopeState.imageSourceInfo.filename ?? "the missing image")' to relink it"
+        panel.prompt = "Open"
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            scopeState.applyRelocatedImage(url: url)
+        }
+        #else
+        let types: [UTType] = [.jpeg, .png, .tiff, .heic].compactMap { $0 }
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
+        picker.allowsMultipleSelection = false
+        picker.modalPresentationStyle = .fullScreen
+        if let dir = startDirectory {
+            picker.directoryURL = dir
+        }
+        
+        let delegate = RelocationFilePickerDelegate()
+        delegate.onPick = { [weak scopeState] url in
+            scopeState?.applyRelocatedImage(url: url)
+        }
+        self.relocationPickerDelegate = delegate
+        picker.delegate = delegate
+        
+        if let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
+           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
+           let rootVC = keyWindow.rootViewController {
+            var presentingVC = rootVC
+            while let presented = presentingVC.presentedViewController {
+                presentingVC = presented
+            }
+            presentingVC.present(picker, animated: true)
+        }
+        #endif
+    }
 
 }
+
+// MARK: - iOS Relocation File Picker Delegate
+#if os(iOS)
+class RelocationFilePickerDelegate: NSObject, UIDocumentPickerDelegate {
+    var onPick: ((URL) -> Void)?
+    
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else { return }
+        onPick?(url)
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        onPick = nil
+    }
+}
+#endif
 
 struct PhotoPickerView: View {
     
