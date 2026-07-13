@@ -34,6 +34,7 @@ struct ScopeWorksCommands: Commands {
             .disabled(scopeState == nil)
         }
         CommandGroup(before: .toolbar) {
+
             Toggle("Show controls", isOn:
                     Binding(
                         get: { scopeState?.showControls ?? false },
@@ -84,7 +85,6 @@ struct ScopeWorksCommands: Commands {
             .keyboardShortcut("r", modifiers: .option)
             .disabled(scopeState == nil)
 
-            //↩
             Toggle("Animate", isOn:
                     Binding(
                         get: { scopeState?.animate ?? false },
@@ -92,6 +92,20 @@ struct ScopeWorksCommands: Commands {
                     ))
             .keyboardShortcut(.return, modifiers: [])
             .disabled(scopeState == nil)
+            // xxx
+            Button("Reverse Animation") {
+                print("Reverse animation menu item triggered.")
+                scopeState?.rotationSpeed *= -1
+                scopeState?.movementSpeed *= -1
+            }
+            .keyboardShortcut("r", modifiers: .command)
+            .disabled(scopeState == nil)
+
+            // return key = "↩"
+            //command key =  "⌘"
+            //option key = "⌥"
+            
+
 
             Divider()
 

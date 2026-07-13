@@ -57,8 +57,20 @@ struct FullScreenOverlayView: View {
 
     var body: some View {
         ZStack {
-            ScopeViewRepresentable(scopeState: scopeState, allowImageExport: true)
-                .ignoresSafeArea()
+            #if os(iOS) || os(iPadOS)
+                ScopeViewRepresentable(scopeState: scopeState,
+                                       allowImageExport: true)
+                .gesture(TwoFingerTapGesture {
+                    print("Two finger tap detected in full-screen view")
+                    scopeState.handleSnapshot()
+                })
+
+                    .ignoresSafeArea()
+            #else
+                ScopeViewRepresentable(scopeState: scopeState,
+                                       allowImageExport: true)
+                    .ignoresSafeArea()
+            #endif
 
             if overlayState.showButton {
                 VStack {
@@ -119,6 +131,31 @@ struct FullScreenOverlayView: View {
 #if os(iOS)
         .onTapGesture {
             overlayState.showExitButton()
+        }
+        .background {
+            VStack {
+                // iOS menu bar items for full screen overlay
+                Button("Reverse Animation (⌘R)") {
+                    scopeState.rotationSpeed *= -1
+                    scopeState.movementSpeed *= -1
+                }
+                .keyboardShortcut("r", modifiers: .command)
+
+                Toggle("Animate", isOn: $scopeState.animate)
+                    .keyboardShortcut(.defaultAction)
+                Toggle("Show controls", isOn: $scopeState.showControls)
+                    .keyboardShortcut("c", modifiers: .option)
+                Toggle("Show source image", isOn: $scopeState.showSourceImage)
+                    .keyboardShortcut("i", modifiers: .option)
+                Toggle("Show outlines", isOn: $scopeState.showOutlines)
+                    .keyboardShortcut("o", modifiers: .option)
+                Toggle("Flip alternates", isOn: $scopeState.flipAlternates)
+                    .keyboardShortcut("f", modifiers: .option)
+                Toggle("Draw with reflection", isOn: $scopeState.drawWithReflection)
+                    .keyboardShortcut("r", modifiers: .option)
+            }
+            .frame(width: 0, height: 0)
+            .opacity(0)
         }
 #endif
     }
@@ -299,15 +336,70 @@ class ExternalDisplayManager: NSObject, ObservableObject {
 
         externalWindow = window
 
-        // Monitor for Escape key and mouse movement.
+        // Monitor for keyboard shortcuts and mouse movement.
         // IMPORTANT: Never remove this monitor or close the window from within
         // this callback — defer via Task to avoid reentrancy crashes.
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .mouseMoved]) { [weak self] event in
-            if event.type == .keyDown && event.keyCode == 53 {
-                Task { @MainActor in
-                    self?.selectedDisplayID = nil
+            if event.type == .keyDown {
+                // Escape always closes the overlay
+                if event.keyCode == 53 {
+                    Task { @MainActor in
+                        self?.selectedDisplayID = nil
+                    }
+                    return nil
                 }
-                return nil
+
+                // Handle menu shortcuts when the overlay window is key,
+                // since it isn't part of a SwiftUI Scene and can't propagate
+                // focusedSceneValue to the app's Commands.
+                if event.window === self?.externalWindow {
+                    let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+                    // Return key — toggle animate
+                    if event.keyCode == 36 && flags.isEmpty {
+                        Task { @MainActor in self?.scopeState?.animate.toggle() }
+                        return nil
+                    }
+
+                    // Command+key shortcuts
+                    if flags == .command {
+                        switch event.charactersIgnoringModifiers {
+                        case "r":
+                            //"Reverse Animation" code for full-screen window.
+                            Task { @MainActor in
+                                self?.scopeState?.rotationSpeed *= -1
+                                self?.scopeState?.movementSpeed *= -1
+                            }
+                            return nil
+                        default:
+                            break
+                        }
+                    }
+
+                    // Option+key shortcuts
+                    if flags == .option {
+                        switch event.charactersIgnoringModifiers {
+                        case "c":
+                            Task { @MainActor in self?.scopeState?.showControls.toggle() }
+                            return nil
+                        case "i":
+                            Task { @MainActor in self?.scopeState?.showSourceImage.toggle() }
+                            return nil
+                        case "o":
+                            // "Show Outlines" code for full-screen window
+                            Task { @MainActor in self?.scopeState?.showOutlines.toggle() }
+                            return nil
+                        case "f":
+                            Task { @MainActor in self?.scopeState?.flipAlternates.toggle() }
+                            return nil
+                        case "r":
+                            Task { @MainActor in self?.scopeState?.drawWithReflection.toggle() }
+                            return nil
+                        default:
+                            break
+                        }
+                    }
+                }
             }
 
             if event.type == .mouseMoved, let window = self?.externalWindow {

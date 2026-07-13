@@ -214,9 +214,19 @@ struct ContentView: View {
                     //                        .gesture(rotateGesture)
                 }
                 ZStack {
+                    #if os(iOS) || os(iPadOS)
+                    ScopeViewRepresentable(scopeState: scopeState)
+                        .gesture(TwoFingerTapGesture {
+                            scopeState.handleSnapshot()
+                            print("Two finger tap detected")
+                        })
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                    #else
                     ScopeViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
+                    #endif
                     VStack {
                         Spacer()
                             .frame(maxHeight: .infinity)
@@ -341,12 +351,12 @@ struct ContentView: View {
                                 .padding(.leading, 7)
 #endif
                                 
-                                Button("Reverse animation (⌘R)") {
-                                    scopeState.rotationSpeed *= -1
-                                    scopeState.movementSpeed *= -1
-                                }
-                                .padding(.leading, reverseAnimationLeading)
-                                .keyboardShortcut("r", modifiers: [.command])
+//                                Button("Reverse animation (⌘R)") {
+//                                    scopeState.rotationSpeed *= -1
+//                                    scopeState.movementSpeed *= -1
+//                                }
+//                                .padding(.leading, reverseAnimationLeading)
+//                                .keyboardShortcut("r", modifiers: [.command])
                                 
                                 
                             }
@@ -487,6 +497,10 @@ struct ContentView: View {
 
 #if os(iOS)
 // MARK: hidden iOS menubar for keyboard shortcuts.
+// return key = "↩"
+//command key =  "⌘"
+//option key = "⌥"
+
         .background {
             VStack {
                 Toggle("Show controls", isOn: $scopeState.showControls)
@@ -499,8 +513,16 @@ struct ContentView: View {
                     .keyboardShortcut("f", modifiers: .option)
                 Toggle("Draw with reflection (⌥r)", isOn: $scopeState.drawWithReflection)
                     .keyboardShortcut("r", modifiers: .option)
-                Toggle("ANimate (↩)", isOn: $scopeState.animate)
+                Toggle("Animate (↩)", isOn: $scopeState.animate)
                     .keyboardShortcut(.defaultAction)
+                // Put "reverse animation" hidden button here.
+                Button("Reverse Animation (⌘R)") {
+                    scopeState.rotationSpeed *= -1
+                    scopeState.movementSpeed *= -1
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(scopeState == nil)
+
             }
             .frame(width: 0, height: 0)
             .opacity(0)
@@ -550,6 +572,10 @@ struct ContentView: View {
             ToolbarItem(placement: .secondaryAction) {
                 Menu("View Options", systemImage: "eye") {
                     Toggle("Animate (↩)", isOn: $scopeState.animate)
+                    Button("Reverse Animation (⌘R)") {
+                        scopeState.rotationSpeed *= -1
+                        scopeState.movementSpeed *= -1
+                    }
                     Toggle("Show controls (⌥C)", isOn: $scopeState.showControls)
                     Toggle("Show source image (⌥I)", isOn: $scopeState.showSourceImage)
                     Toggle("Show outlines (⌥O)", isOn: $scopeState.showOutlines)

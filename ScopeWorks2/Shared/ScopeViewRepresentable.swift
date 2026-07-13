@@ -1,5 +1,8 @@
 import SwiftUI
 import MetalKit
+#if os(iOS) || os(iPadOS)
+    import UIKit
+#endif
 #if os(macOS)
 struct ScopeViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
@@ -41,8 +44,23 @@ struct ScopeViewRepresentable: NSViewRepresentable {
 }
         
 #elseif os(iOS) || os(iPadOS)
+struct TwoFingerTapGesture: UIGestureRecognizerRepresentable {
+    var action: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let recognizer = UITapGestureRecognizer()
+        recognizer.numberOfTouchesRequired = 2
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
+        if recognizer.state == .recognized {
+            action()
+        }
+    }
+}
+
 struct ScopeViewRepresentable: UIViewRepresentable {
-    
 
     typealias ViewType = MTKView
 
@@ -56,7 +74,6 @@ struct ScopeViewRepresentable: UIViewRepresentable {
         self.allowImageExport = allowImageExport
     }
 
-    
     func makeCoordinator() -> ScopeRenderer {
         ScopeRenderer(scopeState: scopeState)
     }
