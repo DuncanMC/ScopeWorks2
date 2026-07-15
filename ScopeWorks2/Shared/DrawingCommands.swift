@@ -34,77 +34,23 @@ struct ScopeWorksCommands: Commands {
             .disabled(scopeState == nil)
         }
         CommandGroup(before: .toolbar) {
-
-            Toggle("Show controls", isOn:
-                    Binding(
-                        get: { scopeState?.showControls ?? false },
-                        set: { newValue in scopeState?.showControls = newValue }
+            ForEach(ScopeCommand.viewCommands) { command in
+                if command.isToggle, let kp = command.keyPath {
+                    Toggle(command.label, isOn: Binding(
+                        get: { scopeState?[keyPath: kp] ?? false },
+                        set: { scopeState?[keyPath: kp] = $0 }
                     ))
-            .keyboardShortcut("c", modifiers: .option)
-            .disabled(scopeState == nil)
-
-            Toggle("Show source image", isOn:
-                    Binding(
-                        get: { scopeState?.showSourceImage ?? false },
-                        set: { newValue in scopeState?.showSourceImage = newValue }
-                    ))
-            .keyboardShortcut("i", modifiers: .option)
-            .disabled(scopeState == nil)
-            Toggle("Show outlines", isOn:
-                    Binding(
-                        get: { scopeState?.showOutlines ?? false },
-                        set: {
-                            newValue in scopeState?.showOutlines = newValue }
-                    ))
-            .keyboardShortcut("o", modifiers: .option)
-            .disabled(scopeState == nil)
-            /*
-             Toggle("xxx", isOn:
-                     Binding(
-                         get: { scopeState?.xxx ?? false },
-                         set: { newValue in scopeState?.xxx = newValue }
-                     ))
-             .keyboardShortcut("xxx", modifiers: .xxx)
-             .disabled(scopeState == nil)
-
-             */
-
-            Toggle("Flip alternates", isOn:
-                    Binding(
-                        get: { scopeState?.flipAlternates ?? false },
-                        set: { newValue in scopeState?.flipAlternates = newValue }
-                    ))
-            .keyboardShortcut("f", modifiers: .option)
-            .disabled(scopeState == nil)
-
-            Toggle("Draw with reflection", isOn:
-                    Binding(
-                        get: { scopeState?.drawWithReflection ?? false },
-                        set: { newValue in scopeState?.drawWithReflection = newValue }
-                    ))
-            .keyboardShortcut("r", modifiers: .option)
-            .disabled(scopeState == nil)
-
-            Toggle("Animate", isOn:
-                    Binding(
-                        get: { scopeState?.animate ?? false },
-                        set: { newValue in scopeState?.animate = newValue }
-                    ))
-            .keyboardShortcut(.return, modifiers: [])
-            .disabled(scopeState == nil)
-            // xxx
-            Button("Reverse Animation") {
-                print("Reverse animation menu item triggered.")
-                scopeState?.rotationSpeed *= -1
-                scopeState?.movementSpeed *= -1
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    .disabled(scopeState == nil)
+                } else {
+                    Button(command.label) {
+                        guard let scopeState else { return }
+                        command.performAction(on: scopeState)
+                    }
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    .disabled(scopeState == nil)
+                }
             }
-            .keyboardShortcut("r", modifiers: .command)
-            .disabled(scopeState == nil)
-
-            // return key = "↩"
-            //command key =  "⌘"
-            //option key = "⌥"
-            
 
 
             Divider()

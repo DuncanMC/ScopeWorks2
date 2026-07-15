@@ -26,8 +26,6 @@ struct ScopeWorks2App: App {
         }
     }
     
-//    @UIApplicationDelegateAdaptor private var appDelegate: MyAppDelegate
-
     static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {
         return scopeTemplates.map { (title: $0.name, index: $0.index) }
     }()

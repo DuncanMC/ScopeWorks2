@@ -30,6 +30,7 @@ enum ImageSourceMode: Equatable {
     case camera(deviceID: String?)
 }
 
+
 // MARK: Private vars
 
 private var notificationToken: NSObjectProtocol?
@@ -41,8 +42,10 @@ private var notificationToken: NSObjectProtocol?
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
+//    @Published var allAsepectRatios: [AspectRatio] = []
+    @Published var availableDisplays: [DisplayInfo] = []
 
-
+    
     var useButton: Bool = true
     
     // MARK: - Camera support (transient, not persisted)
@@ -63,16 +66,42 @@ class ScopeState: ObservableObject, Codable {
         } else {
             imageSourceDescription =  "Image source: \(cameraDescription)"
         }
-
+        
     }
-
+    
     // Camera textures have top-left origin; static images use bottom-left (via MTKTextureLoader)
     var cameraDescription: String = ""
     var flipTextureY: Bool = false
-
+    
     // MARK: - External display (transient, not persisted)
-    var externalDisplayManager: ExternalDisplayManager?
+    var externalDisplayManager: ExternalDisplayViewManager?
     weak var metalView: MTKView? = nil
+    
+    func updateDisplays() {
+        availableDisplays = ExternalDisplayManager.availableDisplays
+        
+        /*
+         let displays = ExternalDisplayManager.availableDisplays
+        //Add code here to upate list of all aspect ratios
+        allAsepectRatios = SavedAspectRatios
+        for display in displays {
+            guard let aspect = display.aspect else { continue }
+            var found = false
+            for ratio in allAsepectRatios {
+                if ratio.width == aspect.width && ratio.height == aspect.height {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height))
+            }
+        }
+        for aspect in allAsepectRatios {
+            print(aspect)
+        }
+         */
+    }
     
     // MARK: - Codable Keys
     enum CodingKeys: String, CodingKey {
@@ -104,7 +133,7 @@ class ScopeState: ObservableObject, Codable {
         let alpha: CGFloat
         
         init(color: Color) {
-            #if os(iOS)
+#if os(iOS)
             let uiColor = UIColor(color)
             var r: CGFloat = 0
             var g: CGFloat = 0
@@ -115,7 +144,7 @@ class ScopeState: ObservableObject, Codable {
             self.green = g
             self.blue = b
             self.alpha = a
-            #elseif os(macOS)
+#elseif os(macOS)
             let nsColor = NSColor(color)
             var r: CGFloat = 0
             var g: CGFloat = 0
@@ -126,12 +155,12 @@ class ScopeState: ObservableObject, Codable {
             self.green = g
             self.blue = b
             self.alpha = a
-            #else
+#else
             self.red = 1
             self.green = 1
             self.blue = 1
             self.alpha = 1
-            #endif
+#endif
         }
         
         func toColor() -> Color {
@@ -179,11 +208,11 @@ class ScopeState: ObservableObject, Codable {
             .addObserver(forName: settingsChangedNotification,
                          object: nil,
                          queue: nil) { notification in
-                            let userInfo = notification.userInfo
-                            if let snapshotFileType = userInfo?[UserDefaultsKeys.snapshotFileType.rawValue] as? Int {
-                                ScopeState.snapshotFileTypeIndex = snapshotFileType
+                let userInfo = notification.userInfo
+                if let snapshotFileType = userInfo?[UserDefaultsKeys.snapshotFileType.rawValue] as? Int {
+                    ScopeState.snapshotFileTypeIndex = snapshotFileType
                 }
-        }
+            }
         
         resolveICloudURL()
         
@@ -191,6 +220,17 @@ class ScopeState: ObservableObject, Codable {
         if imageSourceInfo.sourceType != .none && selectedImageData == nil {
             resolveImageFromSourceInfo()
         }
+        availableDisplays = ExternalDisplayManager.availableDisplays
+        
+        NotificationCenter.default.addObserver(
+            forName: displaysChangedNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.availableDisplays = ExternalDisplayManager.availableDisplays
+            }
+        }
+
     }
     
     /// Attempts to load the image described by imageSourceInfo.
@@ -203,7 +243,7 @@ class ScopeState: ObservableObject, Codable {
         switch imageSourceInfo.sourceType {
         case .file:
             // 1. Try bookmark data (macOS security-scoped)
-            #if os(macOS)
+#if os(macOS)
             if let bmData = imageSourceInfo.bookmarkData {
                 var isStale = false
                 if let url = try? URL(resolvingBookmarkData: bmData,
@@ -214,7 +254,7 @@ class ScopeState: ObservableObject, Codable {
                     return
                 }
             }
-            #endif
+#endif
             
             // 2. Try full URL
             if let url = imageSourceInfo.fullURL,
@@ -236,7 +276,7 @@ class ScopeState: ObservableObject, Codable {
             searchForMissingImage()
             
         case .photoLibrary:
-            #if os(iOS)
+#if os(iOS)
             if let imageID = imageSourceInfo.photoLibraryID {
                 self.selectedImageID = imageID
                 let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
@@ -247,7 +287,7 @@ class ScopeState: ObservableObject, Codable {
                     return
                 }
             }
-            #endif
+#endif
             // On macOS (or if photo not found on iOS), try relative path as fallback
             if let relativePath = imageSourceInfo.relativePathFromSourceImages,
                let url = FolderBookmarkManager.shared.resolveRelativePath(relativePath) {
@@ -282,7 +322,7 @@ class ScopeState: ObservableObject, Codable {
             return
         }
         
-        #if os(macOS)
+#if os(macOS)
         // Defer to main run loop — query.start() requires an active run loop,
         // and this may be called during init(from:) decoding.
         DispatchQueue.main.async { [weak self] in
@@ -338,13 +378,13 @@ class ScopeState: ObservableObject, Codable {
                 self.postRelocationReady()
             }
         }
-        #else
+#else
         // On iOS, show the alert after a brief delay so the view has time to attach.
         print("Image '\(filename)' not found. Prompting user to locate it.")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.postRelocationReady()
         }
-        #endif
+#endif
     }
     
     private func postRelocationReady() {
@@ -365,12 +405,12 @@ class ScopeState: ObservableObject, Codable {
         self.imageURL = url
         self.selectedImageData = data
         
-        #if os(macOS)
+#if os(macOS)
         let bmData = try? url.bookmarkData(
             options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess])
-        #else
+#else
         let bmData = try? url.bookmarkData()
-        #endif
+#endif
         self.bookmarkData = bmData
         
         if let typeID = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier {
@@ -396,7 +436,7 @@ class ScopeState: ObservableObject, Codable {
         } else {
             // Legacy fallback: read old bookmarkData / imageURL / imageID fields
             // and backfill imageSourceInfo
-            #if os(macOS)
+#if os(macOS)
             self.bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
             if let data = self.bookmarkData {
                 var bookmarkDataIsStale: Bool = false
@@ -417,7 +457,7 @@ class ScopeState: ObservableObject, Codable {
             if let url = self.imageURL {
                 self.imageSourceInfo = .fromFile(url: url, bookmarkData: self.bookmarkData)
             }
-            #else
+#else
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
                 print("in ScopeState.init(from:), found imageID: \(imageID)")
                 self.selectedImageID = imageID
@@ -436,11 +476,11 @@ class ScopeState: ObservableObject, Codable {
             } else {
                 print("in ScopeState.init(from:), imageID = nil")
             }
-            #endif
+#endif
         }
-
+        
         self.polygonSides = try container.decode(Int.self, forKey: .polygonSides)
-
+        
         self.zoom = try container.decode(Double.self, forKey: .zoom)
         self.radiusScale = try container.decode(Float.self, forKey: .radiusScale)
         let colorCodable = try container.decode(CodableColor.self, forKey: .backgroundColor)
@@ -457,7 +497,7 @@ class ScopeState: ObservableObject, Codable {
         self.splitTriangle = try container.decode(Bool.self, forKey: .splitTriangle)
         self.drawWithReflection = try container.decode(Bool.self, forKey: .drawWithReflection)
         self.animate = false //try container.decode(Bool.self, forKey: .animate)
-//        self.showControls = try container.decode(Bool.self, forKey: .showControls)
+        //        self.showControls = try container.decode(Bool.self, forKey: .showControls)
         self.rotationSpeed = try container.decode(CGFloat.self, forKey: .rotationSpeed)
         self.movementSpeed = try container.decode(CGFloat.self, forKey: .movementSpeed)
         self.selectedScopeType = try container.decode(Int.self, forKey: .selectedScopeType)
@@ -465,16 +505,16 @@ class ScopeState: ObservableObject, Codable {
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
         doInitSetup()
-
+        
         print("In ScopeState init.from. uuid = \(uuid)")
     }
     
     // MARK: - Encode
     func encode(to encoder: Encoder) throws {
-        print("----------------------")
+//        print("----------------------")
         //print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
         //print("trianglePoints = \(trianglePoints)")
-        //print("----------------------")
+        print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         // New format
@@ -549,11 +589,11 @@ class ScopeState: ObservableObject, Codable {
     }
     
     init(){
-//        print("In ScopeState init. uuid = \(uuid)")
+        //        print("In ScopeState init. uuid = \(uuid)")
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
-     doInitSetup()
+        doInitSetup()
     }
     
     // MARK: - Camera lifecycle
@@ -566,13 +606,13 @@ class ScopeState: ObservableObject, Codable {
         flipTextureY = true
         await cameraManager?.startCamera(deviceID: deviceID)
     }
-
+    
     func stopCamera() {
         cameraManager?.stopCamera()
         imageSourceMode = .staticImage
         flipTextureY = false
     }
-
+    
     func switchToStaticImage() {
         stopCamera()
         // Restore the static image texture if we have image data
@@ -585,23 +625,23 @@ class ScopeState: ObservableObject, Codable {
     
     @Published var uuid = UUID()
     
-
+    
     var selectedImageSize: CGSize {
         guard let selectedImageData else { return .zero }
-        #if os(iOS)
-                guard  let selectedImage: UIImage = UIImage(data: selectedImageData) else {return CGSizeZero}
-                return CGSize(width: selectedImage.size.width, height: selectedImage.size.height)
-        #elseif os(macOS)
-                guard  let selectedImage = NSImage(data: selectedImageData) else {return CGSizeZero}
-                return CGSize(width: selectedImage.size.width, height: selectedImage.size.height)
-        #endif
+#if os(iOS)
+        guard  let selectedImage: UIImage = UIImage(data: selectedImageData) else {return CGSizeZero}
+        return CGSize(width: selectedImage.size.width, height: selectedImage.size.height)
+#elseif os(macOS)
+        guard  let selectedImage = NSImage(data: selectedImageData) else {return CGSizeZero}
+        return CGSize(width: selectedImage.size.width, height: selectedImage.size.height)
+#endif
     }
-
-    var selectedImageAspectRatio: Float {
-        guard selectedImageData != nil,
-                selectedImageSize.width > 0 else { return 0 }
-        return Float(selectedImageSize.width / selectedImageSize.height)
-    }
+    
+//    var selectedImageAspectRatio: Float {
+//        guard selectedImageData != nil,
+//              selectedImageSize.width > 0 else { return 0 }
+//        return Float(selectedImageSize.width / selectedImageSize.height)
+//    }
     // MARK: - Properties to be saved in ScopeWorks document
     var bookmarkData: Data? {
         didSet {
@@ -628,7 +668,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     public var document: ScopeDocument?
-        
+    
     @Published var zoom: Double = 2.0 // use a range of 1.0 to 5.0
     @Published var radiusScale: Float = 1.0
     @Published var backgroundColor = Color.white
@@ -652,18 +692,18 @@ class ScopeState: ObservableObject, Codable {
             trianglePoints = calcTrianglePoints()
         }
     }
-    @Published var rotationSpeed: CGFloat = 10.0 // In degrees per second
+    @Published var rotationSpeed: CGFloat = 5.0 // In degrees per second
     @Published var movementSpeed: CGFloat = 0 // In screen units per second.
-
+    
     // MARK: - other published properties
     @Published var animateButtonTitle: String = "Animate"
     
     @Published var showOpenDialog: Bool = false
-
+    
     @Published var photoManager = PhotoLibraryManager()
     @Published var showControls = true {
         didSet {
-//            print("In showControls.didSet. showControls = \(showControls). uuid = \(uuid)")
+            //            print("In showControls.didSet. showControls = \(showControls). uuid = \(uuid)")
         }
     }
     @Published var showSourceImage: Bool = true
@@ -684,7 +724,7 @@ class ScopeState: ObservableObject, Codable {
     }
     @Published var imageSourceDescription: String = ""
     
-            
+    
     
     /// Set to true when a document's image could not be resolved and needs user help.
     var needsImageRelocation = false
@@ -695,17 +735,17 @@ class ScopeState: ObservableObject, Codable {
     
     /// Notification posted when the relocation search finishes and the alert should be shown.
     static let relocationReadyNotification = Notification.Name("ScopeStateRelocationReady")
-
-
-    @Published var selectedScopeType: Int = 0
-
+    
+    
+    @Published var selectedScopeType: Int = 1
+    
     var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
     @Published var texAspect: Float = 1
     @Published var texSize: CGSize = CGSize(width: 400, height: 400 )
     @Published var draggingState: DragLocations? = nil
     @Published var lastDragLocation: CGPoint? = nil
     @Published var previousRotation: Float? = nil
-
+    
     
     
     @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
@@ -739,10 +779,10 @@ class ScopeState: ObservableObject, Codable {
                 aspectAdjustment.width = texWidth / texHeight
                 aspectAdjustment.height = 1.0
             }
-
+            
         }
     }
-
+    
     private var trianglePoint1: CGPoint = CGPointZero
     private var trianglePoint2: CGPoint = CGPointZero
     private var trianglePoint3: CGPoint = CGPointZero
@@ -750,6 +790,18 @@ class ScopeState: ObservableObject, Codable {
     
     typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
     
+    func animateByElapsed(_ elapsed: Double) {
+        
+        let degrees = Float(elapsed * Double(rotationSpeed))
+        let radians = degrees.degreesToRadians
+        let changed = rotateTriangle(trianglePoints: trianglePoints, angle: radians, aroundCenter: rotationCenter)
+        let adjustment = adjustTrianglePoints(trianglePoints: changed)
+        trianglePoints = adjustment.points
+        if adjustment.adjusted {
+            rotationCenter = rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
+        }
+    }
+
     func adjustTrianglePoints(trianglePoints: TrianglePoints) -> AdjustmentResult {
         let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
         let triangleLimits = triangleLimits(trianglePoints: trianglePoints)

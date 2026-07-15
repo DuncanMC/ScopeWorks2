@@ -3,9 +3,6 @@ import Combine
 import simd
 import PhotosUI
 
-
-
-
 enum ActiveModal: Identifiable {
     case imageSource
     case settings
@@ -27,7 +24,7 @@ struct ContentView: View {
     #if os(iOS)
     @State private var relocationPickerDelegate: RelocationFilePickerDelegate?
     #endif
-
+    
 
     var imageSourceLeading: CGFloat {
         #if os(macOS)
@@ -71,17 +68,19 @@ struct ContentView: View {
 
     let sliderWidth = 350.0
     @ObservedObject var scopeState: ScopeState
-    @StateObject private var externalDisplayManager: ExternalDisplayManager
+    @StateObject private var externalDisplayViewManager: ExternalDisplayViewManager
     @Environment(\.undoManager) var undoManager
 
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
         if let existing = scopeState.externalDisplayManager {
-            _externalDisplayManager = StateObject(wrappedValue: existing)
+            _externalDisplayViewManager = StateObject(wrappedValue: existing)
         } else {
-            let manager = ExternalDisplayManager(scopeState: scopeState)
+            let manager = ExternalDisplayViewManager(scopeState: scopeState)
             scopeState.externalDisplayManager = manager
-            _externalDisplayManager = StateObject(wrappedValue: manager)
+            scopeState.updateDisplays()
+
+            _externalDisplayViewManager = StateObject(wrappedValue: manager)
         }
     }
     
@@ -201,6 +200,231 @@ struct ContentView: View {
 #elseif os(macOS)
     @State private var image: NSImage? = nil
 #endif
+
+    // MARK: - Polygon sides field
+    @ViewBuilder
+    private var polygonSidesField: some View {
+        LabeledContent(content: {
+            TextField("",
+                      text: $polygonSidesString,
+                      onEditingChanged: { isEditing in
+            },
+                      onCommit: {
+                guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
+                    Task { @MainActor in
+                        self.polygonSidesString = "\(scopeState.polygonSides)"
+                    }
+                    return
+                }
+                scopeState.polygonSides = value.intValue
+                isFocused = false
+            }
+
+            )
+#if os(macOS)
+            .padding(.leading, 0)
+#endif
+            .textFieldStyle(.customRoundedBorderTextFieldStyle(borderColor: .gray))
+            .frame(minWidth: 30, maxWidth: 30)
+            .focused($isFocused)
+            .onAppear() {
+#if os(macOS)
+                Task { @MainActor in
+                    let _ = NSApp.keyWindow?.makeFirstResponder(nil)
+                }
+#endif
+            }
+
+            .onChange(of: isFocused) {
+                if isFocused {
+                    Task { @MainActor in
+#if os(macOS)
+                        NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
+#else
+                        UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+#endif
+                    }
+                    selection = .init(range: site.startIndex..<site.endIndex)
+                }
+            }
+            .onAppear() {
+                polygonSidesString = "\(scopeState.polygonSides)"
+            }
+        },
+                       label: {
+            Text("Polygon sides")
+                .frame(minWidth: 80, alignment: .leading)
+                .border(.blue, width: 1)
+
+        })
+        .padding(.leading, polygonSidesLeading)
+    }
+
+    // MARK: - Controls
+    @ViewBuilder
+    private var controlsView: some View {
+                // xxx
+                if scopeState.showControls && !isFullScreen {
+                        HStack(spacing: 30) {
+                            VStack(alignment: .leading, spacing: 20) {
+                            
+                                // External display picker
+                                if !$scopeState.availableDisplays.isEmpty {
+                                    HStack {
+                                        Text("Fullscreen Display:")
+    #if os(macOS)
+                                            .padding(.leading, 12)
+    #else
+                                            .padding(.leading, 5)
+    #endif
+                                        Picker("", selection: $externalDisplayViewManager.selectedDisplayID) {
+                                            Text("None").tag(String?.none)
+                                            ForEach(scopeState.availableDisplays) { display in
+                                                Text(display.name).tag(Optional(display.id))
+                                            }
+                                        }
+                                        .frame(minWidth: 200)
+    #if os(macOS)
+                                        .padding(.leading, 26)
+    #else
+    #endif
+                                    
+                                    }
+                                }
+                            
+                                //Kaleidoscope type picker
+                                ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
+                                    .frame(width: 460)
+                            
+                                    .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
+                                        //print("selectedScopeType = \(newValue)")
+                                    }
+                                    .padding(.leading, kaleidoscopeTypeLeading)
+                            
+                                HStack {
+                                    //Polygon sides
+                                    polygonSidesField
+                                
+                                    //background color well
+                                    ColorPicker("Background color", selection: $scopeState.backgroundColor)
+                                        .frame(minWidth: 200)
+                                    //                                .border(.black, width: 1)
+                                        .padding(.leading, backgroundColorLeading)
+                                
+                                }
+                                HStack {
+                                    //Image source button
+                                    Button("Image source") {
+                                        for display in ExternalDisplayManager.availableDisplays {
+                                            guard let aspect = display.aspect,
+                                                  let size = display.size else { continue }
+                                            print("\(display.name), (\(size.width),\(size.height)) aspect: \(aspect.width):\(aspect.height)")
+                                        }
+                                        presentedModal = .imageSource
+                                    }
+    #if os(macOS)
+                                    .padding(.leading, 0)
+    #else
+                                    .padding(.leading, 7)
+    #endif
+                                
+    //                                Button("Reverse animation (⌘R)") {
+    //                                    scopeState.rotationSpeed *= -1
+    //                                    scopeState.movementSpeed *= -1
+    //                                }
+    //                                .padding(.leading, reverseAnimationLeading)
+    //                                .keyboardShortcut("r", modifiers: [.command])
+                                
+                                
+                                }
+                                .padding(.leading, 0)
+                            
+                            }
+                        
+                            .padding(.leading, 10)
+                            // MARK: - Sliders
+                            VStack(alignment: .leading, spacing: 20) {
+                                // Rotation speed
+                                HStack {
+                                    Text("Rotation speed: \(rotationString)")
+                                        .frame(minWidth: 200, alignment: .leading)
+                                    //                                    .border(.black, width: 1)
+                                    Slider(value: $scopeState.rotationSpeed, in: -15.0 ... 15.0, step: 1.0)
+                                        .frame(width: sliderWidth )
+                                        .frame(minWidth: 150 )
+                                }
+                            
+                                // Zoom
+                                HStack {
+                                    Text("Zoom: \(zoomString)")
+                                        .frame(minWidth: 200, alignment: .leading)
+                                    //                                    .border(.black, width: 1)
+                                
+                                    Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                                        .frame(width: sliderWidth )
+                                        .frame(minWidth: 150 )
+                                
+                                }
+                                // Radius
+                                HStack {
+                                    Text("Radius: \(radiusString)")
+                                        .frame(minWidth: 200, alignment: .leading)
+                                    //                                    .border(.black, width: 1)
+                                    Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
+                                        .frame(width: sliderWidth )
+                                        .frame(minWidth: 150 )
+                                
+                                }
+                                // Put filename here
+                                Text(scopeState.imageSourceDescription)
+                                    .frame(height: 25)
+    //                            Spacer()
+                            }
+                            Spacer()
+                        }
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+    #if os(iOS)
+                        .overlay(alignment: .bottomTrailing) {
+                                                        Button {
+                                                            print("Settings button tapped")
+                                                            presentedModal = .settings
+                        
+                                                        } label:  {
+                                                            Image(systemName: "gear")
+                                                                .resizable(resizingMode: .stretch)
+                                                                .frame(width: 30, height: 30)
+                                                        }
+                                                        .padding([.trailing, .bottom])
+                                                        .padding(.top, 25)
+                                                        .buttonStyle(.borderless)
+                        }
+                #endif
+                        #if os(iOS)
+                        //Settings button
+    //                    VStack {
+    //                        Spacer()
+    //                        HStack {
+    //                            Spacer()
+    //                            Button {
+    //                                print("Settings button tapped")
+    //                                presentedModal = .settings
+    //
+    //                            } label:  {
+    //                                Image(systemName: "gear")
+    //                                    .resizable(resizingMode: .stretch)
+    //                                    .frame(width: 30, height: 30)
+    //                            }
+    //                            .padding([.trailing, .bottom])
+    //                            .buttonStyle(.borderless)
+    //
+    //                        }
+    //                    }
+
+                        #endif
+                
+                }
+    }
+
     var body: some View {
         VStack {
             HStack {
@@ -237,222 +461,16 @@ struct ContentView: View {
                     }
                 }
             }
-            // xxx
-            if scopeState.showControls && !isFullScreen {
-                    HStack(spacing: 30) {
-                        VStack(alignment: .leading, spacing: 20) {
-                            
-                            // External display picker
-                            if !externalDisplayManager.availableDisplays.isEmpty {
-                                HStack {
-                                    Text("Fullscreen Display:")
-#if os(macOS)
-                                        .padding(.leading, 12)
-#else
-                                        .padding(.leading, 5)
-#endif
-                                    Picker("", selection: $externalDisplayManager.selectedDisplayID) {
-                                        Text("None").tag(String?.none)
-                                        ForEach(externalDisplayManager.availableDisplays) { display in
-                                            Text(display.name).tag(Optional(display.id))
-                                        }
-                                    }
-                                    .frame(minWidth: 200)
-#if os(macOS)
-                                    .padding(.leading, 26)
-#else
-#endif
-                                    
-                                }
-                            }
-                            
-                            //Kaleidoscope type picker
-                            ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
-                                .frame(width: 460)
-                            
-                                .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
-                                    //print("selectedScopeType = \(newValue)")
-                                }
-                                .padding(.leading, kaleidoscopeTypeLeading)
-                            
-                            HStack {
-                                //Polygon sides
-                                LabeledContent(content: {
-                                    TextField("",
-                                              text: $polygonSidesString,
-                                              onEditingChanged: { isEditing in
-                                    },
-                                              onCommit: {
-                                        guard let value = Self.numberFormatter.number(from: polygonSidesString) else {
-                                            Task { @MainActor in
-                                                self.polygonSidesString = "\(scopeState.polygonSides)"
-                                            }
-                                            return
-                                        }
-                                        scopeState.polygonSides = value.intValue
-                                        isFocused = false
-                                    }
-                                              
-                                    )
-#if os(macOS)
-                                    .padding(.leading, 0)
-#endif
-                                    .textFieldStyle(.customRoundedBorderTextFieldStyle(borderColor: .gray))
-                                    //                                    .textFieldStyle(.roundedBorder)
-                                    .frame(minWidth: 30, maxWidth: 30)
-                                    .focused($isFocused)
-                                    .onAppear() {
-#if os(macOS)
-                                        Task { @MainActor in
-                                            let _ = NSApp.keyWindow?.makeFirstResponder(nil)
-                                        }
-#endif
-                                    }
-                                    
-                                    .onChange(of: isFocused) {
-                                        if isFocused {
-                                            Task { @MainActor in
-#if os(macOS)
-                                                NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
-#else
-                                                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
-#endif
-                                            }
-                                            selection = .init(range: site.startIndex..<site.endIndex)
-                                        }
-                                    }
-                                    .onAppear() {
-                                        polygonSidesString = "\(scopeState.polygonSides)"
-                                    }
-                                },
-                                               label: {
-                                    Text("Polygon sides")
-                                        .frame(minWidth: 80, alignment: .leading)
-                                        .border(.blue, width: 1)
-                                    
-                                })
-                                .padding(.leading, polygonSidesLeading)
-                                
-                                //background color well
-                                ColorPicker("Background color", selection: $scopeState.backgroundColor)
-                                    .frame(minWidth: 200)
-                                //                                .border(.black, width: 1)
-                                    .padding(.leading, backgroundColorLeading)
-                                
-                            }
-                            HStack {
-                                //Image source button
-                                Button("Image source") {
-                                    presentedModal = .imageSource
-                                }
-#if os(macOS)
-                                .padding(.leading, 0)
-#else
-                                .padding(.leading, 7)
-#endif
-                                
-//                                Button("Reverse animation (⌘R)") {
-//                                    scopeState.rotationSpeed *= -1
-//                                    scopeState.movementSpeed *= -1
-//                                }
-//                                .padding(.leading, reverseAnimationLeading)
-//                                .keyboardShortcut("r", modifiers: [.command])
-                                
-                                
-                            }
-                            .padding(.leading, 0)
-                            
-                        }
-                        
-                        .padding(.leading, 10)
-                        // MARK: - Sliders
-                        VStack(alignment: .leading, spacing: 20) {
-                            // Rotation speed
-                            HStack {
-                                Text("Rotation speed: \(rotationString)")
-                                    .frame(minWidth: 200, alignment: .leading)
-                                //                                    .border(.black, width: 1)
-                                Slider(value: $scopeState.rotationSpeed, in: -15.0 ... 15.0, step: 1.0)
-                                    .frame(width: sliderWidth )
-                                    .frame(minWidth: 150 )
-                            }
-                            
-                            // Zoom
-                            HStack {
-                                Text("Zoom: \(zoomString)")
-                                    .frame(minWidth: 200, alignment: .leading)
-                                //                                    .border(.black, width: 1)
-                                
-                                Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
-                                    .frame(width: sliderWidth )
-                                    .frame(minWidth: 150 )
-                                
-                            }
-                            // Radius
-                            HStack {
-                                Text("Radius: \(radiusString)")
-                                    .frame(minWidth: 200, alignment: .leading)
-                                //                                    .border(.black, width: 1)
-                                Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
-                                    .frame(width: sliderWidth )
-                                    .frame(minWidth: 150 )
-                                
-                            }
-                            // Put filename here
-                            Text(scopeState.imageSourceDescription)
-                                .frame(height: 25)
-//                            Spacer()
-                        }
-                        Spacer()
-                    }
-                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
-#if os(iOS)
-                    .overlay(alignment: .bottomTrailing) {
-                                                    Button {
-                                                        print("Settings button tapped")
-                                                        presentedModal = .settings
-                        
-                                                    } label:  {
-                                                        Image(systemName: "gear")
-                                                            .resizable(resizingMode: .stretch)
-                                                            .frame(width: 30, height: 30)
-                                                    }
-                                                    .padding([.trailing, .bottom])
-                                                    .padding(.top, 25)
-                                                    .buttonStyle(.borderless)
-                    }
-            #endif
-                    #if os(iOS)
-                    //Settings button
-//                    VStack {
-//                        Spacer()
-//                        HStack {
-//                            Spacer()
-//                            Button {
-//                                print("Settings button tapped")
-//                                presentedModal = .settings
-//
-//                            } label:  {
-//                                Image(systemName: "gear")
-//                                    .resizable(resizingMode: .stretch)
-//                                    .frame(width: 30, height: 30)
-//                            }
-//                            .padding([.trailing, .bottom])
-//                            .buttonStyle(.borderless)
-//
-//                        }
-//                    }
-
-                    #endif
-                
-            }
+            controlsView
         }
+
         .sheet(item: $presentedModal) { modalType in
             switch modalType {
             case .settings:
                 SettingsView(doneButtonAction: {
                     presentedModal = nil
-                })
+                },
+                )
             case .imageSource:
                 ImageSouceView(scopeState: scopeState,
                                dismissClosure: {
@@ -502,31 +520,7 @@ struct ContentView: View {
 //option key = "⌥"
 
         .background {
-            VStack {
-                Toggle("Show controls", isOn: $scopeState.showControls)
-                    .keyboardShortcut("c", modifiers: .option)
-                Toggle("Show source image", isOn: $scopeState.showSourceImage)
-                .keyboardShortcut("i", modifiers: .option)
-                Toggle("Show outlines", isOn: $scopeState.showOutlines)
-                .keyboardShortcut("o", modifiers: .option)
-                Toggle("Flip alternates (⌥f)", isOn: $scopeState.flipAlternates)
-                    .keyboardShortcut("f", modifiers: .option)
-                Toggle("Draw with reflection (⌥r)", isOn: $scopeState.drawWithReflection)
-                    .keyboardShortcut("r", modifiers: .option)
-                Toggle("Animate (↩)", isOn: $scopeState.animate)
-                    .keyboardShortcut(.defaultAction)
-                // Put "reverse animation" hidden button here.
-                Button("Reverse Animation (⌘R)") {
-                    scopeState.rotationSpeed *= -1
-                    scopeState.movementSpeed *= -1
-                }
-                .keyboardShortcut("r", modifiers: .command)
-                .disabled(scopeState == nil)
-
-            }
-            .frame(width: 0, height: 0)
-            .opacity(0)
-
+            ScopeCommandButtons(scopeState: scopeState)
         }
 #endif
         .focusedSceneValue(\.scopeState, scopeState)
@@ -571,16 +565,19 @@ struct ContentView: View {
             // MARK: - iOS menubar
             ToolbarItem(placement: .secondaryAction) {
                 Menu("View Options", systemImage: "eye") {
-                    Toggle("Animate (↩)", isOn: $scopeState.animate)
-                    Button("Reverse Animation (⌘R)") {
-                        scopeState.rotationSpeed *= -1
-                        scopeState.movementSpeed *= -1
+                    ForEach(ScopeCommand.viewCommands) { command in
+                        if command.isToggle, let kp = command.keyPath {
+                            Toggle("\(command.label) (\(command.shortcutHint))",
+                                   isOn: Binding(
+                                       get: { scopeState[keyPath: kp] },
+                                       set: { scopeState[keyPath: kp] = $0 }
+                                   ))
+                        } else {
+                            Button("\(command.label) (\(command.shortcutHint))") {
+                                command.performAction(on: scopeState)
+                            }
+                        }
                     }
-                    Toggle("Show controls (⌥C)", isOn: $scopeState.showControls)
-                    Toggle("Show source image (⌥I)", isOn: $scopeState.showSourceImage)
-                    Toggle("Show outlines (⌥O)", isOn: $scopeState.showOutlines)
-                    Toggle("Flip alternates (⌥f)", isOn: $scopeState.flipAlternates)
-                    Toggle("Draw with reflection (⌥r)", isOn: $scopeState.drawWithReflection)
                 }
             }
         }
@@ -704,9 +701,9 @@ struct PhotoPickerView: View {
                             print("newValue = \(newValue)")
                             print("newValue.supportedContentTypes = \(newValue.supportedContentTypes)")
                             scopeState.selectedImageID = newValue.itemIdentifier
-                            print("----------------------")
-                            print("itemIdentifier = \(newValue.itemIdentifier)")
-                            print("----------------------")
+//                            print("----------------------")
+//                            print("itemIdentifier = \(newValue.itemIdentifier)")
+//                            print("----------------------")
 
                             scopeState.selectedImageData = data
                             dismissClosure()

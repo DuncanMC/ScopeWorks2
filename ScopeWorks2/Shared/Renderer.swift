@@ -94,7 +94,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     var sampleCount: Int = 1
     var imageUUID: UUID? = nil
     static var logPoints: Bool = false
-//    static var indexToDraw: Int? = nil
     weak var mtkView: MTKView?
     var device: MTLDevice!
     var commandQueue: MTLCommandQueue!
@@ -120,7 +119,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         self.scopeState = scopeState
         super.init()
         device = MTLCreateSystemDefaultDevice()
-        // xxx
         if device.supportsTextureSampleCount(4) {
             sampleCount = 4
         } else if device.supportsTextureSampleCount(2) {
@@ -249,14 +247,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     public func animateKaleidoscope() {
         guard scopeState.animate else { return }
         let elapsed = CACurrentMediaTime() - scopeState.lastAnimationStepTime
-        let degrees = Float(elapsed * Double(scopeState.rotationSpeed))
-        let radians = degrees.degreesToRadians
-        let changed = rotateTriangle(trianglePoints: scopeState.trianglePoints, angle: radians, aroundCenter: scopeState.rotationCenter)
-        let adjustment = scopeState.adjustTrianglePoints(trianglePoints: changed)
-        scopeState.trianglePoints = adjustment.points
-        if adjustment.adjusted {
-            scopeState.rotationCenter = scopeState.rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
-        }
+        scopeState.animateByElapsed(elapsed)
     }
     
     func draw(in view: MTKView) {

@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>506</string>
+					<string>518</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>505</string>
+					<string>517</string>
 					<key>Timestamp</key>
-					<string>805583779.446202</string>
+					<string>805834716.545138</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,16 +34,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>                Toggle("Show controls", isOn: $scopeState.showControls)
+				<string>// return key = "↩"
 </string>
 				<key>leading</key>
-				<string>        .background {
-            VStack {
+				<string>#if os(iOS)
+// MARK: hidden iOS menubar for keyboard shortcuts.
 </string>
 				<key>trailing</key>
-				<string>                    .keyboardShortcut("c", modifiers: .option)
-                Toggle("Show source image", isOn: $scopeState.showSourceImage)
-                .keyboardShortcut("i", modifiers: .option)
+				<string>//command key =  "⌘"
+//option key = "⌥"
+
 </string>
 			</dict>
 			<key>title</key>
@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>197</string>
+					<string>196</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>196</string>
+					<string>195</string>
 					<key>Timestamp</key>
-					<string>805413234.485086</string>
+					<string>805826892.286749</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -172,151 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>6</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>6</string>
-					<key>Timestamp</key>
-					<string>799074039.471076</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ContentView.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string></string>
-				<key>leading</key>
-				<string>
-
-</string>
-				<key>trailing</key>
-				<string>
-
-enum ActiveModal: Identifiable {
-</string>
-			</dict>
-			<key>title</key>
-			<string>calcTrianglePoints</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>6</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>6</string>
-					<key>Timestamp</key>
-					<string>799074039.471069</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ContentView.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string></string>
-				<key>leading</key>
-				<string>
-
-</string>
-				<key>trailing</key>
-				<string>
-
-enum ActiveModal: Identifiable {
-</string>
-			</dict>
-			<key>title</key>
-			<string>trianglePoints</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>6</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>6</string>
-					<key>Timestamp</key>
-					<string>799074039.47105</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ContentView.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string></string>
-				<key>leading</key>
-				<string>
-
-</string>
-				<key>trailing</key>
-				<string>
-
-enum ActiveModal: Identifiable {
-</string>
-			</dict>
-			<key>title</key>
-			<string>handleDragging</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>191</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
 					<string>190</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>189</string>
 					<key>Timestamp</key>
-					<string>805413234.4851</string>
+					<string>805826892.286726</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

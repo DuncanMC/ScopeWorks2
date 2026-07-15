@@ -29,12 +29,62 @@ enum UserDefaultsKeys: String {
 
 struct SettingsView: View {
     
+    struct AspectRatio: CustomStringConvertible, Identifiable, Hashable {
+        var id: Self { self }
+        let title: String
+        let width: Int
+        let height: Int
+        let index: Int
+        var description: String {
+            return "\"\(title)\": \(width):\(height). Index = \(index)"
+        }
+    }
+
+
+    
+    static let savedAspectRatios: [AspectRatio] = [
+        AspectRatio(title: "Square", width: 1, height: 1, index: 0),
+        AspectRatio(title: "3:2", width: 3, height: 2, index: 1),
+        AspectRatio(title: "4:3", width: 4, height: 3, index: 2),
+        AspectRatio(title: "8:10", width: 5, height: 4, index: 3),
+        AspectRatio(title: "16:9", width: 16, height: 9, index: 4)]
+    
+    @State var allAsepectRatios: [AspectRatio] = SettingsView.savedAspectRatios
+
+    @State var selectedAspectRatio: AspectRatio
+
+    func updateAspectRatios() {
+        let displays = ExternalDisplayManager.availableDisplays
+        //Add code here to upate list of all aspect ratios
+        allAsepectRatios = SettingsView.savedAspectRatios
+        for display in displays {
+            guard let aspect = display.aspect else { continue }
+            var found = false
+            for ratio in allAsepectRatios {
+                if ratio.width == aspect.width && ratio.height == aspect.height {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count))
+            }
+        }
+//        for aspect in allAsepectRatios {
+//            print(aspect)
+//        }
+    }
+    
     init(doneButtonAction: @escaping () -> Void) {
         self.doneButtonAction = doneButtonAction
         let snapshotFileType = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
         self.snapshotFileType = snapshotFileType
         self.selection = snapshotFileType
-        
+        self.allAsepectRatios = SettingsView.savedAspectRatios
+        let sixteenNine = SettingsView.savedAspectRatios.first(where: { $0.width == 16 && $0.height == 9 })
+        self.selectedAspectRatio = sixteenNine  ?? SettingsView.savedAspectRatios.last!
+        updateAspectRatios()
+
     }
     
     var doneButtonAction: () -> Void
@@ -62,6 +112,7 @@ struct SettingsView: View {
 
     @State var selection: Int
     
+    
     var options: [(title: String, index: Int)] = {
         SnapshotFormat.allCases.enumerated().map {
             ($0.element.rawValue, $0.offset)
@@ -79,10 +130,11 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 30) {
                     Text("Snapshots")
                         .font(.headline)
-                        .padding([.leading, .trailing], 50)
+                        .frame(alignment: .leading)
+                        .padding(.leading, 13)
                     HStack {
                         Text("Snapshot filetype")
-                            .frame(minWidth: 140, alignment: .leading)
+                            .frame(minWidth: 120, alignment: .leading)
                             .padding(.leading, snapshotTypeTitleLeading)
                         Picker("", selection: $selection) {
                             ForEach(options, id: \.self.index) { option in
@@ -108,9 +160,31 @@ struct SettingsView: View {
                     Divider()
                         .padding(.horizontal, 20)
 
+                    Text("Image/Video aspect ratio")
+                        .font(.headline)
+                        .frame(alignment: .leading)
+                        .padding(.leading, 13)
+                    //-----------------------
+                    HStack {
+                        Text("Aspect ratio")
+                            .frame(minWidth: 120, alignment: .leading)
+                            .padding(.leading, snapshotTypeTitleLeading)
+                        Picker("", selection: $selectedAspectRatio) {
+                            ForEach(allAsepectRatios) { aspectRatio in
+                                Text("\(aspectRatio.title)").tag(aspectRatio.index)
+                                    .frame(minWidth: 150, alignment: .leading)
+                            }
+                        }
+                    }
+
+//-----------------------
+                    Divider()
+                        .padding(.horizontal, 20)
+
                     Text("Folders")
                         .font(.headline)
-                        .padding([.leading, .trailing], 50)
+                        .frame(alignment: .leading)
+                        .padding(.leading, 13)
 
                     VStack(alignment: .leading, spacing: 8) {
                         folderStatusRow(label: "Source Images", url: FolderBookmarkManager.shared.sourceImagesURL)
@@ -138,6 +212,12 @@ struct SettingsView: View {
 #endif
 
         }
+        .onAppear() {
+            updateAspectRatios()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: displaysChangedNotification)) { notification in
+            updateAspectRatios()
+            }
         #if os(iOS)
         .fullScreenCover(isPresented: $showingFolderSetup) {
             FirstLaunchSetupView(
