@@ -8,6 +8,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+let defaultAspectRatioChangedNotification = Notification.Name("defaultAspectRatioChangedNotification")
+
 
 enum SnapshotFormat: String, CaseIterable {
     case JPEG, PNG, TIFF
@@ -26,32 +28,38 @@ enum UserDefaultsKeys: String {
     case lastUsedImageDirectoryBookmark
 }
 
+struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable {
+    var id: Self { self }
+    let title: String
+    let width: Double
+    let height: Double
+    let index: Int
+    nonisolated var description: String {
+        return "\"\(title)\": \(width):\(height). Index = \(index)"
+    }
+}
 
 struct SettingsView: View {
     
-    struct AspectRatio: CustomStringConvertible, Identifiable, Hashable {
-        var id: Self { self }
-        let title: String
-        let width: Int
-        let height: Int
-        let index: Int
-        var description: String {
-            return "\"\(title)\": \(width):\(height). Index = \(index)"
-        }
-    }
 
 
     
     static let savedAspectRatios: [AspectRatio] = [
-        AspectRatio(title: "Square", width: 1, height: 1, index: 0),
-        AspectRatio(title: "3:2", width: 3, height: 2, index: 1),
-        AspectRatio(title: "4:3", width: 4, height: 3, index: 2),
-        AspectRatio(title: "8:10", width: 5, height: 4, index: 3),
-        AspectRatio(title: "16:9", width: 16, height: 9, index: 4)]
+        AspectRatio(title: "Crop for Tiling", width: 0.6, height: sqrt(3)/5.0, index: 0),
+        AspectRatio(title: "Square", width: 1, height: 1, index: 1),
+        AspectRatio(title: "3:2", width: 3, height: 2, index: 2),
+        AspectRatio(title: "4:3", width: 4, height: 3, index: 3),
+        AspectRatio(title: "8:10", width: 5, height: 4, index: 4),
+        AspectRatio(title: "16:9", width: 16, height: 9, index: 5),
+    ]
     
     @State var allAsepectRatios: [AspectRatio] = SettingsView.savedAspectRatios
 
-    @State var selectedAspectRatio: AspectRatio
+    @State var selectedAspectRatio: AspectRatio {
+        didSet {
+            print("New value = \(selectedAspectRatio). old value = \(oldValue)")
+        }
+    }
 
     func updateAspectRatios() {
         let displays = ExternalDisplayManager.availableDisplays
@@ -67,7 +75,8 @@ struct SettingsView: View {
                 }
             }
             if !found {
-                allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count))
+                let name = "\(display.name) (\(Int(aspect.width)):\(Int(aspect.height)))"
+                allAsepectRatios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count))
             }
         }
 //        for aspect in allAsepectRatios {
@@ -174,6 +183,10 @@ struct SettingsView: View {
                                 Text("\(aspectRatio.title)").tag(aspectRatio.index)
                                     .frame(minWidth: 150, alignment: .leading)
                             }
+                        }
+                        .onChange(of: selectedAspectRatio) {
+                            print("selectedAspectRatio  changed to \(selectedAspectRatio). Posting notification.")
+                            NotificationCenter.default.post(name: defaultAspectRatioChangedNotification, object: nil, userInfo: ["selectedAspectRatio": selectedAspectRatio])
                         }
                     }
 

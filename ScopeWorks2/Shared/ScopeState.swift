@@ -33,7 +33,7 @@ enum ImageSourceMode: Equatable {
 
 // MARK: Private vars
 
-private var notificationToken: NSObjectProtocol?
+private var notificationTokens: [NSObjectProtocol]?
 
 // MARK: - Persisted document properties:
 // bookmarkData, imageURL, zoom, radiusScale, backgroundColor, trianglePoints,
@@ -204,15 +204,51 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func doInitSetup() {
-        notificationToken = NotificationCenter.default
-            .addObserver(forName: settingsChangedNotification,
-                         object: nil,
-                         queue: nil) { notification in
+        //print("Adding observers")
+        NotificationCenter.default.addObserver(
+            forName: settingsChangedNotification,
+            object: nil,
+            queue: nil) { notification in
                 let userInfo = notification.userInfo
                 if let snapshotFileType = userInfo?[UserDefaultsKeys.snapshotFileType.rawValue] as? Int {
                     ScopeState.snapshotFileTypeIndex = snapshotFileType
                 }
             }
+        NotificationCenter.default.addObserver(
+            forName: defaultAspectRatioChangedNotification,
+            object: nil,
+            queue: nil) { notification in
+                
+                guard let userInfo = notification.userInfo,
+                      let aspectRatio = userInfo["selectedAspectRatio"] as? AspectRatio else {
+                    print("Invalid user info for defaultAspectRatioChangedNotification")
+                    return
+                }
+                guard aspectRatio != self.activeAspectRatio  else {
+                    print("aspect ratio unchanged.")
+                    return
+                }
+                print("Received changed aspectRatio \(aspectRatio)")
+                self.activeAspectRatio = aspectRatio
+                if aspectRatio.title == "Crop for Tiling" {
+                    self.cropRect = MetalRect(
+                        topLeft: simd_float2(x: Float(-aspectRatio.width / 2), y: Float(aspectRatio.height / 2)),
+                        topRight: simd_float2(x: Float(aspectRatio.width / 2), y: Float(aspectRatio.height / 2)),
+                        bottomLeft: simd_float2(x: Float(-aspectRatio.width / 2), y: Float(-aspectRatio.height / 2)),
+                        bottomRight: simd_float2(x: Float(aspectRatio.width / 2), y: Float(-aspectRatio.height / 2))
+                    )
+                    self.showCropRect = true // TESTING
+                }
+            }
+        NotificationCenter.default.addObserver(
+            forName: displaysChangedNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.availableDisplays = ExternalDisplayManager.availableDisplays
+            }
+        }
+        
         
         resolveICloudURL()
         
@@ -222,15 +258,7 @@ class ScopeState: ObservableObject, Codable {
         }
         availableDisplays = ExternalDisplayManager.availableDisplays
         
-        NotificationCenter.default.addObserver(
-            forName: displaysChangedNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.availableDisplays = ExternalDisplayManager.availableDisplays
-            }
-        }
-
+        
     }
     
     /// Attempts to load the image described by imageSourceInfo.
@@ -636,6 +664,18 @@ class ScopeState: ObservableObject, Codable {
         return CGSize(width: selectedImage.size.width, height: selectedImage.size.height)
 #endif
     }
+    
+    struct MetalRect {
+        var topLeft: simd_float2
+        var topRight: simd_float2
+        var bottomLeft: simd_float2
+        var bottomRight: simd_float2
+    }
+    
+    var cropRect: MetalRect? = nil
+    @Published var showCropRect: Bool = false
+    var activeAspectRatio: AspectRatio? = nil
+        
     
 //    var selectedImageAspectRatio: Float {
 //        guard selectedImageData != nil,

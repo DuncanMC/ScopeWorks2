@@ -48,7 +48,7 @@ public extension Color {
     }
 }
 
-public typealias AspectAndMultiplier = (width: Int, height: Int, multiplier: Int)
+public typealias AspectAndMultiplier = (width: Double, height: Double, multiplier: Double)
 public func calcAspectAndMultiplier(width: Int, height: Int) -> AspectAndMultiplier{
 
     let max = Int(sqrt(Double(max(width, height))) + 1)
@@ -67,6 +67,6 @@ public func calcAspectAndMultiplier(width: Int, height: Int) -> AspectAndMultipl
     }
     if newAspectHeight == 0 { newAspectHeight = 1 }
     if newAspectWidth == 0 { newAspectWidth = 1 }
-    let currentMultiplier = width / newAspectWidth
-    return (width: newAspectWidth, height: newAspectHeight, multiplier: currentMultiplier)
+    let currentMultiplier = Double(width) / Double(newAspectWidth)
+    return (width: Double(newAspectWidth), height: Double(newAspectHeight), multiplier: currentMultiplier)
 }

@@ -16,13 +16,16 @@ import UIKit
 let displaysChangedNotification = Notification.Name("ScopeStateRelocationReady")
 
 
-struct DisplayInfo: Identifiable, Hashable {
+struct DisplayInfo: Identifiable, Hashable, CustomStringConvertible {
     let id: String
     let name: String
     let size: CGSize?
     var aspect: AspectAndMultiplier? {
         guard let size else { return nil }
         return calcAspectAndMultiplier(width: Int(size.width), height: Int(size.height))
+    }
+    var description: String {
+        return "Display \"\(name)\" (\(size?.width ?? 0)x\(size?.height ?? 0)). Aspect \(aspect?.width ?? 0):\(aspect?.height ?? 0)"
     }
 }
 
@@ -59,8 +62,10 @@ final class ExternalDisplayManager {
         ExternalDisplayManager.availableDisplays = displays
 #endif
         NotificationCenter.default.post(name: displaysChangedNotification, object: nil)
+        //ExternalDisplayManager.availableDisplays.forEach { print($0) }
 
     }
+    
     private func setupNotifications() {
 #if os(macOS)
         NotificationCenter.default.addObserver(
