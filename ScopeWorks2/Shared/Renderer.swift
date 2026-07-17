@@ -424,6 +424,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                     }
                     
+
+                    
                     if scopeState.showOutlines {
                         // Draw outlines using drawThickLine()
                         drawThickLine(encoder: encoder,
@@ -475,7 +477,39 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         //                          p1: verts[0], p2: verts[2],
                         //                          color: white)
                     }
-                }
+                    if scopeState.showCropRect, let cropRect = scopeState.cropRect {
+                        let colorsAndThicknesses: [(simd_float4, Float)] = [
+                            (blue, 6),
+                            (red, 4)]
+                        let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
+                        let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * multiplier, topRight: cropRect.topRight * multiplier, bottomLeft: cropRect.bottomLeft * multiplier, bottomRight: cropRect.bottomRight * multiplier)
+                        for (color, thickness) in colorsAndThicknesses {
+                            drawThickLine(encoder: encoder,
+                                          p1: adjustedCropRect.topLeft, p2: adjustedCropRect.topRight,
+                                          color: color,
+                                          thickness:  4 / Float(drawableSize.width),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: adjustedCropRect.topRight, p2: adjustedCropRect.bottomRight,
+                                          color: color,
+                                          thickness:  thickness / Float(drawableSize.width),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: adjustedCropRect.bottomRight, p2: adjustedCropRect.bottomLeft,
+                                          color: color,
+                                          thickness:  thickness / Float(drawableSize.width),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: adjustedCropRect.bottomLeft, p2: adjustedCropRect.topLeft,
+                                          color: color,
+                                          thickness:  thickness / Float(drawableSize.width),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                        }
+                    }                }
             }
         } else {
             

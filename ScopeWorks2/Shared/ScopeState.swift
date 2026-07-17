@@ -30,6 +30,13 @@ enum ImageSourceMode: Equatable {
     case camera(deviceID: String?)
 }
 
+struct MetalRect {
+    var topLeft: simd_float2
+    var topRight: simd_float2
+    var bottomLeft: simd_float2
+    var bottomRight: simd_float2
+}
+
 
 // MARK: Private vars
 
@@ -232,10 +239,10 @@ class ScopeState: ObservableObject, Codable {
                 self.activeAspectRatio = aspectRatio
                 if aspectRatio.title == "Crop for Tiling" {
                     self.cropRect = MetalRect(
-                        topLeft: simd_float2(x: Float(-aspectRatio.width / 2), y: Float(aspectRatio.height / 2)),
-                        topRight: simd_float2(x: Float(aspectRatio.width / 2), y: Float(aspectRatio.height / 2)),
-                        bottomLeft: simd_float2(x: Float(-aspectRatio.width / 2), y: Float(-aspectRatio.height / 2)),
-                        bottomRight: simd_float2(x: Float(aspectRatio.width / 2), y: Float(-aspectRatio.height / 2))
+                        topLeft:     simd_float2(x: Float(-aspectRatio.width / 2), y: Float( aspectRatio.height / 2)),
+                        topRight:    simd_float2(x: Float( aspectRatio.width / 2), y: Float( aspectRatio.height / 2)),
+                        bottomLeft:  simd_float2(x: Float(-aspectRatio.width / 2), y: Float(-aspectRatio.height / 2)),
+                        bottomRight: simd_float2(x: Float( aspectRatio.width / 2), y: Float(-aspectRatio.height / 2))
                     )
                     self.showCropRect = true // TESTING
                 }
@@ -665,12 +672,6 @@ class ScopeState: ObservableObject, Codable {
 #endif
     }
     
-    struct MetalRect {
-        var topLeft: simd_float2
-        var topRight: simd_float2
-        var bottomLeft: simd_float2
-        var bottomRight: simd_float2
-    }
     
     var cropRect: MetalRect? = nil
     @Published var showCropRect: Bool = false
