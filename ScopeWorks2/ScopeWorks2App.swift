@@ -72,7 +72,7 @@ struct ScopeWorks2App: App {
         DocumentGroup(newDocument: { ScopeDocument() }) { configuration in
             ContentView(scopeState: configuration.document.scopeState)
                 .focusable()
-                .focusedSceneValue(\.scopeState, configuration.document.scopeState)
+                .focusedSceneObject(configuration.document.scopeState)
         }
         .defaultSize(width: 1800, height: 1125)
         .commands {
@@ -80,7 +80,9 @@ struct ScopeWorks2App: App {
         }
 #if os(macOS)
         Settings {
-            SettingsView(doneButtonAction: {} )
+            SettingsView(
+                selectedAspectRatio: AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false),
+                         doneButtonAction: {} )
         }
 #endif
     }

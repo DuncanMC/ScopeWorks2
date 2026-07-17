@@ -9,28 +9,20 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Focused value key for ScopeState
-struct FocusedScopeStateKey: FocusedValueKey {
-    typealias Value = ScopeState
-}
-
-extension FocusedValues {
-    var scopeState: ScopeState? {
-        get { self[FocusedScopeStateKey.self] }
-        set { self[FocusedScopeStateKey.self] = newValue }
-    }
-}
-
 // MARK: macOS menubar
 struct ScopeWorksCommands: Commands {
-    @FocusedValue(\.scopeState) var scopeState
+    @FocusedObject var scopeState: ScopeState?
     var body: some Commands {
         
         CommandGroup(before: .saveItem) {
             Button("Save Image as") {
-                print("Snork button pressed.")
+                scopeState?.saveImageAs()
             }
             .keyboardShortcut("s", modifiers: .option)
+            .disabled(scopeState == nil)
+            Button("Record Video") {
+                scopeState?.saveImageAs()
+            }
             .disabled(scopeState == nil)
         }
         CommandGroup(before: .toolbar) {

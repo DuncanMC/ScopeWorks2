@@ -11,6 +11,7 @@ enum ScopeCommand: CaseIterable, Identifiable {
     case animate
     case reverseAnimation
     case advanceAnimation
+    case showCropRect
 
     var id: Self { self }
 
@@ -24,6 +25,7 @@ enum ScopeCommand: CaseIterable, Identifiable {
         case .animate:            return "Animate"
         case .reverseAnimation:   return "Reverse Animation"
         case .advanceAnimation:   return "Advance animation 1 frame"
+        case .showCropRect:       return "Show crop rectangle"
         }
     }
 
@@ -37,6 +39,7 @@ enum ScopeCommand: CaseIterable, Identifiable {
         case .animate:            return .return
         case .reverseAnimation:   return "r"
         case .advanceAnimation:   return "a"
+        case .showCropRect:       return "c"
         }
     }
 
@@ -51,6 +54,8 @@ enum ScopeCommand: CaseIterable, Identifiable {
             return .command
         case .advanceAnimation:
             return [.command, .option]
+        case .showCropRect:
+            return .control
         }
     }
 
@@ -65,6 +70,8 @@ enum ScopeCommand: CaseIterable, Identifiable {
         case .animate:            return "↩"
         case .reverseAnimation:   return "⌘R"
         case .advanceAnimation:   return "⌘⌥A"
+        case .showCropRect:       return "^C"
+
         }
     }
 
@@ -85,6 +92,8 @@ enum ScopeCommand: CaseIterable, Identifiable {
         case .drawWithReflection: return \.drawWithReflection
         case .animate:            return \.animate
         case .reverseAnimation, .advanceAnimation:   return nil
+        case .showCropRect:
+            return \.showCropRect
         }
     }
 

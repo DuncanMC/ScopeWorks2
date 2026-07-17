@@ -37,6 +37,37 @@ struct MetalRect {
     var bottomRight: simd_float2
 }
 
+struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable {
+    var id: Self { self }
+    let title: String
+    let width: Double
+    let height: Double
+    let index: Int
+    let isCropForTiling: Bool
+    nonisolated var description: String {
+        return "\"\(title)\": \(width):\(height). Index = \(index)"
+    }
+    var cropRect: MetalRect {
+        if isCropForTiling{
+            return  MetalRect(
+                topLeft:     simd_float2(x: Float(-width / 2), y: Float( height / 2)),
+                topRight:    simd_float2(x: Float( width / 2), y: Float( height / 2)),
+                bottomLeft:  simd_float2(x: Float(-width / 2), y: Float(-height / 2)),
+                bottomRight: simd_float2(x: Float( width / 2), y: Float(-height / 2))
+            )
+        }
+        else {
+            let aspectFactor = Float(height / width)
+            return  MetalRect(
+                topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0) * aspectFactor),
+                topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0) * aspectFactor),
+                bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0) * aspectFactor),
+                bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0) * aspectFactor)
+            )
+        }
+    }
+}
+
 
 // MARK: Private vars
 
@@ -51,7 +82,7 @@ class ScopeState: ObservableObject, Codable {
     
 //    @Published var allAsepectRatios: [AspectRatio] = []
     @Published var availableDisplays: [DisplayInfo] = []
-
+    @Published var selectedAspectRatio: AspectRatio
     
     var useButton: Bool = true
     
@@ -231,21 +262,12 @@ class ScopeState: ObservableObject, Codable {
                     print("Invalid user info for defaultAspectRatioChangedNotification")
                     return
                 }
-                guard aspectRatio != self.activeAspectRatio  else {
+                guard aspectRatio != self.selectedAspectRatio  else {
                     print("aspect ratio unchanged.")
                     return
                 }
                 print("Received changed aspectRatio \(aspectRatio)")
-                self.activeAspectRatio = aspectRatio
-                if aspectRatio.title == "Crop for Tiling" {
-                    self.cropRect = MetalRect(
-                        topLeft:     simd_float2(x: Float(-aspectRatio.width / 2), y: Float( aspectRatio.height / 2)),
-                        topRight:    simd_float2(x: Float( aspectRatio.width / 2), y: Float( aspectRatio.height / 2)),
-                        bottomLeft:  simd_float2(x: Float(-aspectRatio.width / 2), y: Float(-aspectRatio.height / 2)),
-                        bottomRight: simd_float2(x: Float( aspectRatio.width / 2), y: Float(-aspectRatio.height / 2))
-                    )
-                    self.showCropRect = true // TESTING
-                }
+                self.selectedAspectRatio = aspectRatio
             }
         NotificationCenter.default.addObserver(
             forName: displaysChangedNotification,
@@ -485,6 +507,7 @@ class ScopeState: ObservableObject, Codable {
                     print("Error loading bookmark: \(error)")
                 }
             }
+            self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
             if self.imageURL == nil {
                 self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
             }
@@ -539,6 +562,8 @@ class ScopeState: ObservableObject, Codable {
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
+        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+
         doInitSetup()
         
         print("In ScopeState init.from. uuid = \(uuid)")
@@ -616,6 +641,7 @@ class ScopeState: ObservableObject, Codable {
         
         // Initialize other properties to defaults or empty values
         self.photoManager = PhotoLibraryManager()
+        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
         doInitSetup()
     }
     
@@ -625,9 +651,11 @@ class ScopeState: ObservableObject, Codable {
     
     init(){
         //        print("In ScopeState init. uuid = \(uuid)")
+        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
+        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
         doInitSetup()
     }
     
@@ -673,16 +701,8 @@ class ScopeState: ObservableObject, Codable {
     }
     
     
-    var cropRect: MetalRect? = nil
     @Published var showCropRect: Bool = false
-    var activeAspectRatio: AspectRatio? = nil
-        
-    
-//    var selectedImageAspectRatio: Float {
-//        guard selectedImageData != nil,
-//              selectedImageSize.width > 0 else { return 0 }
-//        return Float(selectedImageSize.width / selectedImageSize.height)
-//    }
+
     // MARK: - Properties to be saved in ScopeWorks document
     var bookmarkData: Data? {
         didSet {
@@ -1305,6 +1325,28 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
+    func recordVideo() {
+        // TODO: Implement this function
+        // On MacOS, display a save panel with popup and input boxes where the user can select a videofiletype , aspect ratio, and image height/width. (See the aspect ratio popup presented in Settings.swift.)
+        // On iOS, use the platform convention for collecting the user's selected options and a location to save the video
+        // On both platforms, have the selected aspect ratio default to the document's selectedAspectRatio, and when they enter a height or width, compute the other dimension based on the selected aspect ratio.
+        // Once the user has selected the location and settings for the save, create an off-screen version of the document's ScopeViewRepresentable sized for the specified height and width, and render the image using the cropRect from the user's chosent AspectRatio, begin recording the results to the chosen file.
+        // design the offscreen ScopeViewRepresentable so it can also used for both image and video recording.
+        // Design the video recording feature so recording can be paused and resumed, and paused initially so the user can adjust document settings before beginning video recording
+
+    }
+    func saveImageAs() {
+        
+        print("In \(#function)")
+        // TODO: Implement this function
+
+        // On MacOS, display a save panel with popup and input boxes where the user can select a filetype (JPG, PNG, or TIFF), aspect ratio, and image height/width. (See the aspect ratio popup presented in Settings.swift.)
+        // On iOS, use the platform convention for collecting the user's selected options and a location to save the image
+        // On both platforms, have the selected aspect ratio default to the document's selectedAspectRatio, and when they enter a height or width, compute the other dimension based on the selected aspect ratio.
+        // If the user chooses a different aspect ratio, re-compute the cropRect using the logic in computeCropRect.
+        // Once the user has selected the location and settings for the save, create an off-screen version of the document's ScopeViewRepresentable sized for the specified height and width, and render the image using the cropRect from the user's chosent AspectRatio, saving the results to the chosen file.
+        // design the offscreen ScopeViewRepresentable so it can also be used to record videos for the
+    }
     func handleSnapshot() {
         guard metalView != nil else {
             print("In \(#function), metalView = nil")

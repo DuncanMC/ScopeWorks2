@@ -372,10 +372,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         
                     }
                     
-//                    if ScopeRenderer.logPoints {
-//                        print("point2 = \(point2.myDescription)")
-//                        print("point3 = \(point3.myDescription)")
-//                    }
                     encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
                     
                     var uniforms: Uniforms = Uniforms(
@@ -392,7 +388,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                     
                     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-
+                    
                     if scopeState.drawWithReflection {
                         if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                             verts = [
@@ -407,24 +403,24 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                 simd_float2(point2x, point2y)
                             ]
                         }
-                            encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-                            
-                            var uniforms: Uniforms = Uniforms(
-                                color: simd_float4(1, 1, 1, 1),
-                                drawWithTetxure: true,
-                                drawTextureTriangles: true,
-                                textureTriangle: scopeState.trianglePoints,
-                                texAspect: texAspect,
-                                orthoMatrix: orthoMatrix,
-                                flipTextureY: scopeState.flipTextureY
-                            )
-                            encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                            encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                            
-                            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                        encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                        
+                        var uniforms: Uniforms = Uniforms(
+                            color: simd_float4(1, 1, 1, 1),
+                            drawWithTetxure: true,
+                            drawTextureTriangles: true,
+                            textureTriangle: scopeState.trianglePoints,
+                            texAspect: texAspect,
+                            orthoMatrix: orthoMatrix,
+                            flipTextureY: scopeState.flipTextureY
+                        )
+                        encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                        
+                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                     }
                     
-
+                    
                     
                     if scopeState.showOutlines {
                         // Draw outlines using drawThickLine()
@@ -446,7 +442,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       thickness: outerThickness / Float(drawableSize.width),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-
+                        
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
@@ -465,7 +461,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       thickness: innerThickness / Float(drawableSize.width),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-
+                        
                         //            //Now draw again with a 1-pixel thick white line
                         //            drawLine(encoder: encoder,
                         //                          p1: verts[1], p2: verts[2],
@@ -477,11 +473,20 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         //                          p1: verts[0], p2: verts[2],
                         //                          color: white)
                     }
-                    if scopeState.showCropRect, let cropRect = scopeState.cropRect {
+                    if scopeState.showCropRect {
+                        let cropRect = scopeState.selectedAspectRatio.cropRect
                         let colorsAndThicknesses: [(simd_float4, Float)] = [
                             (blue, 6),
                             (red, 4)]
-                        let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
+                        let multiplier: Float
+                        if !scopeState.selectedAspectRatio.isCropForTiling {
+                            multiplier = 1
+                        } else if scopeState.selectedScopeType == 1 {
+                            multiplier = Float(scopeState.zoom)
+                        } else {
+                            multiplier = Float(scopeState.zoom) / 2.0
+                        }
+                        
                         let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * multiplier, topRight: cropRect.topRight * multiplier, bottomLeft: cropRect.bottomLeft * multiplier, bottomRight: cropRect.bottomRight * multiplier)
                         for (color, thickness) in colorsAndThicknesses {
                             drawThickLine(encoder: encoder,
@@ -509,7 +514,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                         }
-                    }                }
+                    }
+                }
             }
         } else {
             

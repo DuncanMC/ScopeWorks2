@@ -467,7 +467,8 @@ struct ContentView: View {
         .sheet(item: $presentedModal) { modalType in
             switch modalType {
             case .settings:
-                SettingsView(doneButtonAction: {
+                SettingsView(selectedAspectRatio: scopeState.selectedAspectRatio,
+                             doneButtonAction: {
                     presentedModal = nil
                 },
                 )
@@ -523,7 +524,7 @@ struct ContentView: View {
             ScopeCommandButtons(scopeState: scopeState)
         }
 #endif
-        .focusedSceneValue(\.scopeState, scopeState)
+        .focusedSceneObject(scopeState)
 #if os(macOS)
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willEnterFullScreenNotification)) { _ in
             isFullScreen = true
@@ -547,7 +548,7 @@ struct ContentView: View {
             ToolbarItem(placement: .secondaryAction) {
                 Menu("File", systemImage: "doc") {
                     Button("Save Image as...") {
-                        print("Save Image as button pressed.")
+                        scopeState.saveImageAs()
                     }
                     Button("Create Video...") {
                         print("Create Video button pressed.")

@@ -7,6 +7,8 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import simd
+
 
 let defaultAspectRatioChangedNotification = Notification.Name("defaultAspectRatioChangedNotification")
 
@@ -28,16 +30,6 @@ enum UserDefaultsKeys: String {
     case lastUsedImageDirectoryBookmark
 }
 
-struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable {
-    var id: Self { self }
-    let title: String
-    let width: Double
-    let height: Double
-    let index: Int
-    nonisolated var description: String {
-        return "\"\(title)\": \(width):\(height). Index = \(index)"
-    }
-}
 
 struct SettingsView: View {
     
@@ -45,12 +37,12 @@ struct SettingsView: View {
 
     
     static let savedAspectRatios: [AspectRatio] = [
-        AspectRatio(title: "Crop for Tiling", width: 0.6, height: sqrt(3)/5.0, index: 0),
-        AspectRatio(title: "Square", width: 1, height: 1, index: 1),
-        AspectRatio(title: "3:2", width: 3, height: 2, index: 2),
-        AspectRatio(title: "4:3", width: 4, height: 3, index: 3),
-        AspectRatio(title: "8:10", width: 5, height: 4, index: 4),
-        AspectRatio(title: "16:9", width: 16, height: 9, index: 5),
+        AspectRatio(title: "Crop for Tiling", width: 0.6, height: sqrt(3)/5.0, index: 0, isCropForTiling: true),
+        AspectRatio(title: "Square", width: 1, height: 1, index: 1, isCropForTiling: false),
+        AspectRatio(title: "3:2", width: 3, height: 2, index: 2, isCropForTiling: false),
+        AspectRatio(title: "4:3", width: 4, height: 3, index: 3, isCropForTiling: false),
+        AspectRatio(title: "8:10", width: 5, height: 4, index: 4, isCropForTiling: false),
+        AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false),
     ]
     
     @State var allAsepectRatios: [AspectRatio] = SettingsView.savedAspectRatios
@@ -76,22 +68,18 @@ struct SettingsView: View {
             }
             if !found {
                 let name = "\(display.name) (\(Int(aspect.width)):\(Int(aspect.height)))"
-                allAsepectRatios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count))
+                allAsepectRatios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count, isCropForTiling: false))
             }
         }
-//        for aspect in allAsepectRatios {
-//            print(aspect)
-//        }
     }
     
-    init(doneButtonAction: @escaping () -> Void) {
+    init(selectedAspectRatio: AspectRatio, doneButtonAction: @escaping () -> Void) {
         self.doneButtonAction = doneButtonAction
         let snapshotFileType = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
         self.snapshotFileType = snapshotFileType
         self.selection = snapshotFileType
         self.allAsepectRatios = SettingsView.savedAspectRatios
-        let sixteenNine = SettingsView.savedAspectRatios.first(where: { $0.width == 16 && $0.height == 9 })
-        self.selectedAspectRatio = sixteenNine  ?? SettingsView.savedAspectRatios.last!
+        self.selectedAspectRatio = selectedAspectRatio
         updateAspectRatios()
 
     }
