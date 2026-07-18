@@ -30,6 +30,7 @@ struct ScopeViewRepresentable: NSViewRepresentable {
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
+        scopeState.renderer = context.coordinator
         if allowImageExport {
             scopeState.metalView = mtkView
         }
@@ -37,6 +38,10 @@ struct ScopeViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: MTKView, context: Context) {
+        // Keep the weak renderer reference current across view updates
+        if scopeState.renderer !== context.coordinator {
+            scopeState.renderer = context.coordinator
+        }
         if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()
         }
@@ -90,6 +95,7 @@ extension ScopeViewRepresentable {
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
+        scopeState.renderer = context.coordinator
         if allowImageExport {
             scopeState.metalView = mtkView
         }
@@ -97,6 +103,10 @@ extension ScopeViewRepresentable {
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {
+        // Keep the weak renderer reference current across view updates
+        if scopeState.renderer !== context.coordinator {
+            scopeState.renderer = context.coordinator
+        }
         if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()
         }

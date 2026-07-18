@@ -45,6 +45,20 @@ struct SettingsView: View {
         AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false),
     ]
     
+    /// Returns saved aspect ratios plus any unique ratios from connected displays.
+    static func allAspectRatios() -> [AspectRatio] {
+        var ratios = savedAspectRatios
+        let displays = ExternalDisplayManager.availableDisplays
+        for display in displays {
+            guard let aspect = display.aspect else { continue }
+            if !ratios.contains(where: { $0.width == aspect.width && $0.height == aspect.height }) {
+                let name = "\(display.name) (\(Int(aspect.width)):\(Int(aspect.height)))"
+                ratios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: ratios.count, isCropForTiling: false))
+            }
+        }
+        return ratios
+    }
+    
     @State var allAsepectRatios: [AspectRatio] = SettingsView.savedAspectRatios
 
     @State var selectedAspectRatio: AspectRatio {
@@ -54,23 +68,7 @@ struct SettingsView: View {
     }
 
     func updateAspectRatios() {
-        let displays = ExternalDisplayManager.availableDisplays
-        //Add code here to upate list of all aspect ratios
-        allAsepectRatios = SettingsView.savedAspectRatios
-        for display in displays {
-            guard let aspect = display.aspect else { continue }
-            var found = false
-            for ratio in allAsepectRatios {
-                if ratio.width == aspect.width && ratio.height == aspect.height {
-                    found = true
-                    break
-                }
-            }
-            if !found {
-                let name = "\(display.name) (\(Int(aspect.width)):\(Int(aspect.height)))"
-                allAsepectRatios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: allAsepectRatios.count, isCropForTiling: false))
-            }
-        }
+        allAsepectRatios = SettingsView.allAspectRatios()
     }
     
     init(selectedAspectRatio: AspectRatio, doneButtonAction: @escaping () -> Void) {

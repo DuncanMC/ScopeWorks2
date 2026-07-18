@@ -21,7 +21,7 @@ struct ScopeWorksCommands: Commands {
             .keyboardShortcut("s", modifiers: .option)
             .disabled(scopeState == nil)
             Button("Record Video") {
-                scopeState?.saveImageAs()
+                scopeState?.recordVideo()
             }
             .disabled(scopeState == nil)
         }

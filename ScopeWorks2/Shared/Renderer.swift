@@ -1,8 +1,8 @@
 import MetalKit
 import simd
 import SwiftUI
-
-
+import ImageIO
+import CoreImage
 
 #if os(iOS)
 import UIKit
@@ -11,37 +11,52 @@ import UIKit
 import AppKit
 #endif
 
-/// Redraw an image from Data so the returned image is always in the default ("up") orientation, as PNG data.
-func normalizedImageData(from imageData: Data) -> Data? {
-#if os(iOS)
-    guard let image = UIImage(data: imageData) else { return nil }
-    // If already up, nothing to do.
-    if image.imageOrientation == .up, let pngData = image.pngData() {
-        return pngData
+/// If the image needs color space conversion or orientation normalization, returns
+/// new PNG data in sRGB with "up" orientation. Returns nil when no conversion is needed
+/// (image is already sRGB with correct orientation), so the caller can use the original data.
+/// Untagged images are assumed to be sRGB.
+func sRGBImageData(from imageData: Data) -> Data? {
+    guard let source = CGImageSourceCreateWithData(imageData as CFData, nil),
+          let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+        return nil
     }
-    // Redraw to "up" orientation
-    let renderer = UIGraphicsImageRenderer(size: image.size)
-    let normalizedImage = renderer.image { _ in
-        image.draw(in: CGRect(origin: .zero, size: image.size))
+
+    let sRGBColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+
+    // Read EXIF orientation metadata
+    let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+    let orientationRaw = properties?[kCGImagePropertyOrientation] as? UInt32
+    let orientation = orientationRaw.flatMap { CGImagePropertyOrientation(rawValue: $0) } ?? .up
+
+    // Determine whether conversion is needed
+    let sourceColorSpace = cgImage.colorSpace
+    let isSRGB = (sourceColorSpace == nil) || (sourceColorSpace?.name == CGColorSpace.sRGB)
+    let needsOrientationFix = orientation != .up
+
+    if isSRGB && !needsOrientationFix {
+        return nil  // No conversion needed — caller should use original data
     }
-    return normalizedImage.pngData()
-#elseif os(macOS)
-    guard let nsImage = NSImage(data: imageData) else { return nil }
-    let imageRect = NSRect(origin: .zero, size: nsImage.size)
-    guard let rep = nsImage.bestRepresentation(for: imageRect, context: nil, hints: nil) else { return nil }
-    let bmp = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(nsImage.size.width), pixelsHigh: Int(nsImage.size.height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
-    guard let bmpRep = bmp else { return nil }
-    NSGraphicsContext.saveGraphicsState()
-    if let ctx = NSGraphicsContext(bitmapImageRep: bmpRep) {
-        NSGraphicsContext.current = ctx
-        rep.draw(in: imageRect)
-        ctx.flushGraphics()
+
+    // Use CIImage for color space conversion and/or orientation normalization
+    var ciImage = CIImage(cgImage: cgImage)
+    if needsOrientationFix {
+        ciImage = ciImage.oriented(forExifOrientation: Int32(orientation.rawValue))
     }
-    NSGraphicsContext.restoreGraphicsState()
-    return bmpRep.representation(using: .png, properties: [:])
-#else
-    return nil
-#endif
+
+    let context = CIContext()
+    guard let convertedImage = context.createCGImage(ciImage, from: ciImage.extent,
+                                                     format: .RGBA8, colorSpace: sRGBColorSpace) else {
+        return nil
+    }
+
+    // Encode as PNG for reliable loading by MTKTextureLoader
+    let data = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(
+        data as CFMutableData, "public.png" as CFString, 1, nil
+    ) else { return nil }
+    CGImageDestinationAddImage(destination, convertedImage, nil)
+    guard CGImageDestinationFinalize(destination) else { return nil }
+    return data as Data
 }
 
 extension Float {
@@ -173,7 +188,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         if true {
             if let scopeImageUUID = scopeState.imageUUID,
                imageUUID != scopeImageUUID {
-                print("New image, UUID = \(scopeImageUUID), reloading texture")
+                //print("New image, UUID = \(scopeImageUUID), reloading texture")
                 loadTexture()
                 imageUUID = scopeState.imageUUID
             }
@@ -181,67 +196,25 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     }
 
     func loadTexture() {
-#if os(macOS)
-//        if let url = scopeState.imageURL,
-//           let imageData = try? Data(contentsOf: url) {
-            
-        guard var imageData = scopeState.selectedImageData else { return }
-        if scopeState.isHEIC {
-            if let normalizedImageData = normalizedImageData(from: imageData) {
-                imageData = normalizedImageData
-            }
-
-        }
-//        Task { @MainActor in
-//            scopeState.selectedImageData = imageData
-//            imageUUID = scopeState.imageUUID
-//        }
+        guard let imageData = scopeState.selectedImageData else { return }
         let loader = MTKTextureLoader(device: device)
+        let options: [MTKTextureLoader.Option: Any] = [
+            .origin: MTKTextureLoader.Origin.bottomLeft,
+            .generateMipmaps: true,
+            .SRGB: false
+        ]
+
         do {
-            let options: [MTKTextureLoader.Option: Any] = [.origin:MTKTextureLoader.Origin.bottomLeft, .generateMipmaps: true]
-            let tex = try loader.newTexture(data: imageData, options: options)
+            // Convert to sRGB if needed; otherwise use the original data directly.
+            // Always go through newTexture(data:) which handles all image formats reliably.
+            let textureData = sRGBImageData(from: imageData) ?? imageData
+            let tex = try loader.newTexture(data: textureData, options: options)
             Task { @MainActor in
                 scopeState.texture = tex
             }
-            let hasAlpha =
-            tex.pixelFormat == .rgba8Unorm ||
-            tex.pixelFormat == .rgba8Unorm_srgb ||
-            tex.pixelFormat == .bgra8Unorm ||
-            tex.pixelFormat == .bgra8Unorm_srgb ||
-            tex.pixelFormat == .rgba16Float ||
-            tex.pixelFormat == .rgba32Float
-            //                    print("[ScopeRenderer] Loaded texture pixel format: \(tex.pixelFormat) | hasAlpha: \(hasAlpha)")
         } catch {
             print("Error loading texture: \(error)")
         }
-#else
-            let loader = MTKTextureLoader(device: device)
-                do {
-                    guard var imageData = scopeState.selectedImageData else { return }
-                    if scopeState.isHEIC {
-                        if let normalizedImageData = normalizedImageData(from: imageData) {
-                            imageData = normalizedImageData
-                        }
-                    }
-                    let options: [MTKTextureLoader.Option: Any] =
-                    [.origin:MTKTextureLoader.Origin.bottomLeft,
-                     .generateMipmaps: true]
-                    let tex = try loader.newTexture(data: imageData, options: options)
-                    Task { @MainActor in
-                        scopeState.texture = tex
-                    }
-
-                    let hasAlpha =
-                    tex.pixelFormat == .rgba8Unorm ||
-                    tex.pixelFormat == .rgba8Unorm_srgb ||
-                    tex.pixelFormat == .bgra8Unorm ||
-                    tex.pixelFormat == .bgra8Unorm_srgb ||
-                    tex.pixelFormat == .rgba16Float ||
-                    tex.pixelFormat == .rgba32Float
-                } catch {
-                    print("Error loading texture: \(error)")
-                }
-#endif
     }
 
     public func animateKaleidoscope() {
@@ -251,27 +224,19 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     }
     
     func draw(in view: MTKView) {
-        
         let width = view.drawableSize.width
         let height = view.drawableSize.height
         guard height != 0 else {
             print("Window height is zero!")
             return
         }
-        
+
 #if os(macOS)
         scale = Float(mtkView?.window?.screen?.backingScaleFactor ?? 1.0)
 #else
         scale = Float(mtkView?.contentScaleFactor ?? 1)
 #endif
 
-        let aspect = Float(width / height)
-        
-          // In your vertex shader, multiply positions by orthoMatrix
-        
-        let outerThickness: Float = 6.0
-        let innerThickness: Float = 2.0
-        
         if scopeState.animate {
             if ScopeRenderer.logPoints {
                 print("Before animate.")
@@ -288,7 +253,6 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             }
         }
 
-        //print("[ScopeRenderer] draw(in:) called. drawableSize: \(drawableSize), view.bounds: \(view.bounds)")
         guard let drawable = view.currentDrawable else {
             print("[ScopeRenderer] currentDrawable is nil")
             return
@@ -301,35 +265,62 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             print("[ScopeRenderer] pipeline is nil")
             return
         }
-        guard let texture = scopeState.texture else {
-//            print("[ScopeRenderer] texture is nil")
-            return
-        }
+        guard scopeState.texture != nil else { return }
 
-        let texWidth = Float(texture.width)
-        let texHeight = Float(texture.height)
-        let texAspect = texWidth / texHeight
-        
-        // Model-View-Projection matrix example
-          var orthoMatrix = matrix_identity_float4x4
-          orthoMatrix.columns.0.x = 1.0 / aspect // scale X by 1/aspect
-
-        let commandBuffer = commandQueue.makeCommandBuffer()!
         let colorComponents = scopeState.backgroundColor.components()
-        
         descriptor.colorAttachments[0].clearColor = MTLClearColor(
             red: colorComponents[0],
             green: colorComponents[1],
             blue: colorComponents[2],
             alpha: colorComponents[3])
+        descriptor.colorAttachments[0].loadAction = .clear
 
-        descriptor.colorAttachments[0].loadAction =  MTLLoadAction.clear
+        let commandBuffer = commandQueue.makeCommandBuffer()!
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)
-        encoder.setFragmentTexture(texture, index: 0)
-        
+        encoder.setFragmentTexture(scopeState.texture, index: 0)
+
+        renderToEncoder(encoder: encoder, drawableWidth: width, drawableHeight: height, skipOverlays: false)
+
+        encoder.endEncoding()
+        commandBuffer.present(drawable)
+        commandBuffer.commit()
+        scopeState.lastAnimationStepTime = CACurrentMediaTime()
+    }
+
+    /// Core rendering logic shared by on-screen draw(in:) and off-screen export.
+    /// Draws all kaleidoscope elements to the given encoder.
+    /// When `skipOverlays` is true, outlines and crop rect overlays are omitted (for image/video export).
+    /// When `exportCropRect` is provided, the ortho matrix is computed from the crop rect bounds
+    /// so that only the region within the crop rect fills the output.
+    func renderToEncoder(
+        encoder: MTLRenderCommandEncoder,
+        drawableWidth: Double,
+        drawableHeight: Double,
+        skipOverlays: Bool,
+        exportCropRect: MetalRect? = nil
+    ) {
+        guard let texture = scopeState.texture else { return }
+
+        let aspect = Float(drawableWidth / drawableHeight)
+        let texWidth = Float(texture.width)
+        let texHeight = Float(texture.height)
+        let texAspect = texWidth / texHeight
+
+        var orthoMatrix = matrix_identity_float4x4
+        if let cropRect = exportCropRect {
+            // Map the crop rect bounds to fill the entire output texture
+            orthoMatrix.columns.0.x = 1.0 / cropRect.topRight.x
+            orthoMatrix.columns.1.y = 1.0 / cropRect.topRight.y
+        } else {
+            orthoMatrix.columns.0.x = 1.0 / aspect
+        }
+
+        let outerThickness: Float = 6.0
+        let innerThickness: Float = 2.0
+
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
-    
+
         if template.isCircular {
             let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
             for (_, anElement) in template.elements.enumerated() {
@@ -347,33 +338,22 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     let nextA = fmod((Float(i+1) * 2 *  (.pi / Float(scopeState.polygonSides)) + anElement.startAngle), Float.pi * 2)
                     let cosB = cos(nextA)
                     let sinB = sin(nextA)
-                    // Zoom in
                     let point2x = (radius * cosA + center.x)
                     let point3x = (radius * cosB + center.x)
                     let point2y = (radius * sinA + center.y)
                     let point3y = (radius * sinB + center.y)
                     let point2: simd_float2 = simd_float2(point2x, point2y)
                     let point3: simd_float2 = simd_float2(point3x, point3y)
-                    
+
                     var verts: [simd_float2]
                     if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
-                        verts = [
-                            center,
-                            point3,
-                            point2
-                        ]
-                        
+                        verts = [center, point3, point2]
                     } else {
-                        verts = [
-                            center,
-                            point2,
-                            point3
-                        ]
-                        
+                        verts = [center, point2, point3]
                     }
-                    
+
                     encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-                    
+
                     var uniforms: Uniforms = Uniforms(
                         color: simd_float4(1, 1, 1, 1),
                         drawWithTetxure: true,
@@ -383,12 +363,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         orthoMatrix: orthoMatrix,
                         flipTextureY: scopeState.flipTextureY
                     )
-                    
+
                     encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                     encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                    
+
                     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-                    
+
                     if scopeState.drawWithReflection {
                         if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                             verts = [
@@ -404,7 +384,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             ]
                         }
                         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-                        
+
                         var uniforms: Uniforms = Uniforms(
                             color: simd_float4(1, 1, 1, 1),
                             drawWithTetxure: true,
@@ -416,117 +396,290 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         )
                         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-                        
+
                         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                     }
-                    
-                    
-                    
-                    if scopeState.showOutlines {
-                        // Draw outlines using drawThickLine()
+
+                    if !skipOverlays && scopeState.showOutlines {
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: black,
-                                      thickness:  outerThickness / Float(drawableSize.width),
+                                      thickness: outerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: black,
-                                      thickness: outerThickness / Float(drawableSize.width),
+                                      thickness: outerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: black,
-                                      thickness: outerThickness / Float(drawableSize.width),
+                                      thickness: outerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-                        
+
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width),
+                                      thickness: innerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[1],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width),
+                                      thickness: innerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                         drawThickLine(encoder: encoder,
                                       p1: verts[0], p2: verts[2],
                                       color: white,
-                                      thickness: innerThickness / Float(drawableSize.width),
+                                      thickness: innerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-                        
-                        //            //Now draw again with a 1-pixel thick white line
-                        //            drawLine(encoder: encoder,
-                        //                          p1: verts[1], p2: verts[2],
-                        //                          color: white)
-                        //            drawLine(encoder: encoder,
-                        //                          p1: verts[0], p2: verts[1],
-                        //                          color: white)
-                        //            drawLine(encoder: encoder,
-                        //                          p1: verts[0], p2: verts[2],
-                        //                          color: white)
                     }
-                    if scopeState.showCropRect {
+                    if !skipOverlays && scopeState.showCropRect {
                         let cropRect = scopeState.selectedAspectRatio.cropRect
                         let colorsAndThicknesses: [(simd_float4, Float)] = [
                             (blue, 6),
                             (red, 4)]
-                        let multiplier: Float
+                        let cropMultiplier: Float
                         if !scopeState.selectedAspectRatio.isCropForTiling {
-                            multiplier = 1
+                            cropMultiplier = 1
                         } else if scopeState.selectedScopeType == 1 {
-                            multiplier = Float(scopeState.zoom)
+                            cropMultiplier = Float(scopeState.zoom)
                         } else {
-                            multiplier = Float(scopeState.zoom) / 2.0
+                            cropMultiplier = Float(scopeState.zoom) / 2.0
                         }
-                        
-                        let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * multiplier, topRight: cropRect.topRight * multiplier, bottomLeft: cropRect.bottomLeft * multiplier, bottomRight: cropRect.bottomRight * multiplier)
+
+                        let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * cropMultiplier, topRight: cropRect.topRight * cropMultiplier, bottomLeft: cropRect.bottomLeft * cropMultiplier, bottomRight: cropRect.bottomRight * cropMultiplier)
                         for (color, thickness) in colorsAndThicknesses {
                             drawThickLine(encoder: encoder,
                                           p1: adjustedCropRect.topLeft, p2: adjustedCropRect.topRight,
                                           color: color,
-                                          thickness:  4 / Float(drawableSize.width),
+                                          thickness: 4 / Float(drawableWidth),
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                             drawThickLine(encoder: encoder,
                                           p1: adjustedCropRect.topRight, p2: adjustedCropRect.bottomRight,
                                           color: color,
-                                          thickness:  thickness / Float(drawableSize.width),
+                                          thickness: thickness / Float(drawableWidth),
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                             drawThickLine(encoder: encoder,
                                           p1: adjustedCropRect.bottomRight, p2: adjustedCropRect.bottomLeft,
                                           color: color,
-                                          thickness:  thickness / Float(drawableSize.width),
+                                          thickness: thickness / Float(drawableWidth),
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                             drawThickLine(encoder: encoder,
                                           p1: adjustedCropRect.bottomLeft, p2: adjustedCropRect.topLeft,
                                           color: color,
-                                          thickness:  thickness / Float(drawableSize.width),
+                                          thickness: thickness / Float(drawableWidth),
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                         }
                     }
                 }
             }
-        } else {
-            
         }
-        
+    }
 
+    // MARK: - Off-screen rendering
+
+    struct OffscreenRenderTarget {
+        let msaaTexture: MTLTexture
+        let resolveTexture: MTLTexture
+        let width: Int
+        let height: Int
+    }
+
+    func makeOffscreenRenderTarget(width: Int, height: Int) -> OffscreenRenderTarget? {
+        guard let device = device else { return nil }
+
+        if sampleCount > 1 {
+            let msDesc = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+            msDesc.textureType = .type2DMultisample
+            msDesc.sampleCount = sampleCount
+            msDesc.usage = [.renderTarget]
+            msDesc.storageMode = .private
+            guard let msTex = device.makeTexture(descriptor: msDesc) else { return nil }
+
+            let resolveDesc = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+            resolveDesc.usage = [.renderTarget, .shaderRead]
+            #if os(macOS)
+            resolveDesc.storageMode = .managed
+            #else
+            resolveDesc.storageMode = .shared
+            #endif
+            guard let resolveTex = device.makeTexture(descriptor: resolveDesc) else { return nil }
+
+            return OffscreenRenderTarget(msaaTexture: msTex, resolveTexture: resolveTex,
+                                         width: width, height: height)
+        } else {
+            let desc = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+            desc.usage = [.renderTarget, .shaderRead]
+            #if os(macOS)
+            desc.storageMode = .managed
+            #else
+            desc.storageMode = .shared
+            #endif
+            guard let tex = device.makeTexture(descriptor: desc) else { return nil }
+            return OffscreenRenderTarget(msaaTexture: tex, resolveTexture: tex,
+                                         width: width, height: height)
+        }
+    }
+
+    /// Computes the adjusted crop rect in model space for the given aspect ratio,
+    /// applying the zoom multiplier for tiling crops.
+    func adjustedCropRect(for aspectRatio: AspectRatio) -> MetalRect {
+        let cropRect = aspectRatio.cropRect
+        let cropMultiplier: Float
+        if !aspectRatio.isCropForTiling {
+            cropMultiplier = 1
+        } else if scopeState.selectedScopeType == 1 {
+            cropMultiplier = Float(scopeState.zoom)
+        } else {
+            cropMultiplier = Float(scopeState.zoom) / 2.0
+        }
+        return MetalRect(
+            topLeft: cropRect.topLeft * cropMultiplier,
+            topRight: cropRect.topRight * cropMultiplier,
+            bottomLeft: cropRect.bottomLeft * cropMultiplier,
+            bottomRight: cropRect.bottomRight * cropMultiplier
+        )
+    }
+
+    /// Render the current kaleidoscope state off-screen at the specified resolution and return a CGImage.
+    /// The `aspectRatio` determines which portion of the kaleidoscope to capture (its cropRect).
+    func renderOffscreenImage(width: Int, height: Int, aspectRatio: AspectRatio) -> CGImage? {
+        guard let target = makeOffscreenRenderTarget(width: width, height: height),
+              let pipeline = pipeline,
+              let sourceTexture = scopeState.texture else { return nil }
+
+        let descriptor = MTLRenderPassDescriptor()
+        if sampleCount > 1 {
+            descriptor.colorAttachments[0].texture = target.msaaTexture
+            descriptor.colorAttachments[0].resolveTexture = target.resolveTexture
+            descriptor.colorAttachments[0].storeAction = .multisampleResolve
+        } else {
+            descriptor.colorAttachments[0].texture = target.resolveTexture
+            descriptor.colorAttachments[0].storeAction = .store
+        }
+
+        let colorComponents = scopeState.backgroundColor.components()
+        descriptor.colorAttachments[0].clearColor = MTLClearColor(
+            red: colorComponents[0], green: colorComponents[1],
+            blue: colorComponents[2], alpha: colorComponents[3])
+        descriptor.colorAttachments[0].loadAction = .clear
+
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+        let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
+        encoder.setRenderPipelineState(pipeline)
+        encoder.setFragmentTexture(sourceTexture, index: 0)
+
+        let exportCrop = adjustedCropRect(for: aspectRatio)
+        renderToEncoder(encoder: encoder,
+                        drawableWidth: Double(width),
+                        drawableHeight: Double(height),
+                        skipOverlays: true,
+                        exportCropRect: exportCrop)
 
         encoder.endEncoding()
-        commandBuffer.present(drawable)
+
+        #if os(macOS)
+        if let blitEncoder = commandBuffer.makeBlitCommandEncoder() {
+            blitEncoder.synchronize(resource: target.resolveTexture)
+            blitEncoder.endEncoding()
+        }
+        #endif
+
         commandBuffer.commit()
-        scopeState.lastAnimationStepTime = CACurrentMediaTime()
+        commandBuffer.waitUntilCompleted()
+
+        let ciContext = CIContext()
+        guard let ciImage = CIImage(mtlTexture: target.resolveTexture, options: [
+            .colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!
+        ]) else { return nil }
+
+        let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
+        return ciContext.createCGImage(ciImage, from: ciImage.extent,
+                                       format: .RGBA8, colorSpace: sRGB)
+    }
+
+    /// Render the current kaleidoscope state off-screen into a CVPixelBuffer (for video recording).
+    /// Uses a pre-allocated render target to avoid per-frame allocation.
+    /// The `aspectRatio` determines which portion of the kaleidoscope to capture.
+    func renderOffscreenToPixelBuffer(
+        pixelBuffer: CVPixelBuffer,
+        renderTarget: OffscreenRenderTarget,
+        aspectRatio: AspectRatio
+    ) -> Bool {
+        guard let pipeline = pipeline,
+              let sourceTexture = scopeState.texture else { return false }
+
+        let width = renderTarget.width
+        let height = renderTarget.height
+
+        let descriptor = MTLRenderPassDescriptor()
+        if sampleCount > 1 {
+            descriptor.colorAttachments[0].texture = renderTarget.msaaTexture
+            descriptor.colorAttachments[0].resolveTexture = renderTarget.resolveTexture
+            descriptor.colorAttachments[0].storeAction = .multisampleResolve
+        } else {
+            descriptor.colorAttachments[0].texture = renderTarget.resolveTexture
+            descriptor.colorAttachments[0].storeAction = .store
+        }
+
+        let colorComponents = scopeState.backgroundColor.components()
+        descriptor.colorAttachments[0].clearColor = MTLClearColor(
+            red: colorComponents[0], green: colorComponents[1],
+            blue: colorComponents[2], alpha: colorComponents[3])
+        descriptor.colorAttachments[0].loadAction = .clear
+
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+        let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
+        encoder.setRenderPipelineState(pipeline)
+        encoder.setFragmentTexture(sourceTexture, index: 0)
+
+        let exportCrop = adjustedCropRect(for: aspectRatio)
+        renderToEncoder(encoder: encoder,
+                        drawableWidth: Double(width),
+                        drawableHeight: Double(height),
+                        skipOverlays: true,
+                        exportCropRect: exportCrop)
+
+        encoder.endEncoding()
+
+        #if os(macOS)
+        if let blitEncoder = commandBuffer.makeBlitCommandEncoder() {
+            blitEncoder.synchronize(resource: renderTarget.resolveTexture)
+            blitEncoder.endEncoding()
+        }
+        #endif
+
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return false }
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+
+        renderTarget.resolveTexture.getBytes(
+            baseAddress,
+            bytesPerRow: bytesPerRow,
+            from: MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                           size: MTLSize(width: width, height: height, depth: 1)),
+            mipmapLevel: 0
+        )
+
+        return true
     }
 
 //    func drawLine(encoder: MTLRenderCommandEncoder,

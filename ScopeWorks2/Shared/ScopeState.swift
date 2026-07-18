@@ -114,6 +114,16 @@ class ScopeState: ObservableObject, Codable {
     // MARK: - External display (transient, not persisted)
     var externalDisplayManager: ExternalDisplayViewManager?
     weak var metalView: MTKView? = nil
+    weak var renderer: ScopeRenderer? = nil
+
+    // MARK: - Export state (transient, not persisted)
+    @Published var activeRecorder: VideoRecorder? = nil
+    #if os(iOS)
+    @Published var showExportImageSheet: Bool = false
+    @Published var showRecordVideoSheet: Bool = false
+    @Published var completedVideoURL: URL? = nil
+    var exportSettingsState: ExportSettingsState?
+    #endif
     
     func updateDisplays() {
         availableDisplays = ExternalDisplayManager.availableDisplays
@@ -255,19 +265,21 @@ class ScopeState: ObservableObject, Codable {
         NotificationCenter.default.addObserver(
             forName: defaultAspectRatioChangedNotification,
             object: nil,
-            queue: nil) { notification in
-                
+            queue: nil) { [weak self] notification in
                 guard let userInfo = notification.userInfo,
                       let aspectRatio = userInfo["selectedAspectRatio"] as? AspectRatio else {
                     print("Invalid user info for defaultAspectRatioChangedNotification")
                     return
                 }
-                guard aspectRatio != self.selectedAspectRatio  else {
-                    print("aspect ratio unchanged.")
-                    return
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    guard aspectRatio != self.selectedAspectRatio  else {
+                        print("aspect ratio unchanged.")
+                        return
+                    }
+                    print("Received changed aspectRatio \(aspectRatio)")
+                    self.selectedAspectRatio = aspectRatio
                 }
-                print("Received changed aspectRatio \(aspectRatio)")
-                self.selectedAspectRatio = aspectRatio
             }
         NotificationCenter.default.addObserver(
             forName: displaysChangedNotification,
@@ -516,6 +528,7 @@ class ScopeState: ObservableObject, Codable {
                 self.imageSourceInfo = .fromFile(url: url, bookmarkData: self.bookmarkData)
             }
 #else
+            self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
                 print("in ScopeState.init(from:), found imageID: \(imageID)")
                 self.selectedImageID = imageID
@@ -566,15 +579,15 @@ class ScopeState: ObservableObject, Codable {
 
         doInitSetup()
         
-        print("In ScopeState init.from. uuid = \(uuid)")
+        //print("In ScopeState init.from. uuid = \(uuid)")
     }
     
     // MARK: - Encode
     func encode(to encoder: Encoder) throws {
-//        print("----------------------")
+        //print("----------------------")
         //print("In ScopeState.encode. selectedImageID = \(selectedImageID)")
         //print("trianglePoints = \(trianglePoints)")
-        print("----------------------")
+        //print("----------------------")
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         // New format
@@ -646,7 +659,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     deinit {
-        print("In ScopeState deinit. uuid = \(uuid)")
+        //print("In ScopeState deinit. uuid = \(uuid)")
     }
     
     init(){
@@ -1179,7 +1192,9 @@ class ScopeState: ObservableObject, Codable {
             return nil
         }
         
-        return ciContext.createCGImage(ciImage, from: ciImage.extent)
+        let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
+        return ciContext.createCGImage(ciImage, from: ciImage.extent,
+                                       format: .RGBA8, colorSpace: sRGB)
     }
     /// Cached iCloud Documents URL, resolved once on a background queue at startup.
     private var _iCloudDocumentsURL: URL?
@@ -1202,7 +1217,7 @@ class ScopeState: ObservableObject, Codable {
                 self?._iCloudDocumentsURL = documentsURL
                 self?._iCloudURLResolved = true
                 if let documentsURL {
-                    print("iCloud container resolved: \(documentsURL.path)")
+                    //print("iCloud container resolved: \(documentsURL.path)")
                 } else {
                     print("iCloud container not available")
                 }
@@ -1261,7 +1276,7 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
-    private func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
+    func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
         #if os(macOS)
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [filetype]
@@ -1326,26 +1341,91 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func recordVideo() {
-        // TODO: Implement this function
-        // On MacOS, display a save panel with popup and input boxes where the user can select a videofiletype , aspect ratio, and image height/width. (See the aspect ratio popup presented in Settings.swift.)
-        // On iOS, use the platform convention for collecting the user's selected options and a location to save the video
-        // On both platforms, have the selected aspect ratio default to the document's selectedAspectRatio, and when they enter a height or width, compute the other dimension based on the selected aspect ratio.
-        // Once the user has selected the location and settings for the save, create an off-screen version of the document's ScopeViewRepresentable sized for the specified height and width, and render the image using the cropRect from the user's chosent AspectRatio, begin recording the results to the chosen file.
-        // design the offscreen ScopeViewRepresentable so it can also used for both image and video recording.
-        // Design the video recording feature so recording can be paused and resumed, and paused initially so the user can adjust document settings before beginning video recording
+        #if os(macOS)
+        let settings = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: true))
+        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 140)
 
+        let savePanel = NSSavePanel()
+        savePanel.accessoryView = accessoryView
+        savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
+        savePanel.nameFieldStringValue = "ScopeWorks recording"
+
+        savePanel.begin { [weak self] result in
+            guard result == .OK, let url = savePanel.url, let self else { return }
+            guard let renderer = self.renderer else {
+                print("Renderer not available for video recording")
+                return
+            }
+
+            let recorder = VideoRecorder(
+                width: settings.exportWidth,
+                height: settings.exportHeight,
+                outputURL: url,
+                renderer: renderer,
+                aspectRatio: settings.selectedAspectRatio
+            )
+
+            do {
+                try recorder.setup()
+                self.activeRecorder = recorder
+            } catch {
+                print("Failed to set up video recorder: \(error)")
+            }
+        }
+        #elseif os(iOS)
+        exportSettingsState = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        showRecordVideoSheet = true
+        #endif
     }
     func saveImageAs() {
-        
-        print("In \(#function)")
-        // TODO: Implement this function
+        #if os(macOS)
+        let settings = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: false))
+        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 180)
 
-        // On MacOS, display a save panel with popup and input boxes where the user can select a filetype (JPG, PNG, or TIFF), aspect ratio, and image height/width. (See the aspect ratio popup presented in Settings.swift.)
-        // On iOS, use the platform convention for collecting the user's selected options and a location to save the image
-        // On both platforms, have the selected aspect ratio default to the document's selectedAspectRatio, and when they enter a height or width, compute the other dimension based on the selected aspect ratio.
-        // If the user chooses a different aspect ratio, re-compute the cropRect using the logic in computeCropRect.
-        // Once the user has selected the location and settings for the save, create an off-screen version of the document's ScopeViewRepresentable sized for the specified height and width, and render the image using the cropRect from the user's chosent AspectRatio, saving the results to the chosen file.
-        // design the offscreen ScopeViewRepresentable so it can also be used to record videos for the
+        let savePanel = NSSavePanel()
+        savePanel.accessoryView = accessoryView
+        savePanel.allowedContentTypes = [settings.selectedFormat.fileType].compactMap { $0 }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
+        let timestamp = formatter.string(from: Date())
+        savePanel.nameFieldStringValue = "ScopeWorks image \(timestamp)"
+
+        // Keep allowed content types in sync with the format picker
+        var formatCancellable: AnyCancellable?
+        formatCancellable = settings.$selectedFormat.sink { format in
+            if let fileType = format.fileType {
+                savePanel.allowedContentTypes = [fileType]
+            }
+            _ = formatCancellable // prevent premature deallocation
+        }
+
+        savePanel.begin { [weak self] result in
+            formatCancellable?.cancel()
+            guard result == .OK, let url = savePanel.url, let self else { return }
+            guard let renderer = self.renderer else {
+                print("Renderer not available for off-screen rendering")
+                return
+            }
+            guard let filetype = settings.selectedFormat.fileType else { return }
+
+            guard let image = renderer.renderOffscreenImage(
+                width: settings.exportWidth,
+                height: settings.exportHeight,
+                aspectRatio: settings.selectedAspectRatio
+            ) else {
+                print("Off-screen render failed")
+                return
+            }
+
+            self.writeImage(image, to: url, type: filetype)
+        }
+        #elseif os(iOS)
+        exportSettingsState = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        showExportImageSheet = true
+        #endif
     }
     func handleSnapshot() {
         guard metalView != nil else {

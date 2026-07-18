@@ -459,6 +459,18 @@ struct ContentView: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
+                    if let recorder = scopeState.activeRecorder {
+                        VStack {
+                            VideoRecordingControlsView(recorder: recorder) {
+                                #if os(iOS)
+                                scopeState.completedVideoURL = recorder.outputURL
+                                #endif
+                                scopeState.activeRecorder = nil
+                            }
+                            .padding(.top, 10)
+                            Spacer()
+                        }
+                    }
                 }
             }
             controlsView
@@ -492,6 +504,85 @@ struct ContentView: View {
             .frame(minWidth: 500, minHeight: 400)
             #endif
         }
+        #if os(iOS)
+        .sheet(isPresented: $scopeState.showExportImageSheet) {
+            if let settings = scopeState.exportSettingsState {
+                NavigationStack {
+                    ExportSettingsView(settings: settings, isForVideo: false)
+                        .navigationTitle("Export Image")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    scopeState.showExportImageSheet = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Export") {
+                                    scopeState.showExportImageSheet = false
+                                    guard let renderer = scopeState.renderer,
+                                          let filetype = settings.selectedFormat.fileType,
+                                          let image = renderer.renderOffscreenImage(
+                                              width: settings.exportWidth,
+                                              height: settings.exportHeight,
+                                              aspectRatio: settings.selectedAspectRatio
+                                          ) else { return }
+                                    scopeState.showSavePanel(
+                                        image: image,
+                                        defaultFilename: "ScopeWorks image",
+                                        directoryURL: nil,
+                                        filetype: filetype
+                                    )
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        .sheet(isPresented: $scopeState.showRecordVideoSheet) {
+            if let settings = scopeState.exportSettingsState {
+                NavigationStack {
+                    ExportSettingsView(settings: settings, isForVideo: true)
+                        .navigationTitle("Record Video")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    scopeState.showRecordVideoSheet = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Start Recording") {
+                                    scopeState.showRecordVideoSheet = false
+                                    guard let renderer = scopeState.renderer else { return }
+                                    let tempURL = FileManager.default.temporaryDirectory
+                                        .appendingPathComponent("ScopeWorks recording.mov")
+                                    let recorder = VideoRecorder(
+                                        width: settings.exportWidth,
+                                        height: settings.exportHeight,
+                                        outputURL: tempURL,
+                                        renderer: renderer,
+                                        aspectRatio: settings.selectedAspectRatio
+                                    )
+                                    do {
+                                        try recorder.setup()
+                                        scopeState.activeRecorder = recorder
+                                    } catch {
+                                        print("Failed to set up video recorder: \(error)")
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { scopeState.completedVideoURL != nil },
+            set: { if !$0 { scopeState.completedVideoURL = nil } }
+        )) {
+            if let url = scopeState.completedVideoURL {
+                ActivityViewController(activityItems: [url])
+            }
+        }
+        #endif
         .alert("Image Not Found", isPresented: $showRelocationAlert) {
             Button("Locate...") {
                 openRelocationPicker()
@@ -551,7 +642,7 @@ struct ContentView: View {
                         scopeState.saveImageAs()
                     }
                     Button("Create Video...") {
-                        print("Create Video button pressed.")
+                        scopeState.recordVideo()
                     }
                 }
             }
@@ -716,8 +807,18 @@ struct PhotoPickerView: View {
     }
 }
 
+#if os(iOS)
+/// Wraps UIActivityViewController for use in SwiftUI sheets.
+struct ActivityViewController: UIViewControllerRepresentable {
+    let activityItems: [Any]
 
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
 
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
 
 
 
