@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AE0CDEEF2FF818A000C79F56 /* ImageSouceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0CDEEE2FF818A000C79F56 /* ImageSouceView.swift */; };
 		AE0CDEF02FF818A000C79F56 /* ImageSouceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0CDEEE2FF818A000C79F56 /* ImageSouceView.swift */; };
 		AEBC86992F7EF7A1002EFFBB /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = AEBC86982F7EF7A1002EFFBB /* ArgumentParser */; };
 /* End PBXBuildFile section */
@@ -219,7 +218,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AE0CDEEF2FF818A000C79F56 /* ImageSouceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

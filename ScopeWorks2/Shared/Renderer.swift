@@ -106,7 +106,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     
     var isMainDocumentScopeView: Bool
     var scale: Float = 1.0
-
+    
     var sampleCount: Int = 1
     var imageUUID: UUID? = nil
     static var logPoints: Bool = false
@@ -114,7 +114,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     var device: MTLDevice!
     var commandQueue: MTLCommandQueue!
     var pipeline: MTLRenderPipelineState!
-
+    
     
     var scopeState: ScopeState
     // Track current drawable size for orientation handling
@@ -129,7 +129,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let orthoMatrix: float4x4
         let flipTextureY: Bool
     }
-
+    
 #if os(iOS)
     init(scopeState: ScopeState, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
@@ -146,32 +146,32 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         loadTexture()
     }
 #elseif os(macOS)
-        init(scopeState: ScopeState, isMainDocumentScopeView: Bool) {
-            self.scopeState = scopeState
-            self.isMainDocumentScopeView = isMainDocumentScopeView
-            super.init()
-            device = MTLCreateSystemDefaultDevice()
-            // xxx
-            if device.supportsTextureSampleCount(4) {
-                sampleCount = 4
-            } else if device.supportsTextureSampleCount(2) {
-                sampleCount = 2
-            }
-            commandQueue = device.makeCommandQueue()
-            makePipeline()
-            loadTexture()
+    init(scopeState: ScopeState, isMainDocumentScopeView: Bool) {
+        self.scopeState = scopeState
+        self.isMainDocumentScopeView = isMainDocumentScopeView
+        super.init()
+        device = MTLCreateSystemDefaultDevice()
+        // xxx
+        if device.supportsTextureSampleCount(4) {
+            sampleCount = 4
+        } else if device.supportsTextureSampleCount(2) {
+            sampleCount = 2
         }
+        commandQueue = device.makeCommandQueue()
+        makePipeline()
+        loadTexture()
+    }
 #endif
-
     
-
+    
+    
     func makePipeline() {
         let library = device.makeDefaultLibrary()
         let pipelineDesc = MTLRenderPipelineDescriptor()
         pipelineDesc.vertexFunction = library?.makeFunction(name: "vertex_main")
         pipelineDesc.fragmentFunction = library?.makeFunction(name: "fragment_main")
         pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
-
+        
         // Enable blending for transparent drawing
         pipelineDesc.rasterSampleCount = sampleCount // xxx
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
@@ -184,7 +184,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)
     }
-
+    
     func updateImageData() {
         // Skip if in camera mode -- CameraManager updates texture directly
         guard scopeState.imageSourceMode == .staticImage else { return }
@@ -197,7 +197,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             }
         }
     }
-
+    
     func loadTexture() {
         guard let imageData = scopeState.selectedImageData else { return }
         let loader = MTKTextureLoader(device: device)
@@ -206,7 +206,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             .generateMipmaps: true,
             .SRGB: false
         ]
-
+        
         do {
             // Convert to sRGB if needed; otherwise use the original data directly.
             // Always go through newTexture(data:) which handles all image formats reliably.
@@ -219,7 +219,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             print("Error loading texture: \(error)")
         }
     }
-
+    
     public func animateKaleidoscope() {
         guard scopeState.animate else { return }
         let elapsed = CACurrentMediaTime() - scopeState.lastAnimationStepTime
@@ -233,13 +233,13 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             print("Window height is zero!")
             return
         }
-
+        
 #if os(macOS)
         scale = Float(mtkView?.window?.screen?.backingScaleFactor ?? 1.0)
 #else
         scale = Float(mtkView?.contentScaleFactor ?? 1)
 #endif
-
+        
         if scopeState.animate {
             if ScopeRenderer.logPoints {
                 print("Before animate.")
@@ -255,7 +255,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 print("   trianglePoints.point3 = \(scopeState.trianglePoints.point3.myDescription)")
             }
         }
-
+        
         guard let drawable = view.currentDrawable else {
             print("[ScopeRenderer] currentDrawable is nil")
             return
@@ -269,7 +269,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             return
         }
         guard scopeState.texture != nil else { return }
-
+        
         let colorComponents = scopeState.backgroundColor.components()
         descriptor.colorAttachments[0].clearColor = MTLClearColor(
             red: colorComponents[0],
@@ -277,20 +277,20 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             blue: colorComponents[2],
             alpha: colorComponents[3])
         descriptor.colorAttachments[0].loadAction = .clear
-
+        
         let commandBuffer = commandQueue.makeCommandBuffer()!
         let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)!
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(scopeState.texture, index: 0)
-
+        
         renderToEncoder(encoder: encoder, drawableWidth: width, drawableHeight: height, skipOverlays: false)
-
+        
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
         scopeState.lastAnimationStepTime = CACurrentMediaTime()
     }
-
+    
     /// Core rendering logic shared by on-screen draw(in:) and off-screen export.
     /// Draws all kaleidoscope elements to the given encoder.
     /// When `skipOverlays` is true, crop rect overlays are omitted (for image/video export). (outlines are drawn if requested)
@@ -304,12 +304,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         exportCropRect: MetalRect? = nil
     ) {
         guard let texture = scopeState.texture else { return }
-
+        
         let aspect = Float(drawableWidth / drawableHeight)
         let texWidth = Float(texture.width)
         let texHeight = Float(texture.height)
         let texAspect = texWidth / texHeight
-
+        
         var orthoMatrix = matrix_identity_float4x4
         if let cropRect = exportCropRect {
             // Map the crop rect bounds to fill the entire output texture
@@ -318,12 +318,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         } else {
             orthoMatrix.columns.0.x = 1.0 / aspect
         }
-
+        
         let outerThickness: Float = 6.0
         let innerThickness: Float = 2.0
-
+        
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
-
+        
         if template.isCircular {
             let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
             for (_, anElement) in template.elements.enumerated() {
@@ -347,16 +347,16 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     let point3y = (radius * sinB + center.y)
                     let point2: simd_float2 = simd_float2(point2x, point2y)
                     let point3: simd_float2 = simd_float2(point3x, point3y)
-
+                    
                     var verts: [simd_float2]
                     if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                         verts = [center, point3, point2]
                     } else {
                         verts = [center, point2, point3]
                     }
-
+                    
                     encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-
+                    
                     var uniforms: Uniforms = Uniforms(
                         color: simd_float4(1, 1, 1, 1),
                         drawWithTetxure: true,
@@ -366,12 +366,12 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         orthoMatrix: orthoMatrix,
                         flipTextureY: scopeState.flipTextureY
                     )
-
+                    
                     encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                     encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
+                    
                     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-
+                    
                     if scopeState.drawWithReflection {
                         if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
                             verts = [
@@ -387,7 +387,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             ]
                         }
                         encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
-
+                        
                         var uniforms: Uniforms = Uniforms(
                             color: simd_float4(1, 1, 1, 1),
                             drawWithTetxure: true,
@@ -399,10 +399,10 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         )
                         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
+                        
                         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                     }
-
+                    
                     if scopeState.showOutlines {
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
@@ -422,7 +422,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       thickness: outerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-
+                        
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
@@ -458,7 +458,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         } else {
                             cropMultiplier = Float(scopeState.zoom) / 2.0
                         }
-
+                        
                         let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * cropMultiplier, topRight: cropRect.topRight * cropMultiplier, bottomLeft: cropRect.bottomLeft * cropMultiplier, bottomRight: cropRect.bottomRight * cropMultiplier)
                         for (color, thickness) in colorsAndThicknesses {
                             drawThickLine(encoder: encoder,
@@ -486,6 +486,114 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
                         }
+                    }
+                }
+            }
+        } else {
+            // MARK: - 8-way
+            // Other non-circular kaleidoscope types (currently 8-way square and 8-way tiles
+            
+            var uniforms: Uniforms
+            
+
+            for (_, anElement) in template.elements.enumerated() {
+                uniforms = Uniforms(
+                    color: simd_float4(1, 1, 1, 1),
+                    drawWithTetxure: true,
+                    drawTextureTriangles: true,
+                    textureTriangle: scopeState.trianglePoints,
+                    texAspect: texAspect,
+                    orthoMatrix: orthoMatrix,
+                    flipTextureY: scopeState.flipTextureY
+                )
+                encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+                encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
+
+
+                guard anElement.type == .eightWay else { continue }
+                let center = simd_float2(anElement.center)
+                let radius: Float = Float(anElement.radius)
+                let topLeft = center + simd_float2(-radius, radius)
+                let topRight = center + simd_float2(radius, radius)
+                let bottomLeft = center + simd_float2(-radius, -radius)
+                let bottomRight = center + simd_float2(radius, -radius)
+                let topMiddle = center + simd_float2(0, radius)
+                let middleLeft = center + simd_float2(-radius, 0)
+                let middleRight = center + simd_float2(radius, 0)
+                let bottomMiddle = center + simd_float2(0, -radius)
+                
+                //Build the 8 right triangles for this 8-way square
+                let triangles: [TrianglePoints] = [
+                    TrianglePoints(point1: center, point2: topMiddle, point3: topRight), // T1
+                    TrianglePoints(point1: center, point2: middleRight, point3: topRight), // T2
+                    TrianglePoints(point1: center, point2: middleRight, point3: bottomRight), // T3
+                    TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomRight), // T4
+                    TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomLeft), // T5
+                    TrianglePoints(point1: center, point2: middleLeft, point3: bottomLeft), // T6
+                    TrianglePoints(point1: center, point2: middleLeft, point3: topLeft), // T7
+                    TrianglePoints(point1: center, point2: topMiddle, point3: topLeft), // T8
+                ]
+                // Build the vertex array from the triangles
+                var verts: [simd_float2] = []
+                for aTriangle in triangles {
+                    verts += [aTriangle.point1, aTriangle.point2, aTriangle.point3]
+                }
+                encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * verts.count, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: verts.count)
+                
+                if scopeState.drawWithReflection {
+                    verts = []
+                    for aTriangle in triangles {
+                        verts.append(aTriangle.point3)
+                        verts.append(aTriangle.point2)
+                        verts.append(aTriangle.point1)
+                    }
+                    encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * verts.count, index: 0)
+                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: verts.count)
+                }
+                
+                if scopeState.showOutlines {
+                    for aTriangle in triangles {
+                        
+                        //Draw a thick black outline of each triangle
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point1, p2: aTriangle.point2,
+                                      color: black,
+                                      thickness: outerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point2, p2: aTriangle.point3,
+                                      color: black,
+                                      thickness: outerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point3, p2: aTriangle.point1,
+                                      color: black,
+                                      thickness: outerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+
+                        // Now draw a thinner white outline of each triangle
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point1, p2: aTriangle.point2,
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point2, p2: aTriangle.point3,
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
+                        drawThickLine(encoder: encoder,
+                                      p1: aTriangle.point3, p2: aTriangle.point1,
+                                      color: white,
+                                      thickness: innerThickness / Float(drawableWidth),
+                                      orthoMatrix: orthoMatrix,
+                                      texAspect: texAspect)
                     }
                 }
             }

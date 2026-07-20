@@ -260,31 +260,31 @@ struct BuildTemplates: AsyncParsableCommand {
                 isCircular = false
                 elements = [ScopeElement(
                     type: .eightWay,
-                    center: CGPoint(x: 0.5, y: 0.5),
-                    radius: 0.5,
+                    center: CGPoint(x: 0, y: 0),
+                    radius: 1,
                     startAngle:  0.0)]
             case 3: // MARK: 8-way tiles template
                 isCircular = false
                 elements = [
                     ScopeElement(
                     type: .eightWay,
-                    center: CGPoint(x: 0.25, y: 0.25),
-                    radius: 0.25,
+                    center: CGPoint(x: 0.5, y: 0.5),
+                    radius: 0.5,
                     startAngle:  0.0),
                     ScopeElement(
                     type: .eightWay,
-                    center: CGPoint(x: 0.25, y: -0.25),
-                    radius: 0.25,
+                    center: CGPoint(x: 0.5, y: -0.5),
+                    radius: 0.5,
                     startAngle:  0.0),
                     ScopeElement(
                     type: .eightWay,
-                    center: CGPoint(x: -0.25, y: -0.25),
-                    radius: 0.25,
+                    center: CGPoint(x: -0.5, y: -0.5),
+                    radius: 0.5,
                     startAngle:  0.0),
                     ScopeElement(
                     type: .eightWay,
-                    center: CGPoint(x: -0.25, y: 0.25),
-                    radius: 0.25,
+                    center: CGPoint(x: -0.5, y: 0.5),
+                    radius: 0.5,
                     startAngle:  0.0),
                 ]
             default:
