@@ -15,15 +15,19 @@ class ExportSettingsState: ObservableObject {
     @Published var selectedAspectRatio: AspectRatio
     @Published var exportWidth: Int = 1920
     @Published var exportHeight: Int = 1080
+    
+    var isEightWayScope: Bool
 
-    init(defaultAspectRatio: AspectRatio) {
+    init(defaultAspectRatio: AspectRatio, isEightWayScope: Bool) {
+        print("In ExportSettingsState.init. isEightWayScope = \(isEightWayScope)")
         self.selectedAspectRatio = defaultAspectRatio
+        self.isEightWayScope = isEightWayScope
         updateHeightFromWidth()
     }
 
     func updateHeightFromWidth() {
         guard selectedAspectRatio.width > 0 else { return }
-        let ratio = selectedAspectRatio.height / selectedAspectRatio.width
+        let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
         let newHeight = max(1, Int(round(Double(exportWidth) * ratio)))
         guard newHeight != exportHeight else { return }
         exportHeight = newHeight
@@ -31,7 +35,7 @@ class ExportSettingsState: ObservableObject {
 
     func updateWidthFromHeight() {
         guard selectedAspectRatio.height > 0 else { return }
-        let ratio = selectedAspectRatio.width / selectedAspectRatio.height
+        let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.width / selectedAspectRatio.height
         let newWidth = max(1, Int(round(Double(exportHeight) * ratio)))
         guard newWidth != exportWidth else { return }
         exportWidth = newWidth

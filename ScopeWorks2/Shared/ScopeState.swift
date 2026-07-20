@@ -49,6 +49,7 @@ struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, 
     }
     var cropRect: MetalRect {
         if isCropForTiling{
+            // TODO: Figure out if this scope isCircular
             return  MetalRect(
                 topLeft:     simd_float2(x: Float(-width / 2), y: Float( height / 2)),
                 topRight:    simd_float2(x: Float( width / 2), y: Float( height / 2)),
@@ -1378,7 +1379,10 @@ class ScopeState: ObservableObject, Codable {
     
     func recordVideo() {
         #if os(macOS)
-        let settings = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let settings = ExportSettingsState(
+            defaultAspectRatio: selectedAspectRatio,
+            isEightWayScope:  !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: true))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 140)
 
@@ -1394,13 +1398,19 @@ class ScopeState: ObservableObject, Codable {
                 return
             }
 
+            // Record to a temp file, then move to the user's chosen destination on stop.
+            // This avoids sandbox permission issues when overwriting existing files.
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString + "." + url.pathExtension)
+
             let recorder = VideoRecorder(
                 width: settings.exportWidth,
                 height: settings.exportHeight,
-                outputURL: url,
+                outputURL: tempURL,
                 renderer: renderer,
                 aspectRatio: settings.selectedAspectRatio
             )
+            recorder.destinationURL = url
 
             do {
                 try recorder.setup()
@@ -1416,7 +1426,11 @@ class ScopeState: ObservableObject, Codable {
     }
     func saveImageAs() {
         #if os(macOS)
-        let settings = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+
+        let settings = ExportSettingsState(
+            defaultAspectRatio: selectedAspectRatio,
+            isEightWayScope: !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: false))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 180)
 

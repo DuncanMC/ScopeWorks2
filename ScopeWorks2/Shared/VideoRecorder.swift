@@ -36,6 +36,9 @@ class VideoRecorder: ObservableObject {
     let outputURL: URL
     let aspectRatio: AspectRatio
 
+    /// The user's chosen destination. When set, the recorded file is moved here on stop.
+    var destinationURL: URL?
+
     weak var renderer: ScopeRenderer?
     var renderTarget: ScopeRenderer.OffscreenRenderTarget?
 
@@ -49,9 +52,10 @@ class VideoRecorder: ObservableObject {
     }
 
     func setup() throws {
-        // Remove existing file if present
-        try? FileManager.default.removeItem(at: outputURL)
-
+        // Remove any leftover temp file — AVAssetWriter requires the output path not exist
+        if FileManager.default.fileExists(atPath: outputURL.path) {
+            try FileManager.default.removeItem(at: outputURL)
+        }
         let writer = try AVAssetWriter(outputURL: outputURL, fileType: .mov)
 
         let videoSettings: [String: Any] = [
@@ -81,7 +85,11 @@ class VideoRecorder: ObservableObject {
         videoInput = input
         pixelBufferAdaptor = adaptor
 
-        writer.startWriting()
+        guard writer.startWriting() else {
+            let writerError = writer.error
+            throw writerError ?? NSError(domain: "VideoRecorder", code: -1,
+                                         userInfo: [NSLocalizedDescriptionKey: "AVAssetWriter failed to start writing"])
+        }
         writer.startSession(atSourceTime: .zero)
         state = .paused
     }
@@ -112,6 +120,20 @@ class VideoRecorder: ObservableObject {
 
         videoInput?.markAsFinished()
         await assetWriter?.finishWriting()
+
+        // Move recorded file to the user's chosen destination
+        if let destination = destinationURL {
+            do {
+                if FileManager.default.fileExists(atPath: destination.path) {
+                    _ = try FileManager.default.replaceItemAt(destination, withItemAt: outputURL)
+                } else {
+                    try FileManager.default.moveItem(at: outputURL, to: destination)
+                }
+            } catch {
+                print("[VideoRecorder] Failed to move recording to destination: \(error)")
+            }
+        }
+
         state = .idle
     }
 

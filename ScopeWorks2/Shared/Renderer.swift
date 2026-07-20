@@ -445,48 +445,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     // Only draw the crop rect if the user requested it, skipOverLays = false,
                     // and this is the main document scope view.
                     // (skipOverlays is true in off-screen rendering)
-                    if scopeState.showCropRect && !skipOverlays && isMainDocumentScopeView {
-                        let cropRect = scopeState.selectedAspectRatio.cropRect
-                        let colorsAndThicknesses: [(simd_float4, Float)] = [
-                            (blue, 6),
-                            (red, 4)]
-                        let cropMultiplier: Float
-                        if !scopeState.selectedAspectRatio.isCropForTiling {
-                            cropMultiplier = 1
-                        } else if scopeState.selectedScopeType == 1 {
-                            cropMultiplier = Float(scopeState.zoom)
-                        } else {
-                            cropMultiplier = Float(scopeState.zoom) / 2.0
-                        }
-                        
-                        let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * cropMultiplier, topRight: cropRect.topRight * cropMultiplier, bottomLeft: cropRect.bottomLeft * cropMultiplier, bottomRight: cropRect.bottomRight * cropMultiplier)
-                        for (color, thickness) in colorsAndThicknesses {
-                            drawThickLine(encoder: encoder,
-                                          p1: adjustedCropRect.topLeft, p2: adjustedCropRect.topRight,
-                                          color: color,
-                                          thickness: 4 / Float(drawableWidth),
-                                          orthoMatrix: orthoMatrix,
-                                          texAspect: texAspect)
-                            drawThickLine(encoder: encoder,
-                                          p1: adjustedCropRect.topRight, p2: adjustedCropRect.bottomRight,
-                                          color: color,
-                                          thickness: thickness / Float(drawableWidth),
-                                          orthoMatrix: orthoMatrix,
-                                          texAspect: texAspect)
-                            drawThickLine(encoder: encoder,
-                                          p1: adjustedCropRect.bottomRight, p2: adjustedCropRect.bottomLeft,
-                                          color: color,
-                                          thickness: thickness / Float(drawableWidth),
-                                          orthoMatrix: orthoMatrix,
-                                          texAspect: texAspect)
-                            drawThickLine(encoder: encoder,
-                                          p1: adjustedCropRect.bottomLeft, p2: adjustedCropRect.topLeft,
-                                          color: color,
-                                          thickness: thickness / Float(drawableWidth),
-                                          orthoMatrix: orthoMatrix,
-                                          texAspect: texAspect)
-                        }
-                    }
+
                 }
             }
         } else {
@@ -495,6 +454,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             
             var uniforms: Uniforms
             
+            let multiplier: Float =  Float(scopeState.zoom) / 2.0
+
 
             for (_, anElement) in template.elements.enumerated() {
                 uniforms = Uniforms(
@@ -511,8 +472,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
 
                 guard anElement.type == .eightWay else { continue }
-                let center = simd_float2(anElement.center)
-                let radius: Float = Float(anElement.radius)
+                let center = simd_float2(anElement.center) * multiplier
+                let radius: Float = Float(anElement.radius) * multiplier
                 let topLeft = center + simd_float2(-radius, radius)
                 let topRight = center + simd_float2(radius, radius)
                 let bottomLeft = center + simd_float2(-radius, -radius)
@@ -598,7 +559,58 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 }
             }
         }
-    }
+        if scopeState.showCropRect && !skipOverlays && isMainDocumentScopeView {
+            let cropRect: MetalRect
+            if scopeState.selectedAspectRatio.isCropForTiling {
+                cropRect = MetalRect(
+                    topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0)),
+                    topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
+                    bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0)),
+                    bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0))
+                    )
+            } else {
+                 cropRect = scopeState.selectedAspectRatio.cropRect
+            }
+            let colorsAndThicknesses: [(simd_float4, Float)] = [
+                (blue, 6),
+                (red, 4)]
+            let cropMultiplier: Float
+            if !scopeState.selectedAspectRatio.isCropForTiling {
+                cropMultiplier = 1
+            } else if scopeState.selectedScopeType == 1 {
+                cropMultiplier = Float(scopeState.zoom)
+            } else {
+                cropMultiplier = Float(scopeState.zoom) / 2.0
+            }
+            
+            let adjustedCropRect = MetalRect(topLeft: cropRect.topLeft * cropMultiplier, topRight: cropRect.topRight * cropMultiplier, bottomLeft: cropRect.bottomLeft * cropMultiplier, bottomRight: cropRect.bottomRight * cropMultiplier)
+            for (color, thickness) in colorsAndThicknesses {
+                drawThickLine(encoder: encoder,
+                              p1: adjustedCropRect.topLeft, p2: adjustedCropRect.topRight,
+                              color: color,
+                              thickness: 4 / Float(drawableWidth),
+                              orthoMatrix: orthoMatrix,
+                              texAspect: texAspect)
+                drawThickLine(encoder: encoder,
+                              p1: adjustedCropRect.topRight, p2: adjustedCropRect.bottomRight,
+                              color: color,
+                              thickness: thickness / Float(drawableWidth),
+                              orthoMatrix: orthoMatrix,
+                              texAspect: texAspect)
+                drawThickLine(encoder: encoder,
+                              p1: adjustedCropRect.bottomRight, p2: adjustedCropRect.bottomLeft,
+                              color: color,
+                              thickness: thickness / Float(drawableWidth),
+                              orthoMatrix: orthoMatrix,
+                              texAspect: texAspect)
+                drawThickLine(encoder: encoder,
+                              p1: adjustedCropRect.bottomLeft, p2: adjustedCropRect.topLeft,
+                              color: color,
+                              thickness: thickness / Float(drawableWidth),
+                              orthoMatrix: orthoMatrix,
+                              texAspect: texAspect)
+            }
+        }    }
 
     // MARK: - Off-screen rendering
 
@@ -651,7 +663,20 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     /// Computes the adjusted crop rect in model space for the given aspect ratio,
     /// applying the zoom multiplier for tiling crops.
     func adjustedCropRect(for aspectRatio: AspectRatio) -> MetalRect {
-        let cropRect = aspectRatio.cropRect
+        
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
+        let cropRect: MetalRect
+        if aspectRatio.isCropForTiling && !template.isCircular {
+            cropRect = MetalRect(
+                topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0)),
+                topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
+                bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0)),
+                bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0))
+                )
+
+        } else {
+            cropRect = aspectRatio.cropRect
+        }
         let cropMultiplier: Float
         if !aspectRatio.isCropForTiling {
             cropMultiplier = 1
