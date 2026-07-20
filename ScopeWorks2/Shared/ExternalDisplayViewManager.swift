@@ -55,7 +55,7 @@ struct FullScreenOverlayView: View {
         ZStack {
             #if os(iOS) || os(iPadOS)
                 ScopeViewRepresentable(scopeState: scopeState,
-                                       allowImageExport: true)
+                                       allowImageExport: true, isMainDocumentScopeView: false)
                 .gesture(TwoFingerTapGesture {
                     print("Two finger tap detected in full-screen view")
                     scopeState.handleSnapshot()
@@ -64,7 +64,8 @@ struct FullScreenOverlayView: View {
                     .ignoresSafeArea()
             #else
                 ScopeViewRepresentable(scopeState: scopeState,
-                                       allowImageExport: true)
+                                       allowImageExport: true,
+                                       isMainDocumentScopeView: false)
                     .ignoresSafeArea()
             #endif
 

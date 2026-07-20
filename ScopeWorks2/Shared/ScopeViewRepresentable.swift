@@ -8,18 +8,20 @@ struct ScopeViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
 
     var allowImageExport: Bool
+    var isMainDocumentScopeView: Bool
     weak var metalView: MTKView? = nil
     @ObservedObject var scopeState: ScopeState
 
-    init (scopeState: ScopeState, allowImageExport: Bool = false) {
+    init (scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
         self.allowImageExport = allowImageExport
+        self.isMainDocumentScopeView = isMainDocumentScopeView
     }
     
         
     
     func makeCoordinator() -> ScopeRenderer {
-        ScopeRenderer(scopeState: scopeState)
+        ScopeRenderer(scopeState: scopeState, isMainDocumentScopeView: isMainDocumentScopeView)
     }
 
     func makeNSView(context: Context) -> MTKView {
@@ -69,18 +71,20 @@ struct ScopeViewRepresentable: UIViewRepresentable {
 
     typealias ViewType = MTKView
 
+    var isMainDocumentScopeView: Bool
     var allowImageExport: Bool
     weak var metalView: MTKView? = nil
 
     @ObservedObject var scopeState: ScopeState
 
-    init (scopeState: ScopeState, allowImageExport: Bool = false) {
+    init (scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
         self.allowImageExport = allowImageExport
+        self.isMainDocumentScopeView = isMainDocumentScopeView
     }
 
     func makeCoordinator() -> ScopeRenderer {
-        ScopeRenderer(scopeState: scopeState)
+        ScopeRenderer(scopeState: scopeState, isMainDocumentScopeView: isMainDocumentScopeView)
     }
 }
 

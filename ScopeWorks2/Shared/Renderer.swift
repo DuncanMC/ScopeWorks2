@@ -104,6 +104,7 @@ let zeroPoint = simd_float2(0,0)
 
 class ScopeRenderer: NSObject, MTKViewDelegate {
     
+    var isMainDocumentScopeView: Bool
     var scale: Float = 1.0
 
     var sampleCount: Int = 1
@@ -130,8 +131,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     }
 
 #if os(iOS)
-    init(scopeState: ScopeState) {
+    init(scopeState: ScopeState, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
+        self.isMainDocumentScopeView = isMainDocumentScopeView
         super.init()
         device = MTLCreateSystemDefaultDevice()
         if device.supportsTextureSampleCount(4) {
@@ -144,8 +146,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         loadTexture()
     }
 #elseif os(macOS)
-        init(scopeState: ScopeState) {
+        init(scopeState: ScopeState, isMainDocumentScopeView: Bool) {
             self.scopeState = scopeState
+            self.isMainDocumentScopeView = isMainDocumentScopeView
             super.init()
             device = MTLCreateSystemDefaultDevice()
             // xxx
@@ -290,7 +293,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
 
     /// Core rendering logic shared by on-screen draw(in:) and off-screen export.
     /// Draws all kaleidoscope elements to the given encoder.
-    /// When `skipOverlays` is true, outlines and crop rect overlays are omitted (for image/video export).
+    /// When `skipOverlays` is true, crop rect overlays are omitted (for image/video export). (outlines are drawn if requested)
     /// When `exportCropRect` is provided, the ortho matrix is computed from the crop rect bounds
     /// so that only the region within the crop rect fills the output.
     func renderToEncoder(
@@ -400,7 +403,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
                     }
 
-                    if !skipOverlays && scopeState.showOutlines {
+                    if scopeState.showOutlines {
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: black,
@@ -439,7 +442,10 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                     }
-                    if !skipOverlays && scopeState.showCropRect {
+                    // Only draw the crop rect if the user requested it, skipOverLays = false,
+                    // and this is the main document scope view.
+                    // (skipOverlays is true in off-screen rendering)
+                    if scopeState.showCropRect && !skipOverlays && isMainDocumentScopeView {
                         let cropRect = scopeState.selectedAspectRatio.cropRect
                         let colorsAndThicknesses: [(simd_float4, Float)] = [
                             (blue, 6),

@@ -439,7 +439,7 @@ struct ContentView: View {
                 }
                 ZStack {
                     #if os(iOS) || os(iPadOS)
-                    ScopeViewRepresentable(scopeState: scopeState)
+                    ScopeViewRepresentable(scopeState: scopeState, isMainDocumentScopeView: true)
                         .gesture(TwoFingerTapGesture {
                             scopeState.handleSnapshot()
                             print("Two finger tap detected")
@@ -447,7 +447,7 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                     #else
-                    ScopeViewRepresentable(scopeState: scopeState)
+                    ScopeViewRepresentable(scopeState: scopeState, isMainDocumentScopeView: true)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                     #endif

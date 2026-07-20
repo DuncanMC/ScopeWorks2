@@ -130,15 +130,15 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         }
         
         guard let drawable = view.currentDrawable else {
-            print("[ScopeRenderer] currentDrawable is nil")
+            print("[SourceImageRenderer] currentDrawable is nil")
             return
         }
         guard let descriptor = view.currentRenderPassDescriptor else {
-            print("[ScopeRenderer] currentRenderPassDescriptor is nil")
+            print("[SourceImageRenderer] currentRenderPassDescriptor is nil")
             return
         }
         guard let pipeline = pipeline else {
-            print("[ScopeRenderer] pipeline is nil")
+            print("[SourceImageRenderer] pipeline is nil")
             return
         }
         guard let texture = scopeState.texture else {
