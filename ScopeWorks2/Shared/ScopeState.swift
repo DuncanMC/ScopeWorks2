@@ -811,7 +811,11 @@ class ScopeState: ObservableObject, Codable {
     static let relocationReadyNotification = Notification.Name("ScopeStateRelocationReady")
     
     
-    @Published var selectedScopeType: Int = 1
+    @Published var selectedScopeType: Int = 1 {
+        didSet {
+            trianglePoints = calcTrianglePoints()
+        }
+    }
     
     var lastAnimationStepTime: CFTimeInterval = CACurrentMediaTime()
     @Published var texAspect: Float = 1
@@ -916,17 +920,41 @@ class ScopeState: ObservableObject, Codable {
         let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
         let point1 = trianglePoints.point1
         let centerAngle = atan2(Double(midpoint.y - point1.y), Double(midpoint.x - point1.x) )
+        
+        //TODO: >>> See if this is a circular or 8-way 'scope <<<
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
 
-        let stepArc = Double.pi / Double(polygonSides)
-        let radius = distanceBetween(p1: point1, p2: trianglePoints.point2)
-        var deltaY = Float(sin(centerAngle + stepArc)) * radius
-        var deltaX = Float(cos(centerAngle + stepArc)) * radius
-        let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
-        deltaY = Float(sin(centerAngle - stepArc)) * radius
-        deltaX = Float(cos(centerAngle - stepArc)) * radius
-        let point2 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+        if template.isCircular {
+            
+            let stepArc = Double.pi / Double(polygonSides)
+            let radius = max(distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point2),
+                          distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )
 
-        return TrianglePoints(point1: point1, point2: point2, point3: point3)
+            var deltaY = Float(sin(centerAngle + stepArc)) * radius
+            var deltaX = Float(cos(centerAngle + stepArc)) * radius
+            let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+            deltaY = Float(sin(centerAngle - stepArc)) * radius
+            deltaX = Float(cos(centerAngle - stepArc)) * radius
+            let point2 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+            
+            return TrianglePoints(point1: point1, point2: point2, point3: point3)
+        } else {
+            // 8-way square
+            let point3Angle = centerAngle + .pi / 8
+            let newLength = max(
+                distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point2),
+                distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )            
+            let point3 = point1 + simd_float2(
+                x: Float(cos(point3Angle)) * newLength,
+                y: Float(sin(point3Angle)) * newLength)
+            let point2Distance = newLength * sqrt(2) / 2
+            let point2Angle = centerAngle - .pi / 8
+            let point2 = point1 + simd_float2(
+                x: Float(cos(point2Angle)) * point2Distance,
+                y: Float(sin(point2Angle)) * point2Distance)
+            return TrianglePoints(point1: point1, point2: point2, point3: point3)
+
+        }
     }
 
     func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {

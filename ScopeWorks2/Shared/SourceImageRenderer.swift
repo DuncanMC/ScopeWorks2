@@ -73,8 +73,7 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         }
 #endif
 
-    func calcTrianglePoints()
-    -> TrianglePoints {
+    func calcTrianglePoints() -> TrianglePoints {
         guard scopeState.selectedImageData != nil else {
             return (TrianglePoints(point1: zeroPoint, point2: zeroPoint, point3: zeroPoint))
         }
