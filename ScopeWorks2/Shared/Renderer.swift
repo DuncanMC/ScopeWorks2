@@ -80,9 +80,9 @@ public struct TriangleCGPoints: CustomStringConvertible{
 }
 
 public struct TrianglePoints: CustomStringConvertible{
-    let point1: SIMD2<Float>
-    let point2: SIMD2<Float>
-    let point3: SIMD2<Float>
+    var point1: SIMD2<Float>
+    var point2: SIMD2<Float>
+    var point3: SIMD2<Float>
     
     public var description: String {
         return """

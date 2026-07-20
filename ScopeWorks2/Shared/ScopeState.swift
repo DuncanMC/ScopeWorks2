@@ -763,7 +763,7 @@ class ScopeState: ObservableObject, Codable {
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
-            trianglePoints = calcTrianglePoints()
+            trianglePoints = calcTrianglePoints(typeChanged: false)
         }
     }
     @Published var rotationSpeed: CGFloat = 5.0 // In degrees per second
@@ -813,7 +813,7 @@ class ScopeState: ObservableObject, Codable {
     
     @Published var selectedScopeType: Int = 1 {
         didSet {
-            trianglePoints = calcTrianglePoints()
+            trianglePoints = calcTrianglePoints(typeChanged: true)
         }
     }
     
@@ -847,7 +847,7 @@ class ScopeState: ObservableObject, Codable {
             guard newSize != texSize else { return }
             // Only fire objectWillChange when dimensions actually change
             objectWillChange.send()
-            trianglePoints = calcTrianglePoints()
+            trianglePoints = calcTrianglePoints(typeChanged: false)
             texSize = newSize
             texAspect = Float(texWidth / texHeight)
             if texAspect > 1 {
@@ -909,20 +909,24 @@ class ScopeState: ObservableObject, Codable {
         return (trianglePoints, false, dx, dy)
     }
     
-    func calcTrianglePoints() -> TrianglePoints {
+    func calcTrianglePoints(typeChanged: Bool) -> TrianglePoints {
         guard selectedImageData != nil || imageSourceMode != .staticImage else {
             return TrianglePoints(
                 point1: SIMD2<Float>(0.4, 0.25),
                 point2: SIMD2<Float>(0.6, 0.25),
                 point3: SIMD2<Float>(0.5, 0.42320508))
         }
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+
+        guard template.isCircular || typeChanged else {
+            return trianglePoints
+        }
+        var result: TrianglePoints
 
         let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
         let point1 = trianglePoints.point1
         let centerAngle = atan2(Double(midpoint.y - point1.y), Double(midpoint.x - point1.x) )
         
-        //TODO: >>> See if this is a circular or 8-way 'scope <<<
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
 
         if template.isCircular {
             
@@ -937,7 +941,7 @@ class ScopeState: ObservableObject, Codable {
             deltaX = Float(cos(centerAngle - stepArc)) * radius
             let point2 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
             
-            return TrianglePoints(point1: point1, point2: point2, point3: point3)
+            result = TrianglePoints(point1: point1, point2: point2, point3: point3)
         } else {
             // 8-way square
             let point3Angle = centerAngle + .pi / 8
@@ -952,9 +956,13 @@ class ScopeState: ObservableObject, Codable {
             let point2 = point1 + simd_float2(
                 x: Float(cos(point2Angle)) * point2Distance,
                 y: Float(sin(point2Angle)) * point2Distance)
-            return TrianglePoints(point1: point1, point2: point2, point3: point3)
+            result =  TrianglePoints(point1: point1, point2: point2, point3: point3)
+            
 
         }
+         (result, _, _, _) = adjustTrianglePoints(trianglePoints: result)
+        
+        return result
     }
 
     func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {
