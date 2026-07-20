@@ -1420,7 +1420,10 @@ class ScopeState: ObservableObject, Codable {
             }
         }
         #elseif os(iOS)
-        exportSettingsState = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        exportSettingsState = ExportSettingsState(
+            defaultAspectRatio: selectedAspectRatio,
+            isEightWayScope: !template.isCircular)
         showRecordVideoSheet = true
         #endif
     }
@@ -1473,7 +1476,10 @@ class ScopeState: ObservableObject, Codable {
             self.writeImage(image, to: url, type: filetype)
         }
         #elseif os(iOS)
-        exportSettingsState = ExportSettingsState(defaultAspectRatio: selectedAspectRatio)
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        exportSettingsState = ExportSettingsState(
+            defaultAspectRatio: selectedAspectRatio,
+            isEightWayScope: !template.isCircular)
         showExportImageSheet = true
         #endif
     }
