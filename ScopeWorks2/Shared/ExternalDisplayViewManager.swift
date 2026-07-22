@@ -139,7 +139,7 @@ struct FullScreenOverlayView: View {
 @MainActor
 class ExternalDisplayViewManager: NSObject, ObservableObject {
 
-//    @Published var availableDisplays: [DisplayInfo] = []
+    
     @Published var selectedDisplayID: String? = nil {
         didSet {
             if selectedDisplayID != oldValue {
@@ -154,7 +154,7 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
 #if os(macOS)
     private var externalWindow: NSWindow?
     private var eventMonitor: Any?
-    private var savedPresentationOptions: NSApplication.PresentationOptions = []
+
 #else
     private var externalWindow: UIWindow?
 #endif
@@ -270,7 +270,6 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
         }
-        NSApplication.shared.presentationOptions = savedPresentationOptions
         externalWindow?.delegate = nil
         externalWindow?.orderOut(nil)  // orderOut instead of close — avoids tearing down Metal mid-render
         externalWindow = nil
@@ -296,6 +295,8 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
         let state = FullScreenOverlayState()
         state.exitAction = { [weak self] in
             self?.selectedDisplayID = nil
+            NotificationCenter.default.post(name: closingFullScreenNotification, object: scopeState)
+
         }
         overlayState = state
 
@@ -306,7 +307,7 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
             defer: false,
             screen: screen
         )
-        window.level = .floating
+        window.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 1)
         window.isOpaque = true
         window.backgroundColor = .black
         window.hasShadow = false
@@ -317,13 +318,6 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
             rootView: FullScreenOverlayView(scopeState: scopeState, overlayState: state)
         )
         window.setFrame(screen.frame, display: true)
-
-        // Only hide menu bar and dock when covering the screen that has them
-        if screen == NSScreen.screens.first {
-            savedPresentationOptions = NSApplication.shared.presentationOptions
-            NSApplication.shared.presentationOptions = [.hideDock, .hideMenuBar]
-        }
-
         window.makeKeyAndOrderFront(nil)
 
         externalWindow = window
@@ -373,6 +367,7 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
 #else
         let state = FullScreenOverlayState()
         state.exitAction = { [weak self] in
+            NotificationCenter.default.post(name: closingFullScreenNotification, object: scopeState)
             self?.selectedDisplayID = nil
         }
         overlayState = state

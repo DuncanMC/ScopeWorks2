@@ -29,17 +29,21 @@ struct ScopeWorksCommands: Commands {
             ForEach(ScopeCommand.viewCommands) { command in
                 if command.isToggle, let kp = command.keyPath {
                     Toggle(command.label, isOn: Binding(
-                        get: { scopeState?[keyPath: kp] ?? false },
-                        set: { scopeState?[keyPath: kp] = $0 }
+                        get: {
+                            return scopeState?[keyPath: kp] ?? false
+                        },
+                        set: {
+                            scopeState?[keyPath: kp] = $0
+                        }
                     ))
-                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
                     .disabled(scopeState == nil)
                 } else {
                     Button(command.label) {
                         guard let scopeState else { return }
                         command.performAction(on: scopeState)
                     }
-                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
                     .disabled(scopeState == nil)
                 }
             }
@@ -48,10 +52,10 @@ struct ScopeWorksCommands: Commands {
             Divider()
 
             Button("Close External Display") {
-                scopeState?.externalDisplayManager?.selectedDisplayID = nil
+                scopeState?.externalDisplayViewManager?.selectedDisplayID = nil
             }
             .keyboardShortcut(.escape, modifiers: [])
-            .disabled(scopeState?.externalDisplayManager?.selectedDisplayID == nil)
+            .disabled(scopeState?.externalDisplayViewManager?.selectedDisplayID == nil)
         }
     }
 }

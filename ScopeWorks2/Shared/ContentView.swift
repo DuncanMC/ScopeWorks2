@@ -73,11 +73,11 @@ struct ContentView: View {
 
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
-        if let existing = scopeState.externalDisplayManager {
+        if let existing = scopeState.externalDisplayViewManager {
             _externalDisplayViewManager = StateObject(wrappedValue: existing)
         } else {
             let manager = ExternalDisplayViewManager(scopeState: scopeState)
-            scopeState.externalDisplayManager = manager
+            scopeState.externalDisplayViewManager = manager
             scopeState.updateDisplays()
 
             _externalDisplayViewManager = StateObject(wrappedValue: manager)
@@ -263,8 +263,9 @@ struct ContentView: View {
     // MARK: - Controls
     @ViewBuilder
     private var controlsView: some View {
-                // xxx
-                if scopeState.showControls && !isFullScreen {
+                // to hide controls in fullscreen mode, change if statement to read
+                // "if scopeState.showControls && !isFullScreen"
+                if scopeState.showControls {
                         HStack(spacing: 30) {
                             VStack(alignment: .leading, spacing: 20) {
                             
@@ -277,8 +278,8 @@ struct ContentView: View {
     #else
                                             .padding(.leading, 5)
     #endif
-                                        Picker("", selection: $externalDisplayViewManager.selectedDisplayID) {
-                                            Text("None").tag(String?.none)
+                                        Picker("", selection: $scopeState.chosenDisplayID) {
+//                                            Text("None").tag(String?.none)
                                             ForEach(scopeState.availableDisplays) { display in
                                                 Text(display.name).tag(Optional(display.id))
                                             }
@@ -428,7 +429,9 @@ struct ContentView: View {
     var body: some View {
         VStack {
             HStack {
-                if scopeState.showSourceImage && !isFullScreen {
+                // to hide source image in fullscreen mode, change if statement to read
+                // "if scopeState.showSourceImage && !isFullScreen"
+                if scopeState.showSourceImage {
                     SourceImageViewRepresentable(scopeState: scopeState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)

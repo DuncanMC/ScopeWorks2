@@ -81,7 +81,6 @@ private var notificationTokens: [NSObjectProtocol]?
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
-//    @Published var allAsepectRatios: [AspectRatio] = []
     @Published var availableDisplays: [DisplayInfo] = []
     @Published var selectedAspectRatio: AspectRatio
     
@@ -113,42 +112,45 @@ class ScopeState: ObservableObject, Codable {
     var flipTextureY: Bool = false
     
     // MARK: - External display (transient, not persisted)
-    var externalDisplayManager: ExternalDisplayViewManager?
+    var externalDisplayViewManager: ExternalDisplayViewManager?
     weak var metalView: MTKView? = nil
     weak var renderer: ScopeRenderer? = nil
-
+    
     // MARK: - Export state (transient, not persisted)
     @Published var activeRecorder: VideoRecorder? = nil
-    #if os(iOS)
+#if os(iOS)
     @Published var showExportImageSheet: Bool = false
     @Published var showRecordVideoSheet: Bool = false
     @Published var completedVideoURL: URL? = nil
     var exportSettingsState: ExportSettingsState?
-    #endif
+#endif
     
     func updateDisplays() {
         availableDisplays = ExternalDisplayManager.availableDisplays
+        if chosenDisplayID == nil {
+            chosenDisplayID = availableDisplays.last?.id
+        }
         
         /*
          let displays = ExternalDisplayManager.availableDisplays
-        //Add code here to upate list of all aspect ratios
-        allAsepectRatios = SavedAspectRatios
-        for display in displays {
-            guard let aspect = display.aspect else { continue }
-            var found = false
-            for ratio in allAsepectRatios {
-                if ratio.width == aspect.width && ratio.height == aspect.height {
-                    found = true
-                    break
-                }
-            }
-            if !found {
-                allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height))
-            }
-        }
-        for aspect in allAsepectRatios {
-            print(aspect)
-        }
+         //Add code here to upate list of all aspect ratios
+         allAsepectRatios = SavedAspectRatios
+         for display in displays {
+         guard let aspect = display.aspect else { continue }
+         var found = false
+         for ratio in allAsepectRatios {
+         if ratio.width == aspect.width && ratio.height == aspect.height {
+         found = true
+         break
+         }
+         }
+         if !found {
+         allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height))
+         }
+         }
+         for aspect in allAsepectRatios {
+         print(aspect)
+         }
          */
     }
     
@@ -290,8 +292,17 @@ class ScopeState: ObservableObject, Codable {
                 self?.availableDisplays = ExternalDisplayManager.availableDisplays
             }
         }
-        
-        
+
+        NotificationCenter.default.addObserver(
+            forName: closingFullScreenNotification,
+            object: self, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.showFullscreenView = false
+            }
+        }
+
+
         resolveICloudURL()
         
         // If we have an imageSourceInfo from a decoded document, resolve it now
@@ -577,7 +588,7 @@ class ScopeState: ObservableObject, Codable {
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
         self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
-
+        
         doInitSetup()
         
         //print("In ScopeState init.from. uuid = \(uuid)")
@@ -716,6 +727,23 @@ class ScopeState: ObservableObject, Codable {
     
     
     @Published var showCropRect: Bool = false
+    @Published var showFullscreenView: Bool = false {
+        didSet {
+            if showFullscreenView == false {
+                externalDisplayViewManager?.selectedDisplayID = nil
+            } else {
+                externalDisplayViewManager?.selectedDisplayID = chosenDisplayID
+            }
+        }
+    }
+
+    @Published var chosenDisplayID: String? = nil {
+        didSet {
+            if showFullscreenView {
+                externalDisplayViewManager?.selectedDisplayID = chosenDisplayID
+            }
+        }
+    }
 
     // MARK: - Properties to be saved in ScopeWorks document
     var bookmarkData: Data? {
@@ -760,7 +788,11 @@ class ScopeState: ObservableObject, Codable {
     @Published var showOutlines: Bool = false
     @Published var flipAlternates: Bool = true
     @Published var splitTriangle: Bool = false
-    @Published var drawWithReflection: Bool = true
+    @Published var drawWithReflection: Bool = true {
+        didSet {
+            print("In drawWithReflection.didSet")
+        }
+    }
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
@@ -868,6 +900,18 @@ class ScopeState: ObservableObject, Codable {
     private var rotationCenterPoint: CGPoint = CGPointZero
     
     typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
+    
+    // MARK: Misc functions -
+    
+    func selectNextFullScreenDisplay() {
+        // xxx
+        //availableDisplays
+        guard let currentIndex = availableDisplays.firstIndex(where:  { $0.id == chosenDisplayID }) else {
+            return
+        }
+        let nextIndex = (currentIndex + 1) % availableDisplays.count
+        chosenDisplayID = availableDisplays[nextIndex].id
+    }
     
     func animateByElapsed(_ elapsed: Double) {
         

@@ -14,6 +14,7 @@ import UIKit
 
 
 let displaysChangedNotification = Notification.Name("ScopeStateRelocationReady")
+let closingFullScreenNotification = Notification.Name("closingFullScreen")
 
 
 struct DisplayInfo: Identifiable, Hashable, CustomStringConvertible {
@@ -62,7 +63,6 @@ final class ExternalDisplayManager {
         ExternalDisplayManager.availableDisplays = displays
 #endif
         NotificationCenter.default.post(name: displaysChangedNotification, object: nil)
-        //ExternalDisplayManager.availableDisplays.forEach { print($0) }
 
     }
     

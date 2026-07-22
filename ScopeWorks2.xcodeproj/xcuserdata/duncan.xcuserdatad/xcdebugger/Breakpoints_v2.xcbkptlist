@@ -7,125 +7,81 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "336B000A-630E-4CB2-B031-0E0CB132F575"
+            uuid = "D52DB307-5B4F-4F76-8295-EC1BFC1DCB8F"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ScopeWorks2/Shared/Renderer.swift"
+            filePath = "ScopeWorks2/Shared/ScopeState.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "562"
-            endingLineNumber = "562"
-            landmarkName = "renderToEncoder(encoder:drawableWidth:drawableHeight:skipOverlays:exportCropRect:)"
+            startingLineNumber = "909"
+            endingLineNumber = "909"
+            landmarkName = "selectNextFullScreenDisplay()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "18AF2445-AD3D-4617-82A6-AF4D71D677F2"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ScopeWorks2/Shared/Renderer.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "582"
-            endingLineNumber = "582"
-            landmarkName = "renderToEncoder(encoder:drawableWidth:drawableHeight:skipOverlays:exportCropRect:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "123937B8-38B8-45FF-A60F-38C0DE06A7E5"
+            uuid = "C296698C-D4B6-4A30-B11F-39D6C01DEB49"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ScopeWorks2/Shared/Renderer.swift"
+            filePath = "ScopeWorks2/Shared/ScopeCommand.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "566"
-            endingLineNumber = "566"
-            landmarkName = "renderToEncoder(encoder:drawableWidth:drawableHeight:skipOverlays:exportCropRect:)"
+            startingLineNumber = "138"
+            endingLineNumber = "138"
+            landmarkName = "performAction(on:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "123937B8-38B8-45FF-A60F-38C0DE06A7E5 - 5f0147bb00d4b3"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ScopeWorks2.ScopeRenderer.renderToEncoder(encoder: __C.MTLRenderCommandEncoder, drawableWidth: Swift.Double, drawableHeight: Swift.Double, skipOverlays: Swift.Bool, exportCropRect: Swift.Optional&lt;ScopeWorks2.MetalRect&gt;) -&gt; ()"
-                  moduleName = "ScopeWorks2"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/Renderer.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "567"
-                  endingLineNumber = "567">
-               </Location>
-               <Location
-                  uuid = "123937B8-38B8-45FF-A60F-38C0DE06A7E5 - 5f9f8839e3f75a0d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ScopeWorks2.ScopeRenderer.renderToEncoder(encoder: __C.MTLRenderCommandEncoder, drawableWidth: Swift.Double, drawableHeight: Swift.Double, skipOverlays: Swift.Bool, exportCropRect: Swift.Optional&lt;ScopeWorks2.MetalRect&gt;) -&gt; ()"
-                  moduleName = "ScopeWorks2.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/Renderer.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "566"
-                  endingLineNumber = "566">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "A4222053-F7B0-40A5-BFFB-372A42AACE68"
+            uuid = "6B7A6929-9EBE-4A2F-8654-570FEE374B1A"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "ScopeWorks2/Shared/ScopeState.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "130"
-            endingLineNumber = "130"
-            landmarkName = "updateDisplays()"
+            startingLineNumber = "910"
+            endingLineNumber = "910"
+            landmarkName = "selectNextFullScreenDisplay()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "A4222053-F7B0-40A5-BFFB-372A42AACE68 - 62edff4efd2b1c8b"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ScopeWorks2.ContentView.init(scopeState: ScopeWorks2.ScopeState) -&gt; ScopeWorks2.ContentView"
-                  moduleName = "ScopeWorks2"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/ScopeState.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "130"
-                  endingLineNumber = "130">
-               </Location>
-               <Location
-                  uuid = "A4222053-F7B0-40A5-BFFB-372A42AACE68 - a24c599b333bed2c"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ScopeWorks2.ScopeState.updateDisplays() -&gt; ()"
-                  moduleName = "ScopeWorks2.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/ScopeState.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "130"
-                  endingLineNumber = "130">
-               </Location>
-            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "54EDA08D-EC98-4C0F-AC01-FB549BA71120"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ScopeWorks2/Shared/ScopeState.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "912"
+            endingLineNumber = "912"
+            landmarkName = "selectNextFullScreenDisplay()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4054CF0C-47D4-46A8-BFA1-2D2F8B477180"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ScopeWorks2/Shared/ScopeState.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "742"
+            endingLineNumber = "742"
+            landmarkName = "chosenDisplayID"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
