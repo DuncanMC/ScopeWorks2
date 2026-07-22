@@ -561,7 +561,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         }
         if scopeState.showCropRect && !skipOverlays && isMainDocumentScopeView {
             let cropRect: MetalRect
-            if scopeState.selectedAspectRatio.isCropForTiling {
+            // If isCropForTiling == true force all 'scope types but polygon grid to a square crop
+            if scopeState.selectedAspectRatio.isCropForTiling && scopeState.selectedScopeType != 1 {
                 cropRect = MetalRect(
                     topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0)),
                     topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
