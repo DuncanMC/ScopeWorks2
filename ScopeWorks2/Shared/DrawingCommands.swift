@@ -36,14 +36,14 @@ struct ScopeWorksCommands: Commands {
                             scopeState?[keyPath: kp] = $0
                         }
                     ))
-                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                     .disabled(scopeState == nil)
                 } else {
                     Button(command.label) {
                         guard let scopeState else { return }
                         command.performAction(on: scopeState)
                     }
-                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                     .disabled(scopeState == nil)
                 }
             }

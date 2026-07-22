@@ -60,7 +60,7 @@ struct ContentView: View {
 
     var backgroundColorLeading: CGFloat {
         #if os(macOS)
-            return 22
+            return 17
         #else
             return 12
         #endif
@@ -221,11 +221,9 @@ struct ContentView: View {
             }
 
             )
-#if os(macOS)
             .padding(.leading, 0)
-#endif
             .textFieldStyle(.customRoundedBorderTextFieldStyle(borderColor: .gray))
-            .frame(minWidth: 30, maxWidth: 30)
+            .frame(minWidth: 35, maxWidth: 35)
             .focused($isFocused)
             .onAppear() {
 #if os(macOS)
@@ -253,11 +251,14 @@ struct ContentView: View {
         },
                        label: {
             Text("Polygon sides")
-                .frame(minWidth: 80, alignment: .leading)
-                .border(.blue, width: 1)
-
+                .frame(minWidth: 50, alignment: .leading)
+            
         })
         .padding(.leading, polygonSidesLeading)
+        #if os(iOS) || os(iPadOS)
+            .frame(maxWidth: 225)
+        #endif
+        .border(.blue, width: 1)
     }
 
     // MARK: - Controls
@@ -306,11 +307,6 @@ struct ContentView: View {
                                     //Polygon sides
                                     polygonSidesField
                                 
-                                    //background color well
-                                    ColorPicker("Background color", selection: $scopeState.backgroundColor)
-                                        .frame(minWidth: 200)
-                                    //                                .border(.black, width: 1)
-                                        .padding(.leading, backgroundColorLeading)
                                 
                                 }
                                 HStack {
@@ -325,9 +321,18 @@ struct ContentView: View {
                                     }
     #if os(macOS)
                                     .padding(.leading, 0)
+                                    .padding(.trailing, 30)
     #else
                                     .padding(.leading, 7)
+                                    .padding(.trailing, 20)
     #endif
+                                    
+                                    //background color well
+                                    ColorPicker("Background color", selection: $scopeState.backgroundColor)
+                                        .frame(minWidth: 200)
+                                    //                                .border(.black, width: 1)
+                                        .padding(.leading, backgroundColorLeading)
+
                                 
     //                                Button("Reverse animation (⌘R)") {
     //                                    scopeState.rotationSpeed *= -1

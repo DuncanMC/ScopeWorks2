@@ -38,14 +38,14 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         }
     }
 
-    var shortcutKey: Character {
+    var shortcutKey: KeyEquivalent {
         switch self {
         case .showControls:       return "c"
         case .showSourceImage:    return "i"
         case .showOutlines:       return "o"
         case .flipAlternates:     return "f"
         case .drawWithReflection: return "r"
-        case .animate:            return "\n"
+        case .animate:            return .return
         case .reverseAnimation:   return "r"
         case .advanceAnimation:   return "a"
         case .showCropRect:       return "c"
@@ -193,12 +193,12 @@ struct ScopeCommandButtons: View {
                         get: { scopeState[keyPath: kp] },
                         set: { scopeState[keyPath: kp] = $0 }
                     ))
-                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                 } else {
                     Button(command.label) {
                         command.performAction(on: scopeState)
                     }
-                    .keyboardShortcut(KeyEquivalent(command.shortcutKey), modifiers: command.shortcutModifiers)
+                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                 }
             }
         }
