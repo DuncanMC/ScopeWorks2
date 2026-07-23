@@ -111,6 +111,13 @@ class ScopeState: ObservableObject, Codable {
     var cameraDescription: String = ""
     var flipTextureY: Bool = false
     
+    // MARK: - Document loading state (transient, not persisted)
+    /// True while a document is being loaded from file. Prevents the document
+    /// from being marked dirty by initialization side-effects (texture load,
+    /// triangle-point adjustment). Stays true through user-driven image
+    /// relocation and is cleared when the texture is first set.
+    var isLoadingFromFile = false
+
     // MARK: - External display (transient, not persisted)
     var externalDisplayViewManager: ExternalDisplayViewManager?
     weak var metalView: MTKView? = nil
@@ -310,8 +317,11 @@ class ScopeState: ObservableObject, Codable {
             resolveImageFromSourceInfo()
         }
         availableDisplays = ExternalDisplayManager.availableDisplays
-        
-        
+
+        // If no image will be loaded (empty document), loading is already complete
+        if isLoadingFromFile && selectedImageData == nil && !needsImageRelocation {
+            isLoadingFromFile = false
+        }
     }
     
     /// Attempts to load the image described by imageSourceInfo.
@@ -588,7 +598,8 @@ class ScopeState: ObservableObject, Codable {
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
         self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
-        
+        self.isLoadingFromFile = true
+
         doInitSetup()
         
         //print("In ScopeState init.from. uuid = \(uuid)")
@@ -787,12 +798,51 @@ class ScopeState: ObservableObject, Codable {
     }
     @Published var showOutlines: Bool = false
     @Published var flipAlternates: Bool = true
-    @Published var splitTriangle: Bool = false
+    @Published var splitTriangle: Bool = false {
+        //splitTriangle didSet
+        didSet {
+            if splitTriangle {
+                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
+            } else {
+                let distance = simd_float2(x: trianglePoints.point2.x - trianglePoints.point3.x, y: trianglePoints.point2.y - trianglePoints.point3.y)
+                let point2 = trianglePoints.point3 + distance * 2.0
+                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
+                //trianglePoints = calcTrianglePoints(typeChanged: false)
+                (trianglePoints, _, _, _) = adjustTrianglePoints(trianglePoints: trianglePoints)
+
+                
+            }
+        }
+    }
     @Published var drawWithReflection: Bool = true {
         didSet {
             print("In drawWithReflection.didSet")
         }
     }
+//    @Published var splitPolygonTriangles: Bool = false {
+//        didSet {
+//            if splitPolygonTriangles {
+//                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+//                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
+//            } else {
+//                let distance = simd_float2(x: trianglePoints.point2.x - trianglePoints.point3.x, y: trianglePoints.point2.y - trianglePoints.point3.y)
+//                let point2 = trianglePoints.point3 + distance * 2.0
+//                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
+//                trianglePoints = calcTrianglePoints(typeChanged: false)
+//
+//
+//            }
+/*
+ if (splitPolygonTriangles) {
+     point2 = GLMakePoint((point2.x+point3.x)/2, (point2.y+point3.y)/2);
+ } else {
+     //TODO: Fix point2 if it is now out of bounds
+     point2 = GLMakePoint((point2.x-point3.x)*2 + point3.x, (point2.y-point3.y)*2+ point3.y);
+     [self adjustRoationAndShiftToScale];
+ }
+
+ */
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
@@ -880,7 +930,7 @@ class ScopeState: ObservableObject, Codable {
             guard newSize != texSize else { return }
             // Only fire objectWillChange when dimensions actually change
             objectWillChange.send()
-            trianglePoints = calcTrianglePoints(typeChanged: false)
+           // trianglePoints = calcTrianglePoints(typeChanged: false)
             texSize = newSize
             texAspect = Float(texWidth / texHeight)
             if texAspect > 1 {
@@ -890,7 +940,15 @@ class ScopeState: ObservableObject, Codable {
                 aspectAdjustment.width = texWidth / texHeight
                 aspectAdjustment.height = 1.0
             }
-            
+            // Make sure the triangle fits inside the texture bounds and adjust if not.
+            // Skip during initial document load — saved triangle points are already
+            // valid for the saved texture. Adjusting here would modify a CodingKeys
+            // property and mark the document dirty on open.
+            if isLoadingFromFile {
+                isLoadingFromFile = false
+            } else {
+                (trianglePoints, _, _, _) = adjustTrianglePoints(trianglePoints: trianglePoints)
+            }
         }
     }
     
@@ -904,7 +962,6 @@ class ScopeState: ObservableObject, Codable {
     // MARK: Misc functions -
     
     func selectNextFullScreenDisplay() {
-        // xxx
         //availableDisplays
         guard let currentIndex = availableDisplays.firstIndex(where:  { $0.id == chosenDisplayID }) else {
             return
@@ -955,6 +1012,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func calcTrianglePoints(typeChanged: Bool) -> TrianglePoints {
+        print("Entering function \(#function)")
         guard selectedImageData != nil || imageSourceMode != .staticImage else {
             return TrianglePoints(
                 point1: SIMD2<Float>(0.4, 0.25),
@@ -1357,16 +1415,56 @@ class ScopeState: ObservableObject, Codable {
         }
     }
     
+    // MARK: - Export directory tracking
+
+    /// Returns the last directory the user saved an export to, resolved from a
+    /// security-scoped bookmark stored in UserDefaults. Falls back to the
+    /// FolderBookmarkManager snapshots folder.
+    private var lastUsedExportDirectory: URL? {
+        if let data = UserDefaults.standard.data(
+            forKey: UserDefaultsKeys.lastUsedExportDirectoryBookmark.rawValue
+        ) {
+            var isStale = false
+            #if os(macOS)
+            let opts: URL.BookmarkResolutionOptions = [.withSecurityScope]
+            #else
+            let opts: URL.BookmarkResolutionOptions = []
+            #endif
+            if let url = try? URL(resolvingBookmarkData: data, options: opts,
+                                  bookmarkDataIsStale: &isStale) {
+                #if os(macOS)
+                _ = url.startAccessingSecurityScopedResource()
+                #endif
+                return url
+            }
+        }
+        return FolderBookmarkManager.shared.snapshotsURL
+    }
+
+    /// Saves a bookmark for the directory the user just exported to.
+    private func saveLastUsedExportDirectory(_ dirURL: URL) {
+        #if os(macOS)
+        let data = try? dirURL.bookmarkData(options: [.withSecurityScope])
+        #else
+        let data = try? dirURL.bookmarkData()
+        #endif
+        if let data {
+            UserDefaults.standard.set(data,
+                forKey: UserDefaultsKeys.lastUsedExportDirectoryBookmark.rawValue)
+        }
+    }
+
     func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
         #if os(macOS)
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [filetype]
         savePanel.nameFieldStringValue = defaultFilename
-        savePanel.directoryURL = directoryURL
+        savePanel.directoryURL = directoryURL ?? lastUsedExportDirectory
         
         savePanel.begin { result in
             if result == .OK, let url = savePanel.url {
                 self.writeImage(image, to: url, type: filetype)
+                self.saveLastUsedExportDirectory(url.deletingLastPathComponent())
             }
         }
         #elseif os(iOS)
@@ -1376,9 +1474,7 @@ class ScopeState: ObservableObject, Codable {
         writeImage(image, to: tempURL, type: filetype)
         
         let picker = UIDocumentPickerViewController(forExporting: [tempURL])
-        if let directoryURL {
-            picker.directoryURL = directoryURL
-        }
+        picker.directoryURL = directoryURL ?? lastUsedExportDirectory
         
         // Present on the key window's view controller. This ensures the picker
         // appears above any full-screen overlay window (which has an elevated windowLevel).
@@ -1434,6 +1530,7 @@ class ScopeState: ObservableObject, Codable {
         savePanel.accessoryView = accessoryView
         savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
         savePanel.nameFieldStringValue = "ScopeWorks recording"
+        savePanel.directoryURL = lastUsedExportDirectory
 
         savePanel.begin { [weak self] result in
             guard result == .OK, let url = savePanel.url, let self else { return }
@@ -1455,6 +1552,7 @@ class ScopeState: ObservableObject, Codable {
                 aspectRatio: settings.selectedAspectRatio
             )
             recorder.destinationURL = url
+            self.saveLastUsedExportDirectory(url.deletingLastPathComponent())
 
             do {
                 try recorder.setup()
@@ -1484,6 +1582,7 @@ class ScopeState: ObservableObject, Codable {
         let savePanel = NSSavePanel()
         savePanel.accessoryView = accessoryView
         savePanel.allowedContentTypes = [settings.selectedFormat.fileType].compactMap { $0 }
+        savePanel.directoryURL = lastUsedExportDirectory
 
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
@@ -1518,6 +1617,7 @@ class ScopeState: ObservableObject, Codable {
             }
 
             self.writeImage(image, to: url, type: filetype)
+            self.saveLastUsedExportDirectory(url.deletingLastPathComponent())
         }
         #elseif os(iOS)
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]

@@ -41,6 +41,15 @@ struct ContentView: View {
             return 7
         #endif
     }
+    
+    var splitPolygonTrianglesLeading: CGFloat {
+#if os(macOS)
+    return 25
+#else
+    return 13
+#endif
+    }
+    
     var kaleidoscopeTypeLeading: CGFloat {
     #if os(macOS)
         return 0
@@ -258,7 +267,6 @@ struct ContentView: View {
         #if os(iOS) || os(iPadOS)
             .frame(maxWidth: 225)
         #endif
-        .border(.blue, width: 1)
     }
 
     // MARK: - Controls
@@ -307,7 +315,8 @@ struct ContentView: View {
                                     //Polygon sides
                                     polygonSidesField
                                 
-                                
+                                    Toggle("Split polygon triangles", isOn: $scopeState.splitTriangle)
+                                        .padding(.leading, splitPolygonTrianglesLeading) // xxx
                                 }
                                 HStack {
                                     //Image source button
@@ -633,12 +642,12 @@ struct ContentView: View {
         }
 #endif
         .onReceive(scopeState.objectWillChange) { _ in
-            if !scopeState.animate && scopeState.imageSourceMode == .staticImage {
+            if !scopeState.isLoadingFromFile && !scopeState.animate && scopeState.imageSourceMode == .staticImage {
                 undoManager?.registerUndo(withTarget: scopeState) { _ in }
             }
         }
         .onChange(of: scopeState.animate) { _, newValue in
-            if !newValue {
+            if !newValue && !scopeState.isLoadingFromFile {
                 undoManager?.registerUndo(withTarget: scopeState) { _ in }
             }
         }

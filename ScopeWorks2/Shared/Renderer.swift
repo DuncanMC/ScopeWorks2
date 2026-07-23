@@ -349,13 +349,27 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     let point3: simd_float2 = simd_float2(point3x, point3y)
                     
                     var verts: [simd_float2]
-                    if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
-                        verts = [center, point3, point2]
+                    //XXX
+                    if scopeState.splitTriangle {
+                        let midpoint = (point2 + point3) / 2
+                        if scopeState.flipAlternates  {
+                            verts = [center, midpoint, point3]
+                            verts += [center, midpoint, point2]
+
+                        } else {
+                            verts = [center, point3, midpoint]
+                            verts += [center, midpoint, point2]
+                        }
+                        
                     } else {
-                        verts = [center, point2, point3]
+                        if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
+                            verts = [center, point3, point2]
+                        } else {
+                            verts = [center, point2, point3]
+                        }
                     }
                     
-                    encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                    encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * verts.count, index: 0)
                     
                     var uniforms: Uniforms = Uniforms(
                         color: simd_float4(1, 1, 1, 1),
@@ -370,23 +384,27 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                     encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                     
-                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: verts.count)
                     
                     if scopeState.drawWithReflection {
-                        if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
-                            verts = [
-                                center,
-                                simd_float2(point2x, point2y),
-                                simd_float2(point3x, point3y)
-                            ]
+                        if scopeState.splitTriangle {
+                            let midpoint = (point2 + point3) / 2
+                            if scopeState.flipAlternates  {
+                                verts = [center, point3, midpoint]
+                                verts += [center, point2, midpoint]
+
+                            } else {
+                                verts = [center, midpoint, point3]
+                                verts += [center, point2, midpoint]
+                            }
                         } else {
-                            verts = [
-                                center,
-                                simd_float2(point3x, point3y),
-                                simd_float2(point2x, point2y)
-                            ]
+                            if scopeState.flipAlternates && !i.isMultiple(of: 2)  {
+                                verts = [center, point2, point3]
+                            } else {
+                                verts = [center, point3, point2]
+                            }
                         }
-                        encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * 3, index: 0)
+                        encoder.setVertexBytes(verts, length: MemoryLayout<simd_float2>.stride * verts.count, index: 0)
                         
                         var uniforms: Uniforms = Uniforms(
                             color: simd_float4(1, 1, 1, 1),
@@ -400,7 +418,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                         
-                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: verts.count)
                     }
                     
                     if scopeState.showOutlines {
@@ -423,6 +441,28 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
                         
+                        if scopeState.splitTriangle && verts.count >= 6 {
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[1+3], p2: verts[2+3],
+                                          color: black,
+                                          thickness: outerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[0+3], p2: verts[1+3],
+                                          color: black,
+                                          thickness: outerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[0+3], p2: verts[2+3],
+                                          color: black,
+                                          thickness: outerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+
+                        }
+                        
                         drawThickLine(encoder: encoder,
                                       p1: verts[1], p2: verts[2],
                                       color: white,
@@ -441,6 +481,27 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       thickness: innerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
+                        
+                        if scopeState.splitTriangle && verts.count >= 6 {
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[1+3], p2: verts[2+3],
+                                          color: white,
+                                          thickness: innerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[0+3], p2: verts[1+3],
+                                          color: white,
+                                          thickness: innerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                            drawThickLine(encoder: encoder,
+                                          p1: verts[0+3], p2: verts[2+3],
+                                          color: white,
+                                          thickness: innerThickness / Float(drawableWidth),
+                                          orthoMatrix: orthoMatrix,
+                                          texAspect: texAspect)
+                        }
                     }
                     // Only draw the crop rect if the user requested it, skipOverLays = false,
                     // and this is the main document scope view.

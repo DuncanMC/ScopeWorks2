@@ -21,7 +21,7 @@ final class ScopeDocument: ReferenceFileDocument {
     nonisolated static var writableContentTypes: [UTType] { [.scopeworksDocument] }
 
     private var cancellables = Set<AnyCancellable>()
-    
+
     /// Baseline snapshot of the encoded state taken after loading.
     /// Used to detect real content changes vs. transient rendering state updates.
     private var baselineSnapshot: Data?
@@ -39,11 +39,8 @@ final class ScopeDocument: ReferenceFileDocument {
     }()
 
     private func doInitSetup() {
-        // Capture baseline snapshot AFTER all synchronous setup (including image resolution
-        // from ScopeState.doInitSetup). Transient @Published properties like texSize, texAspect,
-        // imageUUID are NOT in CodingKeys, so they won't affect the comparison.
         baselineSnapshot = try? Self.comparisonEncoder.encode(scopeState)
-        
+
         scopeState.objectWillChange
             .sink { [weak self] _ in
                 // Defer to next run loop iteration so the @Published property
@@ -54,10 +51,17 @@ final class ScopeDocument: ReferenceFileDocument {
             }
             .store(in: &cancellables)
     }
-    
+
     /// Forwards objectWillChange to the document system only when the encoded
     /// document content has actually changed from the baseline.
     private func forwardIfContentChanged() {
+        // While loading from file, keep re-capturing the baseline to absorb
+        // initialization side-effects (texture load, triangle-point adjustment,
+        // image relocation) without marking the document dirty.
+        if scopeState.isLoadingFromFile {
+            baselineSnapshot = try? Self.comparisonEncoder.encode(scopeState)
+            return
+        }
         if contentHasChanged {
             objectWillChange.send()
             return
@@ -76,8 +80,8 @@ final class ScopeDocument: ReferenceFileDocument {
             doInitSetup()
         }
     }
-    
-    
+
+
     required init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
@@ -86,7 +90,7 @@ final class ScopeDocument: ReferenceFileDocument {
         scopeState = try decoder.decode(ScopeState.self, from: data)
         doInitSetup()
     }
-    
+
     func snapshot(contentType: UTType) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -97,10 +101,9 @@ final class ScopeDocument: ReferenceFileDocument {
         return data
     }
 
-    
+
     nonisolated func fileWrapper(snapshot: Data, configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: snapshot)
     }
 
 }
-

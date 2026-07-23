@@ -28,6 +28,7 @@ enum UserDefaultsKeys: String {
     case snapshotFileType
     case folderSetupComplete
     case lastUsedImageDirectoryBookmark
+    case lastUsedExportDirectoryBookmark
 }
 
 
