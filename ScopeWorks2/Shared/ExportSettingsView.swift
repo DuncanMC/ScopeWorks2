@@ -22,13 +22,15 @@ class ExportSettingsState: ObservableObject {
         print("In ExportSettingsState.init. isEightWayScope = \(isEightWayScope)")
         self.selectedAspectRatio = defaultAspectRatio
         self.isEightWayScope = isEightWayScope
-        updateHeightFromWidth()
+        updateHeightFromWidth(aspectChanged: true)
     }
 
-    func updateHeightFromWidth() {
+    func updateHeightFromWidth(aspectChanged: Bool) {
         guard selectedAspectRatio.width > 0 else { return }
         let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
-        let newHeight = max(1, Int(round(Double(exportWidth) * ratio)))
+        let adjustedWidth = aspectChanged ? Int(selectedAspectRatio.width) * selectedAspectRatio.defaultMultiplier : exportWidth
+        exportWidth = adjustedWidth
+        let newHeight = max(1, Int(round(Double(adjustedWidth) * ratio)))
         guard newHeight != exportHeight else { return }
         exportHeight = newHeight
     }
@@ -80,7 +82,7 @@ struct ExportSettingsView: View {
                 .labelsHidden()
                 .frame(width: 180)
                 .onChange(of: settings.selectedAspectRatio) {
-                    settings.updateHeightFromWidth()
+                    settings.updateHeightFromWidth(aspectChanged: true)
                 }
             }
 
@@ -90,10 +92,10 @@ struct ExportSettingsView: View {
                 TextField("Width", value: $settings.exportWidth, format: .number)
                     .frame(width: 80)
                     .focused($focusedField, equals: .width)
-                    .onSubmit { settings.updateHeightFromWidth() }
+                    .onSubmit { settings.updateHeightFromWidth(aspectChanged: false) }
                     .onChange(of: settings.exportWidth) {
                         if focusedField == .width {
-                            settings.updateHeightFromWidth()
+                            settings.updateHeightFromWidth(aspectChanged: false)
                         }
                     }
                 Text("px")

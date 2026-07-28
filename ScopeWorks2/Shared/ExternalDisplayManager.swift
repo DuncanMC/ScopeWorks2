@@ -21,12 +21,13 @@ struct DisplayInfo: Identifiable, Hashable, CustomStringConvertible {
     let id: String
     let name: String
     let size: CGSize?
+    let scale: CGFloat
     var aspect: AspectAndMultiplier? {
         guard let size else { return nil }
         return calcAspectAndMultiplier(width: Int(size.width), height: Int(size.height))
     }
     var description: String {
-        return "Display \"\(name)\" (\(size?.width ?? 0)x\(size?.height ?? 0)). Aspect \(aspect?.width ?? 0):\(aspect?.height ?? 0)"
+        return "Display \"\(name)\" (\(size?.width ?? 0)x\(size?.height ?? 0)). Aspect \(aspect?.width ?? 0):\(aspect?.height ?? 0). Multiplier = \(aspect?.multiplier ?? 0)"
     }
 }
 
@@ -42,26 +43,43 @@ final class ExternalDisplayManager {
     
     public func refreshDisplayList() {
 #if os(macOS)
-        ExternalDisplayManager.availableDisplays = NSScreen.screens.compactMap { screen in
+        ExternalDisplayManager.availableDisplays = NSScreen.screens
+            .compactMap { screen in
             guard let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
                 return nil
             }
-            return DisplayInfo(id: String(screenNumber), name: screen.localizedName, size: screen.frame.size)
-            //Add height and width to this screen's displayInfo
+            return DisplayInfo(
+                id: String(screenNumber),
+                name: screen.localizedName,
+                size: screen.frame.size,
+                scale: screen.backingScaleFactor
+            )
         }
 #else
         var displays: [DisplayInfo] = []
         // Always include the built-in screen
-        displays.append(DisplayInfo(id: "0", name: UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone", size: UIScreen.main.bounds.size))
+        displays.append(DisplayInfo(
+            id: "0",
+            name: UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone",
+            size: UIScreen.main.bounds.size,
+            scale: UIScreen.main.scale)
+        )
         // Add any external display scenes (AirPlay, HDMI, etc.)
         let externalScenes = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .filter { $0.session.role == .windowExternalDisplayNonInteractive }
         for (index, scene) in externalScenes.enumerated() {
-            displays.append(DisplayInfo(id: "ext-\(index)", name: "AirPlay Display \(index + 1)",  size: scene.coordinateSpace.bounds.size))
+            displays.append(DisplayInfo(
+                id: "ext-\(index)",
+                name: "AirPlay Display \(index + 1)",
+                size: scene.coordinateSpace.bounds.size,
+                scale: scene.screen.scale))
         }
         ExternalDisplayManager.availableDisplays = displays
 #endif
+        for aDisplay in ExternalDisplayManager.availableDisplays {
+            print(aDisplay.description)
+        }
         NotificationCenter.default.post(name: displaysChangedNotification, object: nil)
 
     }

@@ -81,7 +81,13 @@ struct ScopeWorks2App: App {
 #if os(macOS)
         Settings {
             SettingsView(
-                selectedAspectRatio: AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false),
+                selectedAspectRatio: AspectRatio(
+                    title: "16:9",
+                    width: 16,
+                    height: 9,
+                    defaultMultiplier: 120,
+                    index: 5,
+                    isCropForTiling: false),
                          doneButtonAction: {} )
         }
 #endif

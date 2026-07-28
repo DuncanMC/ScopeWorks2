@@ -452,19 +452,30 @@ struct ContentView: View {
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .gesture(ExclusiveGesture(dragGesture, rotateGesture))
                         .border(.blue, width: 1)
-                    //                        .gesture(rotateGesture)
                 }
                 ZStack {
                     #if os(iOS) || os(iPadOS)
-                    ScopeViewRepresentable(scopeState: scopeState, isMainDocumentScopeView: true)
+                    ScopeViewRepresentable(
+                        scopeState: scopeState,
+                        allowImageExport: true,
+                        isMainDocumentScopeView: true,
+                        )
                         .gesture(TwoFingerTapGesture {
-                            scopeState.handleSnapshot()
                             print("Two finger tap detected")
+                            scopeState.handleSnapshot(isFullScreenView: false)
                         })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                     #else
-                    ScopeViewRepresentable(scopeState: scopeState, isMainDocumentScopeView: true)
+                    ScopeViewRepresentable(
+                        scopeState: scopeState,
+                        allowImageExport: true,
+                        isMainDocumentScopeView: true,
+                        )
+                        .onTapGesture {
+                            print("Tap gesture recognized")
+                            scopeState.handleSnapshot(isFullScreenView: false)
+                        }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                     #endif
@@ -536,7 +547,7 @@ struct ContentView: View {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Export") {
                                     scopeState.showExportImageSheet = false
-                                    guard let renderer = scopeState.renderer,
+                                    guard let renderer = scopeState.documentRenderer,
                                           let filetype = settings.selectedFormat.fileType,
                                           let image = renderer.renderOffscreenImage(
                                               width: settings.exportWidth,
@@ -569,7 +580,7 @@ struct ContentView: View {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Start Recording") {
                                     scopeState.showRecordVideoSheet = false
-                                    guard let renderer = scopeState.renderer else { return }
+                                    guard let renderer = scopeState.documentRenderer else { return }
                                     let tempURL = FileManager.default.temporaryDirectory
                                         .appendingPathComponent("ScopeWorks recording.mov")
                                     let recorder = VideoRecorder(

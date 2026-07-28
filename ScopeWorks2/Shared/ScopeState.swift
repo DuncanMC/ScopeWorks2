@@ -42,6 +42,7 @@ struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, 
     let title: String
     let width: Double
     let height: Double
+    let defaultMultiplier: Int
     let index: Int
     let isCropForTiling: Bool
     nonisolated var description: String {
@@ -117,11 +118,14 @@ class ScopeState: ObservableObject, Codable {
     /// triangle-point adjustment). Stays true through user-driven image
     /// relocation and is cleared when the texture is first set.
     var isLoadingFromFile = false
-
+    
     // MARK: - External display (transient, not persisted)
     var externalDisplayViewManager: ExternalDisplayViewManager?
-    weak var metalView: MTKView? = nil
-    weak var renderer: ScopeRenderer? = nil
+    weak var fullscreenMetalView: MTKView? = nil
+    weak var fullscreenRenderer: ScopeRenderer? = nil
+    
+    weak var documentMetalView: MTKView? = nil
+    weak var documentRenderer: ScopeRenderer? = nil
     
     // MARK: - Export state (transient, not persisted)
     @Published var activeRecorder: VideoRecorder? = nil
@@ -262,6 +266,13 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func doInitSetup() {
+        //        if splitTriangle {
+        //            let (isRightTriangle, index) = isRightTriangle(trianglePoints)
+        //            if !isRightTriangle {
+        //                print("splitTriangle = true but it's not a right triangle!")
+        //                splitTriangle = false
+        //            }
+        //        }
         //print("Adding observers")
         NotificationCenter.default.addObserver(
             forName: settingsChangedNotification,
@@ -299,7 +310,7 @@ class ScopeState: ObservableObject, Codable {
                 self?.availableDisplays = ExternalDisplayManager.availableDisplays
             }
         }
-
+        
         NotificationCenter.default.addObserver(
             forName: closingFullScreenNotification,
             object: self, queue: .main
@@ -308,8 +319,8 @@ class ScopeState: ObservableObject, Codable {
                 self?.showFullscreenView = false
             }
         }
-
-
+        
+        
         resolveICloudURL()
         
         // If we have an imageSourceInfo from a decoded document, resolve it now
@@ -317,7 +328,7 @@ class ScopeState: ObservableObject, Codable {
             resolveImageFromSourceInfo()
         }
         availableDisplays = ExternalDisplayManager.availableDisplays
-
+        
         // If no image will be loaded (empty document), loading is already complete
         if isLoadingFromFile && selectedImageData == nil && !needsImageRelocation {
             isLoadingFromFile = false
@@ -541,7 +552,13 @@ class ScopeState: ObservableObject, Codable {
                     print("Error loading bookmark: \(error)")
                 }
             }
-            self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+            self.selectedAspectRatio = AspectRatio(
+                title: "16:9",
+                width: 16,
+                height: 9,
+                defaultMultiplier: 120,
+                index: 5,
+                isCropForTiling: false)
             if self.imageURL == nil {
                 self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
             }
@@ -550,7 +567,13 @@ class ScopeState: ObservableObject, Codable {
                 self.imageSourceInfo = .fromFile(url: url, bookmarkData: self.bookmarkData)
             }
 #else
-            self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+            self.selectedAspectRatio = AspectRatio(
+                title: "16:9",
+                width: 16,
+                height: 9,
+                defaultMultiplier: 120,
+                index: 5,
+                isCropForTiling: false)
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
                 print("in ScopeState.init(from:), found imageID: \(imageID)")
                 self.selectedImageID = imageID
@@ -587,7 +610,15 @@ class ScopeState: ObservableObject, Codable {
         
         self.showOutlines = try container.decode(Bool.self, forKey: .showOutlines)
         self.flipAlternates = try container.decode(Bool.self, forKey: .flipAlternates)
-        self.splitTriangle = try container.decode(Bool.self, forKey: .splitTriangle)
+        var tempSplit = try container.decode(Bool.self, forKey: .splitTriangle)
+        var isRight: Bool = false
+        if tempSplit {
+            (isRight, _) = isRightTriangle(trianglePoints)
+        }
+        if tempSplit && !isRight {
+            print("splitTriangle == true but triangle is not a right triangle. Fixing.")
+        }
+        self.splitTriangle = tempSplit && isRight
         self.drawWithReflection = try container.decode(Bool.self, forKey: .drawWithReflection)
         self.animate = false //try container.decode(Bool.self, forKey: .animate)
         //        self.showControls = try container.decode(Bool.self, forKey: .showControls)
@@ -597,9 +628,16 @@ class ScopeState: ObservableObject, Codable {
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+        self.selectedAspectRatio = AspectRatio(
+            title: "16:9",
+            width: 16,
+            height: 9,
+            defaultMultiplier: 120,
+            index: 5,
+            isCropForTiling: false)
+        
         self.isLoadingFromFile = true
-
+        
         doInitSetup()
         
         //print("In ScopeState init.from. uuid = \(uuid)")
@@ -677,7 +715,14 @@ class ScopeState: ObservableObject, Codable {
         
         // Initialize other properties to defaults or empty values
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+        self.selectedAspectRatio = AspectRatio(
+            title: "16:9",
+            width: 16,
+            height: 9,
+            defaultMultiplier: 120,
+            index: 5,
+            isCropForTiling: false)
+        
         doInitSetup()
     }
     
@@ -687,11 +732,18 @@ class ScopeState: ObservableObject, Codable {
     
     init(){
         //        print("In ScopeState init. uuid = \(uuid)")
-        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+        self.selectedAspectRatio = AspectRatio(
+            title: "16:9",
+            width: 16,
+            height: 9,
+            defaultMultiplier: 120,
+            index: 5,
+            isCropForTiling: false)
+        
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
-        self.selectedAspectRatio = AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false)
+        
         doInitSetup()
     }
     
@@ -747,7 +799,7 @@ class ScopeState: ObservableObject, Codable {
             }
         }
     }
-
+    
     @Published var chosenDisplayID: String? = nil {
         didSet {
             if showFullscreenView {
@@ -755,7 +807,7 @@ class ScopeState: ObservableObject, Codable {
             }
         }
     }
-
+    
     // MARK: - Properties to be saved in ScopeWorks document
     var bookmarkData: Data? {
         didSet {
@@ -810,7 +862,7 @@ class ScopeState: ObservableObject, Codable {
                 trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
                 //trianglePoints = calcTrianglePoints(typeChanged: false)
                 (trianglePoints, _, _, _) = adjustTrianglePoints(trianglePoints: trianglePoints)
-
+                
                 
             }
         }
@@ -820,29 +872,29 @@ class ScopeState: ObservableObject, Codable {
             print("In drawWithReflection.didSet")
         }
     }
-//    @Published var splitPolygonTriangles: Bool = false {
-//        didSet {
-//            if splitPolygonTriangles {
-//                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
-//                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
-//            } else {
-//                let distance = simd_float2(x: trianglePoints.point2.x - trianglePoints.point3.x, y: trianglePoints.point2.y - trianglePoints.point3.y)
-//                let point2 = trianglePoints.point3 + distance * 2.0
-//                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
-//                trianglePoints = calcTrianglePoints(typeChanged: false)
-//
-//
-//            }
-/*
- if (splitPolygonTriangles) {
+    //    @Published var splitPolygonTriangles: Bool = false {
+    //        didSet {
+    //            if splitPolygonTriangles {
+    //                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+    //                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
+    //            } else {
+    //                let distance = simd_float2(x: trianglePoints.point2.x - trianglePoints.point3.x, y: trianglePoints.point2.y - trianglePoints.point3.y)
+    //                let point2 = trianglePoints.point3 + distance * 2.0
+    //                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
+    //                trianglePoints = calcTrianglePoints(typeChanged: false)
+    //
+    //
+    //            }
+    /*
+     if (splitPolygonTriangles) {
      point2 = GLMakePoint((point2.x+point3.x)/2, (point2.y+point3.y)/2);
- } else {
+     } else {
      //TODO: Fix point2 if it is now out of bounds
      point2 = GLMakePoint((point2.x-point3.x)*2 + point3.x, (point2.y-point3.y)*2+ point3.y);
      [self adjustRoationAndShiftToScale];
- }
-
- */
+     }
+     
+     */
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
@@ -930,7 +982,7 @@ class ScopeState: ObservableObject, Codable {
             guard newSize != texSize else { return }
             // Only fire objectWillChange when dimensions actually change
             objectWillChange.send()
-           // trianglePoints = calcTrianglePoints(typeChanged: false)
+            // trianglePoints = calcTrianglePoints(typeChanged: false)
             texSize = newSize
             texAspect = Float(texWidth / texHeight)
             if texAspect > 1 {
@@ -981,7 +1033,7 @@ class ScopeState: ObservableObject, Codable {
             rotationCenter = rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
         }
     }
-
+    
     func adjustTrianglePoints(trianglePoints: TrianglePoints) -> AdjustmentResult {
         let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
         let triangleLimits = triangleLimits(trianglePoints: trianglePoints)
@@ -1012,7 +1064,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func calcTrianglePoints(typeChanged: Bool) -> TrianglePoints {
-        print("Entering function \(#function)")
+        //print("Entering function \(#function)")
         guard selectedImageData != nil || imageSourceMode != .staticImage else {
             return TrianglePoints(
                 point1: SIMD2<Float>(0.4, 0.25),
@@ -1020,29 +1072,37 @@ class ScopeState: ObservableObject, Codable {
                 point3: SIMD2<Float>(0.5, 0.42320508))
         }
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
-
+        
         guard template.isCircular || typeChanged else {
             return trianglePoints
         }
         var result: TrianglePoints
-
-        let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+        let oldMidpoint: SIMD2<Float>
+        if splitTriangle {
+            oldMidpoint = trianglePoints.point2
+        } else {
+            oldMidpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+        }
         let point1 = trianglePoints.point1
-        let centerAngle = atan2(Double(midpoint.y - point1.y), Double(midpoint.x - point1.x) )
+        let centerAngle = atan2(Double(oldMidpoint.y - point1.y), Double(oldMidpoint.x - point1.x) )
         
-
+        
         if template.isCircular {
             
             let stepArc = Double.pi / Double(polygonSides)
             let radius = max(distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point2),
-                          distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )
-
+                             distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )
+            
             var deltaY = Float(sin(centerAngle + stepArc)) * radius
             var deltaX = Float(cos(centerAngle + stepArc)) * radius
             let point3 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
             deltaY = Float(sin(centerAngle - stepArc)) * radius
             deltaX = Float(cos(centerAngle - stepArc)) * radius
-            let point2 = SIMD2<Float>(point1[0] + deltaX, point1[1] + deltaY)
+            var point2 = SIMD2<Float>(point1.x + deltaX, point1.y + deltaY)
+            if splitTriangle {
+                let newMidpoint = midpoint(p1: point2, p2: point3)
+                point2 = newMidpoint
+            }
             
             result = TrianglePoints(point1: point1, point2: point2, point3: point3)
         } else {
@@ -1050,7 +1110,7 @@ class ScopeState: ObservableObject, Codable {
             let point3Angle = centerAngle + .pi / 8
             let newLength = max(
                 distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point2),
-                distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )            
+                distanceBetween(p1: trianglePoints.point1, p2: trianglePoints.point3) )
             let point3 = point1 + simd_float2(
                 x: Float(cos(point3Angle)) * newLength,
                 y: Float(sin(point3Angle)) * newLength)
@@ -1061,33 +1121,33 @@ class ScopeState: ObservableObject, Codable {
                 y: Float(sin(point2Angle)) * point2Distance)
             result =  TrianglePoints(point1: point1, point2: point2, point3: point3)
             
-
+            
         }
-         (result, _, _, _) = adjustTrianglePoints(trianglePoints: result)
+        (result, _, _, _) = adjustTrianglePoints(trianglePoints: result)
         
         return result
     }
-
+    
     func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {
         return CGPoint(
             x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(imageViewSize.width)) * 1),
             y: (imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(imageViewSize.height)) )) * CGFloat(1))
     }
-
+    
     func viewPointToMetal(_ viewPoint: CGPoint ) -> SIMD2<Float> {
         return SIMD2<Float>(
             x: Float(viewPoint.x).interpolated(from:0...Float(imageViewSize.width), to: 0...1),
             y: Float(imageViewSize.height-viewPoint.y).interpolated(from:0...Float(imageViewSize.height), to: 0...1)
-            )
+        )
     }
-
+    
     func matchPoint(_  tapPoint: CGPoint, inPoints points: [DragPointTuple]) -> DragPointTuple? {
         let slop: CGFloat = 20
         for (aPoint, location) in points {
             if tapPoint.x > aPoint.x - slop && tapPoint.x < aPoint.x + slop &&
                 tapPoint.y > aPoint.y - slop && tapPoint.y < aPoint.y + slop
             {
-                    return (aPoint, location)
+                return (aPoint, location)
             }
         }
         if pointInTriangle(
@@ -1095,28 +1155,28 @@ class ScopeState: ObservableObject, Codable {
             p1: points[1].point,
             p2: points[2].point,
             p3: points[3].point) {
-                return (tapPoint, .inTriangleBody)
-            }
+            return (tapPoint, .inTriangleBody)
+        }
         return (tapPoint, .outsideTriangle)
     }
     /*
      + (BOOL) isRightHandTurnFromV1: (NSPoint) endpoint1
      endpoint2: (NSPoint) endpoint2
-                                                             pointToTest: (NSPoint) pointToTest;
+     pointToTest: (NSPoint) pointToTest;
      {
-         CGFloat z;
-         z = endpoint1.x * (endpoint2.y - pointToTest.y) +
+     CGFloat z;
+     z = endpoint1.x * (endpoint2.y - pointToTest.y) +
      endpoint2.x * (pointToTest.y - endpoint1.y) +
      pointToTest.x * (endpoint1.y - endpoint2.y);
-         return signbit(z);
+     return signbit(z);
      }
-
+     
      */
     func pointIsRighthandTurnFromEndpoints(_ pointToTest: CGPoint, endpoint1: CGPoint, endpoint2: CGPoint) -> Bool {
         let z = endpoint1.x * (endpoint2.y - pointToTest.y) +
         endpoint2.x * (pointToTest.y - endpoint1.y) +
         pointToTest.x * (endpoint1.y - endpoint2.y);
-
+        
         return z < 0
     }
     
@@ -1157,13 +1217,13 @@ class ScopeState: ObservableObject, Codable {
             print("trianglePoint2 = \(trianglePoint2)")
             print("trianglePoint3 = \(trianglePoint3)")
         }
-        let aspect = imageViewSize.width / imageViewSize.height
+        //        let aspect = imageViewSize.width / imageViewSize.height
         let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
         //print("Adjusted tap point = \(adjusted)")
         let result = matchPoint(adjusted, inPoints: points)
         return result
     }
-
+    
     func changeAnimationState() {
         if animate {
             lastAnimationStepTime = CACurrentMediaTime()
@@ -1178,13 +1238,13 @@ class ScopeState: ObservableObject, Codable {
         if let previousRotation {
             rotationAngle = fmod(angle - previousRotation, Float.pi * 2)
         }
-            
+        
         let pivotPoint = centerPoint(trianglePoints: trianglePoints)
         trianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: rotationAngle, aroundCenter: pivotPoint)
         if trianglePoints.point1.x.isNaN {
             print("NAN!")
         }
-
+        
         previousRotation = angle
     }
     
@@ -1199,15 +1259,15 @@ class ScopeState: ObservableObject, Codable {
     func shiftPoint(_ point: inout simd_float2, by offset: simd_float2) {
         point += offset
     }
-
+    
     func scaleTrianglePoints(by scale: Float, centeredAt center: simd_float2) -> TrianglePoints{
         //print("center = \(center.myDescription)")
         let scaleMatrix = makeScaleMatrix(xScale: scale, yScale: scale)
-
-                let translation = makeTranslationMatrix(tx: -center.x, ty: -center.y)
-                let reverseTranslation = makeTranslationMatrix(tx: center.x , ty: center.y )
         
-//  -- This code does not work. The translationMatrix has no effect. Why?
+        let translation = makeTranslationMatrix(tx: -center.x, ty: -center.y)
+        let reverseTranslation = makeTranslationMatrix(tx: center.x , ty: center.y )
+        
+        //  -- This code does not work. The translationMatrix has no effect. Why?
         let transform = translation * scaleMatrix * reverseTranslation
         let point1 = ((positionVector(point: trianglePoints.point1)) * transform)
         let point2 = ((positionVector(point: trianglePoints.point2))  * transform)
@@ -1216,7 +1276,7 @@ class ScopeState: ObservableObject, Codable {
             point1: pointFromVector(point1),
             point2: pointFromVector(point2),
             point3: pointFromVector(point3)
-            )
+        )
     }
     
     func handleDragging(
@@ -1229,7 +1289,7 @@ class ScopeState: ObservableObject, Codable {
         let deltaX = (value.location.x - lastDragLocation.x) * aspect
         let deltaY = value.location.y - lastDragLocation.y
         //print("You moved by (x: \(deltaX), y: \(deltaY)")
-
+        
         switch draggingState {
         case .inTrianglePoint1, .inTrianglePoint2, .inTrianglePoint3:
             let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
@@ -1246,9 +1306,9 @@ class ScopeState: ObservableObject, Codable {
             let changed = scaleTrianglePoints(by: sizeChange, centeredAt: triangleCenter)
             let adjustment = adjustTrianglePoints(trianglePoints: changed)
             trianglePoints = adjustment.points
-
+            
             self.lastDragLocation = value.location
-
+            
         case .inRotationCenter:
             let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
             let newRotationCenter = viewPointToMetal(newCenterPoint)
@@ -1261,27 +1321,27 @@ class ScopeState: ObservableObject, Codable {
             let newPoint2Metal = viewPointToMetal(newPoint2)
             let newPoint3 = CGPoint(x: trianglePoint3.x + deltaX, y: trianglePoint3.y + deltaY)
             let newPoint3Metal = viewPointToMetal(newPoint3)
-
+            
             let changed = TrianglePoints(point1: newPoint1Metal, point2: newPoint2Metal, point3: newPoint3Metal)
             let adjustment = adjustTrianglePoints(trianglePoints: changed)
             trianglePoints = adjustment.points
-
-            #if os(macOS)
-                if NSEvent.modifierFlags.rawValue & NSEvent.ModifierFlags.shift.rawValue != 0 {
-                                     let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
-                                     let newRotationCenter = viewPointToMetal(newCenterPoint)
-                         
-                                     self.rotationCenter = newRotationCenter
-                }
-            #endif
-
-
+            
+#if os(macOS)
+            if NSEvent.modifierFlags.rawValue & NSEvent.ModifierFlags.shift.rawValue != 0 {
+                let newCenterPoint = CGPoint(x: rotationCenterPoint.x + deltaX, y: rotationCenterPoint.y + deltaY)
+                let newRotationCenter = viewPointToMetal(newCenterPoint)
+                
+                self.rotationCenter = newRotationCenter
+            }
+#endif
+            
+            
         case .outsideTriangle:
             let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
             var  roateAroundCenter: Bool = false
-            #if os(macOS)
-                roateAroundCenter = flags & NSEvent.ModifierFlags.option.rawValue != 0
-            #endif
+#if os(macOS)
+            roateAroundCenter = flags & NSEvent.ModifierFlags.option.rawValue != 0
+#endif
             let pivotPoint: CGPoint
             if roateAroundCenter {
                 pivotPoint = centerCGPoint(triangleCGPoints: triangleCGPoint)
@@ -1310,30 +1370,50 @@ class ScopeState: ObservableObject, Codable {
                 rotationCenter = rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
                 rotationCenterPoint = metalPointToView(rotationCenter)
             }
-
+            
         default:
             return
         }
     }
     
     
-    func snapshotImage() -> CGImage? {
-        guard let metalView = self.metalView else { return nil }
-        guard let drawableTexture = metalView.currentDrawable?.texture else { return nil }
-        
-        let ciContext = CIContext()
-        // The texture format is .bgra8Unorm (not _srgb), so the framebuffer stores
-        // sRGB-encoded values without automatic conversion. Tell CIImage the values
-        // are sRGB to prevent a double gamma curve that washes out colors.
-        guard let ciImage = CIImage(mtlTexture: drawableTexture, options: [
-            .colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!
-        ]) else {
-            return nil
+    func snapshotImage(isFullscreenView: Bool) -> CGImage? {
+        guard let metalView = isFullscreenView ? self.fullscreenMetalView : documentMetalView else { return nil
         }
-        
-        let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
-        return ciContext.createCGImage(ciImage, from: ciImage.extent,
-                                       format: .RGBA8, colorSpace: sRGB)
+        if isFullscreenView {
+            guard let drawableTexture = metalView.currentDrawable?.texture else { return nil }
+            
+            //TODO: For the document metal view, set the drawable size to a size for the current crop rect
+            
+            let ciContext = CIContext()
+            // The texture format is .bgra8Unorm (not _srgb), so the framebuffer stores
+            // sRGB-encoded values without automatic conversion. Tell CIImage the values
+            // are sRGB to prevent a double gamma curve that washes out colors.
+            guard let ciImage = CIImage(mtlTexture: drawableTexture, options: [
+                .colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!
+            ]) else {
+                return nil
+            }
+            
+            let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
+            return ciContext.createCGImage(ciImage, from: ciImage.extent,
+                                           format: .RGBA8, colorSpace: sRGB)
+        } else {
+            guard let renderer = self.documentRenderer else {
+                print("Renderer not available for off-screen rendering")
+                return nil
+            }
+            guard let image = renderer.renderOffscreenImage(
+                width: Int(selectedAspectRatio.width * Double(selectedAspectRatio.defaultMultiplier)),
+
+                height: Int(selectedAspectRatio.height * Double(selectedAspectRatio.defaultMultiplier)),
+                aspectRatio: selectedAspectRatio
+            ) else {
+                print("Off-screen render failed")
+                return nil
+            }
+            return image
+        }
     }
     /// Cached iCloud Documents URL, resolved once on a background queue at startup.
     private var _iCloudDocumentsURL: URL?
@@ -1534,7 +1614,7 @@ class ScopeState: ObservableObject, Codable {
 
         savePanel.begin { [weak self] result in
             guard result == .OK, let url = savePanel.url, let self else { return }
-            guard let renderer = self.renderer else {
+            guard let renderer = self.documentRenderer else {
                 print("Renderer not available for video recording")
                 return
             }
@@ -1601,7 +1681,8 @@ class ScopeState: ObservableObject, Codable {
         savePanel.begin { [weak self] result in
             formatCancellable?.cancel()
             guard result == .OK, let url = savePanel.url, let self else { return }
-            guard let renderer = self.renderer else {
+            // xxx
+            guard let renderer = self.documentRenderer else {
                 print("Renderer not available for off-screen rendering")
                 return
             }
@@ -1627,13 +1708,18 @@ class ScopeState: ObservableObject, Codable {
         showExportImageSheet = true
         #endif
     }
-    func handleSnapshot() {
-        guard metalView != nil else {
+    func handleSnapshot(isFullScreenView: Bool) {
+        /*
+         weak var documentMetalView: MTKView? = nil
+         weak var fullscreenMetalView: MTKView? = nil
+
+         */
+        guard  (isFullScreenView ? fullscreenMetalView : documentMetalView) != nil else {
             print("In \(#function), metalView = nil")
             return
         }
         print("Snapshot button pressed.")
-        guard let snapshotImage = snapshotImage() else {
+        guard let snapshotImage = snapshotImage(isFullscreenView: isFullScreenView) else {
             print("snapshotImage returned nil")
             return
         }

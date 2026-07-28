@@ -38,12 +38,55 @@ struct SettingsView: View {
 
     
     static let savedAspectRatios: [AspectRatio] = [
-        AspectRatio(title: "Crop for Tiling", width: 0.6, height: sqrt(3)/5.0, index: 0, isCropForTiling: true),
-        AspectRatio(title: "Square", width: 1, height: 1, index: 1, isCropForTiling: false),
-        AspectRatio(title: "3:2", width: 3, height: 2, index: 2, isCropForTiling: false),
-        AspectRatio(title: "4:3", width: 4, height: 3, index: 3, isCropForTiling: false),
-        AspectRatio(title: "8:10", width: 5, height: 4, index: 4, isCropForTiling: false),
-        AspectRatio(title: "16:9", width: 16, height: 9, index: 5, isCropForTiling: false),
+        AspectRatio(
+            title: "Crop for Tiling",
+            width: 0.6,
+            height: sqrt(3)/5.0,
+            defaultMultiplier: 3200,
+            index: 0,
+            isCropForTiling: true),
+        AspectRatio(
+            title: "Square",
+            width:  1,
+            height: 1,
+            defaultMultiplier: 1920,
+            index: 1,
+            isCropForTiling: false),
+        AspectRatio(
+            title: "3:2",
+            width:  3,
+            height: 2,
+            defaultMultiplier: 640,
+            index: 2,
+            isCropForTiling: false),
+        AspectRatio(
+            title: "4:3",
+            width:  4,
+            height: 3,
+            defaultMultiplier: 480,
+            index: 3,
+            isCropForTiling: false),
+        AspectRatio(
+            title: "8:10",
+            width:  5,
+            height: 4,
+            defaultMultiplier: 384,
+            index: 4,
+            isCropForTiling: false),
+        AspectRatio(
+            title: "16:9",
+            width: 16,
+            height: 9,
+            defaultMultiplier: 120,
+            index: 5,
+            isCropForTiling: false),
+        AspectRatio(
+            title:  "8:5",
+            width:  8,
+            height: 5,
+            defaultMultiplier: 240,
+            index: 6,
+            isCropForTiling: false)
     ]
     
     /// Returns saved aspect ratios plus any unique ratios from connected displays.
@@ -54,7 +97,13 @@ struct SettingsView: View {
             guard let aspect = display.aspect else { continue }
             if !ratios.contains(where: { $0.width == aspect.width && $0.height == aspect.height }) {
                 let name = "\(display.name) (\(Int(aspect.width)):\(Int(aspect.height)))"
-                ratios.append(AspectRatio(title: name, width: aspect.width, height: aspect.height, index: ratios.count, isCropForTiling: false))
+                ratios.append(AspectRatio(
+                    title: name,
+                    width: aspect.width,
+                    height: aspect.height,
+                    defaultMultiplier: Int(aspect.multiplier) * Int(display.scale),
+                    index: ratios.count,
+                    isCropForTiling: false))
             }
         }
         return ratios

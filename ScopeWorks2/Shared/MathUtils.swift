@@ -29,6 +29,43 @@ extension FloatingPoint {
       toUpperBound: to.upperBound)
   }
 }
+public func isRightTriangle(_ triangle: TrianglePoints) -> (isRight: Bool, rightAngleIndex: Int?) {
+    let epsilon = Float.pi/720
+    var angle1 = atan2(triangle.point2.y - triangle.point1.y,
+                       triangle.point2.x - triangle.point1.x)
+    
+    var angle2 = atan2(triangle.point2.y - triangle.point3.y,
+                       triangle.point2.x - triangle.point3.x)
+    let  point2Angle = fmod(abs(angle1 - angle2), .pi)
+    angle1 = atan2(triangle.point3.y - triangle.point1.y,
+                   triangle.point3.x - triangle.point1.x)
+    
+    angle2 = atan2(triangle.point3.y - triangle.point2.y,
+                   triangle.point3.x - triangle.point2.x)
+    let point3Angle = fmod(abs(angle1 - angle2), .pi)
+    
+    angle1 = atan2(triangle.point1.y - triangle.point2.y,
+                   triangle.point1.x - triangle.point2.x)
+    
+    angle2 = atan2(triangle.point1.y - triangle.point3.y,
+                   triangle.point1.x - triangle.point3.x)
+    let point1Angle = fmod(abs(angle1 - angle2), .pi)
+    //---------
+    let point1String = String(format: "%.3f",point1Angle.radiansToDegrees)
+    let point2String = String(format: "%.3f",point2Angle.radiansToDegrees)
+    let point3String = String(format: "%.3f",point3Angle.radiansToDegrees)
+    print("point1Angle = \(point1String)")
+    print("point2Angle = \(point2String)")
+    print("point3Angle = \(point3String)")
+    //---------
+    if abs(point2Angle - .pi/2) < epsilon {
+        return (true, 2)
+    } else if abs(point3Angle - .pi/2) < epsilon {
+        return (true, 3)
+    } else if abs(point2Angle - .pi/2) < epsilon {
+        return (true, 3)
+    } else { return (false, nil) }
+}
 
 public func distanceBetween(p1:  CGPoint, p2: CGPoint) -> CGFloat {
     let deltaX = p1.x - p2.x

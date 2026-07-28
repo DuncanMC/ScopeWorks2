@@ -6,24 +6,24 @@ import MetalKit
 #if os(macOS)
 struct ScopeViewRepresentable: NSViewRepresentable {
     typealias ViewType = MTKView
-
+    
     var allowImageExport: Bool
     var isMainDocumentScopeView: Bool
     weak var metalView: MTKView? = nil
     @ObservedObject var scopeState: ScopeState
-
-    init (scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
+    
+    init(scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
         self.allowImageExport = allowImageExport
         self.isMainDocumentScopeView = isMainDocumentScopeView
     }
     
-        
+    
     
     func makeCoordinator() -> ScopeRenderer {
         ScopeRenderer(scopeState: scopeState, isMainDocumentScopeView: isMainDocumentScopeView)
     }
-
+    
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
         mtkView.sampleCount = context.coordinator.sampleCount
@@ -32,17 +32,23 @@ struct ScopeViewRepresentable: NSViewRepresentable {
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
-        scopeState.renderer = context.coordinator
+        //xxx
         if allowImageExport {
-            scopeState.metalView = mtkView
+            if isMainDocumentScopeView {
+                scopeState.documentMetalView = mtkView
+                scopeState.documentRenderer = context.coordinator
+            } else {
+                scopeState.fullscreenMetalView = mtkView
+                scopeState.fullscreenRenderer = context.coordinator
+            }
         }
         return mtkView
     }
-
+    
     func updateNSView(_ nsView: MTKView, context: Context) {
         // Keep the weak renderer reference current across view updates
-        if scopeState.renderer !== context.coordinator {
-            scopeState.renderer = context.coordinator
+        if isMainDocumentScopeView && scopeState.documentRenderer !== context.coordinator {
+            scopeState.documentRenderer = context.coordinator
         }
         if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()
@@ -77,7 +83,7 @@ struct ScopeViewRepresentable: UIViewRepresentable {
 
     @ObservedObject var scopeState: ScopeState
 
-    init (scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
+    init(scopeState: ScopeState, allowImageExport: Bool = false, isMainDocumentScopeView: Bool) {
         self.scopeState = scopeState
         self.allowImageExport = allowImageExport
         self.isMainDocumentScopeView = isMainDocumentScopeView
@@ -99,17 +105,20 @@ extension ScopeViewRepresentable {
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.framebufferOnly = !allowImageExport
         context.coordinator.mtkView = mtkView
-        scopeState.renderer = context.coordinator
-        if allowImageExport {
-            scopeState.metalView = mtkView
+        if isMainDocumentScopeView {
+            scopeState.documentMetalView = mtkView
+            scopeState.documentRenderer = context.coordinator
+        } else {
+            scopeState.fullscreenMetalView = mtkView
+            scopeState.fullscreenRenderer = context.coordinator
         }
         return mtkView
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {
         // Keep the weak renderer reference current across view updates
-        if scopeState.renderer !== context.coordinator {
-            scopeState.renderer = context.coordinator
+        if isMainDocumentScopeView && scopeState.documentRenderer !== context.coordinator {
+            scopeState.documentRenderer = context.coordinator
         }
         if scopeState.imageSourceMode == .staticImage && scopeState.selectedImageData != nil {
             context.coordinator.updateImageData()

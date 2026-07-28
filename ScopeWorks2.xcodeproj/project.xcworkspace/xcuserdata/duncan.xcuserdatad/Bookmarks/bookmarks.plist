@@ -172,13 +172,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>791</string>
+					<string>843</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>790</string>
+					<string>842</string>
 					<key>Timestamp</key>
-					<string>806514563.644845</string>
+					<string>806936675.543851</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -194,16 +194,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>        //splitTriangle didSet
+				<string>        point2: SIMD2&lt;Float&gt;(0.6, 0.25),
 </string>
 				<key>leading</key>
-				<string>    @Published var flipAlternates: Bool = true
-    @Published var splitTriangle: Bool = false {
+				<string>    var trianglePoints = TrianglePoints(
+        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
 </string>
 				<key>trailing</key>
-				<string>        didSet {
-            if splitTriangle {
-                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
+				<string>        point3: SIMD2&lt;Float&gt;(0.5, 0.42320508))
+    
+    var rotationCenter: SIMD2&lt;Float&gt; = [0.5, 0.5] {
 </string>
 			</dict>
 			<key>title</key>
@@ -217,15 +217,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>14</string>
+					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>913</string>
+					<string>966</string>
 					<key>StartingColumnNumber</key>
-					<string>8</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>913</string>
+					<string>965</string>
 					<key>Timestamp</key>
-					<string>806514893.629687</string>
+					<string>806936675.543835</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -241,15 +241,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>didSet</string>
+				<string>    var aspectAdjustment: CGSize = .zero
+</string>
 				<key>leading</key>
-				<string>    // DMC:
-    var texture: MTLTexture? {
-        </string>
+				<string>    @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
+    
+</string>
 				<key>trailing</key>
-				<string> {
-            guard let texture else { return }
-            let texWidth = CGFloat(texture.width)
+				<string>    var imageViewSize: CGSize = CGSizeZero {
+        willSet {
+            //print("about to change imageViewSize")
 </string>
 			</dict>
 			<key>title</key>
@@ -265,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>967</string>
+					<string>1019</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>966</string>
+					<string>1018</string>
 					<key>Timestamp</key>
-					<string>806515061.994862</string>
+					<string>806936675.54382</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -287,16 +288,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    func adjustTrianglePoints(trianglePoints: TrianglePoints) -&gt; AdjustmentResult {
+				<string>            return
 </string>
 				<key>leading</key>
-				<string>    }
-
+				<string>        //availableDisplays
+        guard let currentIndex = availableDisplays.firstIndex(where:  { $0.id == chosenDisplayID }) else {
 </string>
 				<key>trailing</key>
-				<string>        let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
-        let triangleLimits = triangleLimits(trianglePoints: trianglePoints)
-        var dx: Float? = nil
+				<string>        }
+        let nextIndex = (currentIndex + 1) % availableDisplays.count
+        chosenDisplayID = availableDisplays[nextIndex].id
 </string>
 			</dict>
 			<key>title</key>
@@ -312,13 +313,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>996</string>
+					<string>1048</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>995</string>
+					<string>1047</string>
 					<key>Timestamp</key>
-					<string>806515061.994845</string>
+					<string>806936675.543804</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -334,16 +335,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    func calcTrianglePoints(typeChanged: Bool) -&gt; TrianglePoints {
+				<string>        if triangleLimits.minY &lt; textureLimits.minY {
 </string>
 				<key>leading</key>
-				<string>    }
-    
+				<string>            dx = textureLimits.maxX - triangleLimits.maxX
+        }
 </string>
 				<key>trailing</key>
-				<string>        print("Entering function \(#function)")
-        guard selectedImageData != nil || imageSourceMode != .staticImage else {
-            return TrianglePoints(
+				<string>            dy = textureLimits.minY - triangleLimits.minY
+        } else if triangleLimits.maxY &gt; textureLimits.maxY {
+            dy = textureLimits.maxY - triangleLimits.maxY
 </string>
 			</dict>
 			<key>title</key>
