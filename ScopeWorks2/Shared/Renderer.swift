@@ -693,7 +693,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             msDesc.sampleCount = sampleCount
             msDesc.usage = [.renderTarget]
             msDesc.storageMode = .private
-            guard let msTex = device.makeTexture(descriptor: msDesc) else { return nil }
+            guard let msTex = device.makeTexture(descriptor: msDesc) else {
+                return nil
+            }
 
             let resolveDesc = MTLTextureDescriptor.texture2DDescriptor(
                 pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)

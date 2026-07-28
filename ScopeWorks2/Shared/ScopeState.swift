@@ -1604,7 +1604,7 @@ class ScopeState: ObservableObject, Codable {
             defaultAspectRatio: selectedAspectRatio,
             isEightWayScope:  !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: true))
-        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 140)
+        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 170)
 
         let savePanel = NSSavePanel()
         savePanel.accessoryView = accessoryView
@@ -1612,10 +1612,23 @@ class ScopeState: ObservableObject, Codable {
         savePanel.nameFieldStringValue = "ScopeWorks recording"
         savePanel.directoryURL = lastUsedExportDirectory
 
+        // Reject the Save action (with an explanatory alert) while the requested
+        // size exceeds what the H.264 encoder accepts. The delegate property is
+        // weak, so keep a strong reference until the panel completes.
+        let sizeValidator = ExportSizeValidator(settings: settings, isForVideo: true)
+        savePanel.delegate = sizeValidator
+
         savePanel.begin { [weak self] result in
+            _ = sizeValidator // keep the delegate alive for the panel's lifetime
             guard result == .OK, let url = savePanel.url, let self else { return }
             guard let renderer = self.documentRenderer else {
                 print("Renderer not available for video recording")
+                return
+            }
+
+            // Safety net — the panel delegate should have blocked this already.
+            guard !settings.exceedsMaxVideoSize else {
+                print("Video size exceeds the H.264 encoder limit")
                 return
             }
 
@@ -1649,6 +1662,24 @@ class ScopeState: ObservableObject, Codable {
         showRecordVideoSheet = true
         #endif
     }
+    
+    static func getMaxTextureSize() -> Int {
+       let device = MTLCreateSystemDefaultDevice()!
+       
+       // According to the Metal Feature Set Tables there are only two supported maximum resolutions
+       // 16384px for macs and the latest iOS devices
+       // 8192px for the older iOS devices
+       // Older Apple devices used to be limited to 4,096, 2,048 or even 1,024, but are no longer supported
+       // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+       
+       if device.supportsFamily(MTLGPUFamily.mac2) ||
+          device.supportsFamily(MTLGPUFamily.apple3) {
+          return 16384
+       }
+       
+       return 8192
+    }
+
     func saveImageAs() {
         #if os(macOS)
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
@@ -1657,12 +1688,18 @@ class ScopeState: ObservableObject, Codable {
             defaultAspectRatio: selectedAspectRatio,
             isEightWayScope: !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: false))
-        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 180)
+        accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 210)
 
         let savePanel = NSSavePanel()
         savePanel.accessoryView = accessoryView
         savePanel.allowedContentTypes = [settings.selectedFormat.fileType].compactMap { $0 }
         savePanel.directoryURL = lastUsedExportDirectory
+
+        // Reject the Save action (with an explanatory alert) while the requested
+        // size exceeds the GPU's maximum texture size. The delegate property is
+        // weak, so keep a strong reference until the panel completes.
+        let sizeValidator = ExportSizeValidator(settings: settings)
+        savePanel.delegate = sizeValidator
 
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
@@ -1680,6 +1717,7 @@ class ScopeState: ObservableObject, Codable {
 
         savePanel.begin { [weak self] result in
             formatCancellable?.cancel()
+            _ = sizeValidator // keep the delegate alive for the panel's lifetime
             guard result == .OK, let url = savePanel.url, let self else { return }
             // xxx
             guard let renderer = self.documentRenderer else {
@@ -1688,6 +1726,12 @@ class ScopeState: ObservableObject, Codable {
             }
             guard let filetype = settings.selectedFormat.fileType else { return }
 
+            // Safety net — the panel delegate should have blocked this already.
+            guard !settings.exceedsMaxTextureSize else {
+                print("Texture can't be wider/taller than \(settings.maxTextureSize)")
+                return
+            }
+            
             guard let image = renderer.renderOffscreenImage(
                 width: settings.exportWidth,
                 height: settings.exportHeight,
@@ -1733,5 +1777,47 @@ class ScopeState: ObservableObject, Codable {
     static  var snapshotFileTypeIndex: Int = Int(UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue))
 
 }
+
+#if os(macOS)
+/// Save panel delegate that rejects the Save action while the requested export size
+/// exceeds the GPU's maximum texture size. Throwing from `panel(_:validate:)` shows
+/// an alert and keeps the panel open so the user can correct the dimensions.
+private class ExportSizeValidator: NSObject, NSOpenSavePanelDelegate {
+    let settings: ExportSettingsState
+    let isForVideo: Bool
+
+    init(settings: ExportSettingsState, isForVideo: Bool = false) {
+        self.settings = settings
+        self.isForVideo = isForVideo
+    }
+
+    func panel(_ sender: Any, validate url: URL) throws {
+        if isForVideo {
+            if settings.exceedsMaxVideoSize {
+                let maxSize = settings.maxVideoSize
+                throw NSError(
+                    domain: "ScopeWorks2",
+                    code: 1,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "The video size is too large.",
+                        NSLocalizedRecoverySuggestionErrorKey:
+                            "The maximum video size for this aspect ratio is \(maxSize.width)×\(maxSize.height) px."
+                    ]
+                )
+            }
+        } else if settings.exceedsMaxTextureSize {
+            throw NSError(
+                domain: "ScopeWorks2",
+                code: 1,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "The image size is too large.",
+                    NSLocalizedRecoverySuggestionErrorKey:
+                        "Maximum texture width/height is \(settings.maxTextureSize) px."
+                ]
+            )
+        }
+    }
+}
+#endif
 
 

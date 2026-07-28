@@ -535,71 +535,12 @@ struct ContentView: View {
         #if os(iOS)
         .sheet(isPresented: $scopeState.showExportImageSheet) {
             if let settings = scopeState.exportSettingsState {
-                NavigationStack {
-                    ExportSettingsView(settings: settings, isForVideo: false)
-                        .navigationTitle("Export Image")
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") {
-                                    scopeState.showExportImageSheet = false
-                                }
-                            }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Export") {
-                                    scopeState.showExportImageSheet = false
-                                    guard let renderer = scopeState.documentRenderer,
-                                          let filetype = settings.selectedFormat.fileType,
-                                          let image = renderer.renderOffscreenImage(
-                                              width: settings.exportWidth,
-                                              height: settings.exportHeight,
-                                              aspectRatio: settings.selectedAspectRatio
-                                          ) else { return }
-                                    scopeState.showSavePanel(
-                                        image: image,
-                                        defaultFilename: "ScopeWorks image",
-                                        directoryURL: nil,
-                                        filetype: filetype
-                                    )
-                                }
-                            }
-                        }
-                }
+                ExportImageSheetView(settings: settings, scopeState: scopeState)
             }
         }
         .sheet(isPresented: $scopeState.showRecordVideoSheet) {
             if let settings = scopeState.exportSettingsState {
-                NavigationStack {
-                    ExportSettingsView(settings: settings, isForVideo: true)
-                        .navigationTitle("Record Video")
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") {
-                                    scopeState.showRecordVideoSheet = false
-                                }
-                            }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Start Recording") {
-                                    scopeState.showRecordVideoSheet = false
-                                    guard let renderer = scopeState.documentRenderer else { return }
-                                    let tempURL = FileManager.default.temporaryDirectory
-                                        .appendingPathComponent("ScopeWorks recording.mov")
-                                    let recorder = VideoRecorder(
-                                        width: settings.exportWidth,
-                                        height: settings.exportHeight,
-                                        outputURL: tempURL,
-                                        renderer: renderer,
-                                        aspectRatio: settings.selectedAspectRatio
-                                    )
-                                    do {
-                                        try recorder.setup()
-                                        scopeState.activeRecorder = recorder
-                                    } catch {
-                                        print("Failed to set up video recorder: \(error)")
-                                    }
-                                }
-                            }
-                        }
-                }
+                RecordVideoSheetView(settings: settings, scopeState: scopeState)
             }
         }
         .sheet(isPresented: Binding(
@@ -768,6 +709,95 @@ class RelocationFilePickerDelegate: NSObject, UIDocumentPickerDelegate {
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         onPick = nil
+    }
+}
+
+// MARK: - iOS Export Image Sheet
+/// Sheet content for image export. Observes the export settings so the Export
+/// button's enabled state updates live as the user edits the dimensions.
+struct ExportImageSheetView: View {
+    @ObservedObject var settings: ExportSettingsState
+    @ObservedObject var scopeState: ScopeState
+
+    var body: some View {
+        NavigationStack {
+            ExportSettingsView(settings: settings, isForVideo: false)
+                .navigationTitle("Export Image")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            scopeState.showExportImageSheet = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Export") {
+                            // Safety net — the button is disabled when the size is too large.
+                            guard !settings.exceedsMaxTextureSize else { return }
+                            scopeState.showExportImageSheet = false
+                            guard let renderer = scopeState.documentRenderer,
+                                  let filetype = settings.selectedFormat.fileType,
+                                  let image = renderer.renderOffscreenImage(
+                                      width: settings.exportWidth,
+                                      height: settings.exportHeight,
+                                      aspectRatio: settings.selectedAspectRatio
+                                  ) else { return }
+                            scopeState.showSavePanel(
+                                image: image,
+                                defaultFilename: "ScopeWorks image",
+                                directoryURL: nil,
+                                filetype: filetype
+                            )
+                        }
+                        .disabled(settings.exceedsMaxTextureSize)
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - iOS Record Video Sheet
+/// Sheet content for video recording. Observes the export settings so the Start
+/// Recording button's enabled state updates live as the user edits the dimensions.
+struct RecordVideoSheetView: View {
+    @ObservedObject var settings: ExportSettingsState
+    @ObservedObject var scopeState: ScopeState
+
+    var body: some View {
+        NavigationStack {
+            ExportSettingsView(settings: settings, isForVideo: true)
+                .navigationTitle("Record Video")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            scopeState.showRecordVideoSheet = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Start Recording") {
+                            // Safety net — the button is disabled when the size is too large.
+                            guard !settings.exceedsMaxVideoSize else { return }
+                            scopeState.showRecordVideoSheet = false
+                            guard let renderer = scopeState.documentRenderer else { return }
+                            let tempURL = FileManager.default.temporaryDirectory
+                                .appendingPathComponent("ScopeWorks recording.mov")
+                            let recorder = VideoRecorder(
+                                width: settings.exportWidth,
+                                height: settings.exportHeight,
+                                outputURL: tempURL,
+                                renderer: renderer,
+                                aspectRatio: settings.selectedAspectRatio
+                            )
+                            do {
+                                try recorder.setup()
+                                scopeState.activeRecorder = recorder
+                            } catch {
+                                print("Failed to set up video recorder: \(error)")
+                            }
+                        }
+                        .disabled(settings.exceedsMaxVideoSize)
+                    }
+                }
+        }
     }
 }
 #endif
