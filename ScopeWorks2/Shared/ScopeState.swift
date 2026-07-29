@@ -910,11 +910,8 @@ class ScopeState: ObservableObject, Codable {
     @Published var showOpenDialog: Bool = false
     
     @Published var photoManager = PhotoLibraryManager()
-    @Published var showControls = true {
-        didSet {
-            //            print("In showControls.didSet. showControls = \(showControls). uuid = \(uuid)")
-        }
-    }
+    @Published var showControls = true
+    
     @Published var showSourceImage: Bool = true
     @Published var imageUUID: UUID? = nil
     @Published var isHEIC: Bool = false

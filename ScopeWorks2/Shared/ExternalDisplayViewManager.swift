@@ -51,6 +51,12 @@ struct FullScreenOverlayView: View {
     @ObservedObject var scopeState: ScopeState
     @ObservedObject var overlayState: FullScreenOverlayState
 
+    #if os(macOS)
+        let exitFullscreenString = "Exit Full Screen (Esc)"
+    #else
+        let exitFullscreenString = "Exit Full Screen"
+    #endif
+
     var body: some View {
         ZStack {
             #if os(iOS) || os(iPadOS)
@@ -81,13 +87,8 @@ struct FullScreenOverlayView: View {
                                 HStack(spacing: 6) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.white)
-#if os(macOS)
-                                    Text("Exit Full Screen (Esc)")
+                                    Text(exitFullscreenString)
                                         .foregroundStyle(.white)
-#else
-                                    Text("Exit Full Screen")
-                                        .foregroundStyle(.white)
-#endif
                                 }
                                 .font(.system(size: 14, weight: .medium))
                                 .padding(.horizontal, 16)

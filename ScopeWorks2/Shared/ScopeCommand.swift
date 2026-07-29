@@ -138,7 +138,10 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
             state.selectNextFullScreenDisplay()
         default:
             if let kp = keyPath {
-                state[keyPath: kp].toggle()
+                withAnimation {
+                    print("Toggling \(kp)")
+                    state[keyPath: kp].toggle()
+                }
             }
         }
     }
@@ -191,7 +194,12 @@ struct ScopeCommandButtons: View {
                 if command.isToggle, let kp = command.keyPath {
                     Toggle(command.label, isOn: Binding(
                         get: { scopeState[keyPath: kp] },
-                        set: { scopeState[keyPath: kp] = $0 }
+                        set: { value in
+                            withAnimation {
+                                print("In toggle")
+                                scopeState[keyPath: kp] = value
+                            }
+                        }
                     ))
                     .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                 } else {
