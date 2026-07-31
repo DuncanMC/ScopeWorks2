@@ -63,6 +63,8 @@ struct FullScreenOverlayView: View {
                 ScopeViewRepresentable(scopeState: scopeState,
                                        allowImageExport: true,
                                        isMainDocumentScopeView: false)
+                .help("Tap with 2 fingers to take a snapshot")
+
                 .gesture(TwoFingerTapGesture {
                     print("Two finger tap detected in full-screen view")
                     scopeState.handleSnapshot(isFullScreenView: true)
@@ -146,6 +148,11 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
         didSet {
             if selectedDisplayID != oldValue {
                 updateExternalDisplay()
+                if selectedDisplayID == nil {
+                    Task { @MainActor in
+                        scopeState?.showFullscreenView = false
+                    }
+                }
             }
         }
     }
@@ -329,7 +336,7 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
         // this callback — defer via Task to avoid reentrancy crashes.
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .mouseMoved]) { [weak self] event in
             if event.type == .keyDown {
-                // Escape always closes the overlay
+                // Escape key always closes the overlay
                 if event.keyCode == 53 {
                     Task { @MainActor in
                         self?.selectedDisplayID = nil

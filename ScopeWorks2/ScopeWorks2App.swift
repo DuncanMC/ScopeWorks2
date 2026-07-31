@@ -54,7 +54,6 @@ struct ScopeWorks2App: App {
             let decoder = JSONDecoder()
             var scopeTemplates = [ScopeTemplate]()
             for aFileURL in kaleidoscopeTemplateURLs {
-//                print("filename = \(aFileURL.path)")
                 let data = try Data(contentsOf: aFileURL)
                 let aScopeTemplate = try decoder.decode(ScopeTemplate.self, from: data)
                 scopeTemplates.append(aScopeTemplate)

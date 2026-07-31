@@ -575,7 +575,6 @@ class ScopeState: ObservableObject, Codable {
                 index: 5,
                 isCropForTiling: false)
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
-                print("in ScopeState.init(from:), found imageID: \(imageID)")
                 self.selectedImageID = imageID
                 self.imageSourceInfo = .fromPhotoLibrary(id: imageID)
                 let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageID], options: nil)
@@ -867,34 +866,7 @@ class ScopeState: ObservableObject, Codable {
             }
         }
     }
-    @Published var drawWithReflection: Bool = true {
-        didSet {
-            print("In drawWithReflection.didSet")
-        }
-    }
-    //    @Published var splitPolygonTriangles: Bool = false {
-    //        didSet {
-    //            if splitPolygonTriangles {
-    //                let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
-    //                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
-    //            } else {
-    //                let distance = simd_float2(x: trianglePoints.point2.x - trianglePoints.point3.x, y: trianglePoints.point2.y - trianglePoints.point3.y)
-    //                let point2 = trianglePoints.point3 + distance * 2.0
-    //                trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: point2, point3: trianglePoints.point3)
-    //                trianglePoints = calcTrianglePoints(typeChanged: false)
-    //
-    //
-    //            }
-    /*
-     if (splitPolygonTriangles) {
-     point2 = GLMakePoint((point2.x+point3.x)/2, (point2.y+point3.y)/2);
-     } else {
-     //TODO: Fix point2 if it is now out of bounds
-     point2 = GLMakePoint((point2.x-point3.x)*2 + point3.x, (point2.y-point3.y)*2+ point3.y);
-     [self adjustRoationAndShiftToScale];
-     }
-     
-     */
+    @Published var drawWithReflection: Bool = true
     @Published var animate: Bool = false
     @Published var polygonSides = 6 {
         didSet {
@@ -1750,11 +1722,6 @@ class ScopeState: ObservableObject, Codable {
         #endif
     }
     func handleSnapshot(isFullScreenView: Bool) {
-        /*
-         weak var documentMetalView: MTKView? = nil
-         weak var fullscreenMetalView: MTKView? = nil
-
-         */
         guard  (isFullScreenView ? fullscreenMetalView : documentMetalView) != nil else {
             print("In \(#function), metalView = nil")
             return

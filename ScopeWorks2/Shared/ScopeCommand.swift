@@ -55,6 +55,16 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         }
     }
 
+    /// Secondary key that also triggers this command, or nil if there is none.
+    /// The Enter key (U+0003, the AppKit keypad-Enter key equivalent) also
+    /// toggles animation, in addition to Return.
+    var alternateShortcutKey: KeyEquivalent? {
+        switch self {
+        case .animate: return KeyEquivalent(Character("\u{3}"))
+        default:       return nil
+        }
+    }
+
     var shortcutModifiers: EventModifiers {
         switch self {
         case .showControls, .showSourceImage, .showOutlines,
@@ -139,7 +149,6 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         default:
             if let kp = keyPath {
                 withAnimation {
-                    print("Toggling \(kp)")
                     state[keyPath: kp].toggle()
                 }
             }
@@ -153,17 +162,22 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
 #if os(macOS)
     /// Returns true if the given NSEvent matches this command's shortcut.
     func matches(event: NSEvent) -> Bool {
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        // Compare only against the real modifier keys. This ignores incidental
+        // flags like .capsLock (set whenever caps lock is on) and .numericPad
+        // (set by the keypad Enter key), which would otherwise break matching.
+        let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
         switch self {
         case .animate:
-            return event.keyCode == 36 && flags.isEmpty
+            // 36 = Return, 76 = keypad Enter
+            return (event.keyCode == 36 || event.keyCode == 76) && flags.isEmpty
         case .reverseAnimation:
-            return flags == .command && event.charactersIgnoringModifiers == "r"
-        case .advanceAnimation: 
-            let chars = event.charactersIgnoringModifiers
+            return flags == .command && event.charactersIgnoringModifiers?.lowercased() == "r"
+        case .advanceAnimation:
+            let chars = event.charactersIgnoringModifiers?.lowercased()
             return chars == "a" && flags == [.option, .command]
         default:
-            guard let chars = event.charactersIgnoringModifiers else { return false }
+            // Lowercase because caps lock uppercases charactersIgnoringModifiers.
+            guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return false }
             switch (flags, self) {
             case (.option, .showControls):       return chars == "c"
             case (.option, .showSourceImage):    return chars == "i"
@@ -188,20 +202,29 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
 struct ScopeCommandButtons: View {
     @ObservedObject var scopeState: ScopeState
 
+    private func toggleBinding(for kp: ReferenceWritableKeyPath<ScopeState, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { scopeState[keyPath: kp] },
+            set: { value in
+                withAnimation {
+                    scopeState[keyPath: kp] = value
+                }
+            }
+        )
+    }
+
     var body: some View {
         VStack {
             ForEach(ScopeCommand.viewCommands) { command in
                 if command.isToggle, let kp = command.keyPath {
-                    Toggle(command.label, isOn: Binding(
-                        get: { scopeState[keyPath: kp] },
-                        set: { value in
-                            withAnimation {
-                                print("In toggle")
-                                scopeState[keyPath: kp] = value
-                            }
-                        }
-                    ))
-                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    Toggle(command.label, isOn: toggleBinding(for: kp))
+                        .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                    // A second hidden control for commands with an alternate key
+                    // (e.g. Enter also toggles animation, in addition to Return).
+                    if let altKey = command.alternateShortcutKey {
+                        Toggle(command.label, isOn: toggleBinding(for: kp))
+                            .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
+                    }
                 } else {
                     Button(command.label) {
                         command.performAction(on: scopeState)

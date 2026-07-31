@@ -420,11 +420,12 @@ struct ContentView: View {
                 }
                 ZStack {
                     #if os(iOS) || os(iPadOS)
-                    ScopeViewRepresentable(
-                        scopeState: scopeState,
-                        allowImageExport: true,
-                        isMainDocumentScopeView: true,
+                        ScopeViewRepresentable(
+                            scopeState: scopeState,
+                            allowImageExport: true,
+                            isMainDocumentScopeView: true,
                         )
+                        .help("Tap with two fingers to take a snapshot")
                         .gesture(TwoFingerTapGesture {
                             print("Two finger tap detected")
                             scopeState.handleSnapshot(isFullScreenView: false)
@@ -437,6 +438,8 @@ struct ContentView: View {
                         allowImageExport: true,
                         isMainDocumentScopeView: true,
                         )
+                    .help("Tap to take a snapshot")
+
                         .onTapGesture {
                             print("Tap gesture recognized")
                             scopeState.handleSnapshot(isFullScreenView: false)
@@ -478,10 +481,11 @@ struct ContentView: View {
         .sheet(item: $presentedModal) { modalType in
             switch modalType {
             case .settings:
-                SettingsView(selectedAspectRatio: scopeState.selectedAspectRatio,
-                             doneButtonAction: {
-                    presentedModal = nil
-                },
+                SettingsView(
+                    selectedAspectRatio: scopeState.selectedAspectRatio,
+                    doneButtonAction: {
+                        presentedModal = nil
+                    },
                 )
             case .imageSource:
                 ImageSouceView(scopeState: scopeState,
