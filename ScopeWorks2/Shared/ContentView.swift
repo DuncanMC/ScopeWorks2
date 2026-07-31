@@ -79,6 +79,9 @@ struct ContentView: View {
     @ObservedObject var scopeState: ScopeState
     @StateObject private var externalDisplayViewManager: ExternalDisplayViewManager
     @Environment(\.undoManager) var undoManager
+    #if os(macOS)
+    @Environment(\.documentConfiguration) private var documentConfiguration
+    #endif
 
     init(scopeState: ScopeState) {
         self.scopeState = scopeState
@@ -477,6 +480,15 @@ struct ContentView: View {
         // comes from (menu command, keyboard shortcut, or NSEvent monitor).
         .animation(.easeInOut(duration: 0.2), value: scopeState.showControls)
         .animation(.easeInOut(duration: 0.2), value: scopeState.showSourceImage)
+        #if os(macOS)
+        // Remember the folder containing this document whenever it's opened or
+        // saved, so the next document open/save panel starts there.
+        .onChange(of: documentConfiguration?.fileURL, initial: true) { _, newURL in
+            if let newURL {
+                ScopeState.recordDocumentDirectory(forDocumentAt: newURL)
+            }
+        }
+        #endif
 
         .sheet(item: $presentedModal) { modalType in
             switch modalType {

@@ -29,6 +29,7 @@ enum UserDefaultsKeys: String {
     case folderSetupComplete
     case lastUsedImageDirectoryBookmark
     case lastUsedExportDirectoryBookmark
+    case lastUsedDocumentDirectoryPath
 }
 
 

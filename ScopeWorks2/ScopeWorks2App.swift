@@ -24,6 +24,12 @@ struct ScopeWorks2App: App {
             // Copy any new bundle images added in app updates
             FolderBookmarkManager.shared.copyBundleImagesToSourceFolder()
         }
+
+        #if os(macOS)
+        // Start the document open/save panels in the last document folder,
+        // rather than wherever the last snapshot/image panel left off.
+        ScopeState.seedDocumentPanelDirectory()
+        #endif
     }
     
     static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {

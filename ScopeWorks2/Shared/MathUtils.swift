@@ -51,12 +51,12 @@ public func isRightTriangle(_ triangle: TrianglePoints) -> (isRight: Bool, right
                    triangle.point1.x - triangle.point3.x)
     let point1Angle = fmod(abs(angle1 - angle2), .pi)
     //---------
-    let point1String = String(format: "%.3f",point1Angle.radiansToDegrees)
-    let point2String = String(format: "%.3f",point2Angle.radiansToDegrees)
-    let point3String = String(format: "%.3f",point3Angle.radiansToDegrees)
-    print("point1Angle = \(point1String)")
-    print("point2Angle = \(point2String)")
-    print("point3Angle = \(point3String)")
+//    let point1String = String(format: "%.3f",point1Angle.radiansToDegrees)
+//    let point2String = String(format: "%.3f",point2Angle.radiansToDegrees)
+//    let point3String = String(format: "%.3f",point3Angle.radiansToDegrees)
+//    print("point1Angle = \(point1String)")
+//    print("point2Angle = \(point2String)")
+//    print("point3Angle = \(point3String)")
     //---------
     if abs(point2Angle - .pi/2) < epsilon {
         return (true, 2)

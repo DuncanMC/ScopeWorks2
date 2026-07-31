@@ -54,7 +54,8 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     constexpr sampler s(address::clamp_to_edge,
                         filter::linear,
                         mip_filter::linear,
-                        max_anisotropy(8));
+                        max_anisotropy(8)
+                        );
     if (uniforms.drawWithTexture) {
         float2 coord = in.texCoord;
         coord.x /= uniforms.texAspect;

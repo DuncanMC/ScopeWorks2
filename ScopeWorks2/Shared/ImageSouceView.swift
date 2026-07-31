@@ -289,12 +289,22 @@ struct ImageSouceView: View {
         if let data {
             UserDefaults.standard.set(data, forKey: "lastUsedImageDirectoryBookmark")
         }
-        
+
         // If the directory is NOT the source images folder, remember that
         let sourceURL = FolderBookmarkManager.shared.sourceImagesURL
         if let sourceURL, !dirURL.standardizedFileURL.path.hasPrefix(sourceURL.standardizedFileURL.path) {
             useSourceImagesFolder = false
         }
+
+        #if os(macOS)
+        // The image picker moved the system's remembered panel directory here.
+        // Pin it back to the document folder for the DocumentGroup panels —
+        // this picker doesn't rely on it (it sets directoryURL explicitly).
+        // Delayed because the panel service writes its memory asynchronously.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            ScopeState.seedDocumentPanelDirectory()
+        }
+        #endif
     }
 }
 

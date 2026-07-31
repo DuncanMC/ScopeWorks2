@@ -100,16 +100,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    }
+				<string>    
 </string>
 				<key>leading</key>
-				<string>    private func label(for value: Double) -&gt; some View {
-        Text(String(format: "%.2f", value))
+				<string>        
+    }
 </string>
 				<key>trailing</key>
-				<string>    
-#if os(iOS)
-    @State private var image: UIImage? = nil
+				<string>    private func label(for value: Double) -&gt; some View {
+        Text(String(format: "%.2f", value))
+    }
 </string>
 			</dict>
 			<key>title</key>
@@ -147,16 +147,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>#endif
+				<string>        return .leading
 </string>
 				<key>leading</key>
-				<string>#else
-        return .trailing
+				<string>    var toggleAlignment: Alignment {
+#if os(macOS)
 </string>
 				<key>trailing</key>
-				<string>        
-    }
-    
+				<string>#else
+        return .trailing
+#endif
 </string>
 			</dict>
 			<key>title</key>

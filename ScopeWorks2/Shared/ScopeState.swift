@@ -653,7 +653,7 @@ class ScopeState: ObservableObject, Codable {
         // New format
         try container.encode(imageSourceInfo, forKey: .imageSourceInfo)
         // Legacy fields for backward compat with older app versions
-        try container.encode(bookmarkData, forKey: .bookmarkData)
+//        try container.encode(bookmarkData, forKey: .bookmarkData)
         try container.encode(selectedImageID, forKey: .imageID)
         try container.encode(imageURL, forKey: .imageURL)
         try container.encode(zoom, forKey: .zoom)
@@ -1501,7 +1501,66 @@ class ScopeState: ObservableObject, Codable {
             UserDefaults.standard.set(data,
                 forKey: UserDefaultsKeys.lastUsedExportDirectoryBookmark.rawValue)
         }
+        #if os(macOS)
+        // The panel that just completed moved the system's remembered panel
+        // directory to the export folder. Our own panels don't rely on that
+        // memory (they set directoryURL explicitly), so pin it back to the
+        // document folder for the DocumentGroup open/save panels. Delayed
+        // because the panel service writes its memory asynchronously — we
+        // need our write to land after it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            ScopeState.seedDocumentPanelDirectory()
+        }
+        #endif
     }
+
+    // MARK: - Document directory tracking (macOS)
+
+    #if os(macOS)
+    /// The .ksp2 open/save panels are system-managed by DocumentGroup, so we can't
+    /// set their directoryURL the way we do for snapshot/image panels. Instead we
+    /// track the last document folder ourselves and seed AppKit's remembered panel
+    /// directory (the NSNavLastRootDirectory default) so document panels start there.
+    /// A plain path is stored rather than a security-scoped bookmark because the
+    /// panel service only needs a starting path — and the sandbox doesn't let us
+    /// bookmark the parent folder of an opened document anyway.
+
+    /// Records the folder containing a document the user just opened or saved.
+    static func recordDocumentDirectory(forDocumentAt fileURL: URL) {
+        // Ignore autosaved drafts of untitled documents. Editing an unsaved
+        // document gives it a fileURL in a draft location (the Autosave
+        // Information folder or the iCloud container root) — not a folder the
+        // user chose, so it must not become the remembered document folder.
+        if let document = NSDocumentController.shared.document(for: fileURL),
+           document.isDraft {
+            return
+        }
+        if fileURL.path.contains("/Autosave Information/") { return }
+
+        let dirPath = fileURL.deletingLastPathComponent().path
+        UserDefaults.standard.set(dirPath,
+            forKey: UserDefaultsKeys.lastUsedDocumentDirectoryPath.rawValue)
+        seedDocumentPanelDirectory()
+    }
+
+    /// Points AppKit's remembered open/save panel directory at the last document
+    /// folder. Call at launch and whenever the document folder changes, so the
+    /// DocumentGroup open/save panels start in the right place.
+    ///
+    /// The sandboxed panel service reads its starting directory from the
+    /// NSOSPLastRootDirectory default, stored as plain URL bookmark data.
+    static func seedDocumentPanelDirectory() {
+        let path = UserDefaults.standard.string(
+            forKey: UserDefaultsKeys.lastUsedDocumentDirectoryPath.rawValue)
+            ?? FolderBookmarkManager.shared.documentsURL?.path
+        guard let path, FileManager.default.fileExists(atPath: path) else { return }
+        guard let bookmark = try? URL(fileURLWithPath: path, isDirectory: true).bookmarkData() else {
+            print("Couldn't create bookmark to seed document panel directory")
+            return
+        }
+        UserDefaults.standard.set(bookmark, forKey: "NSOSPLastRootDirectory")
+    }
+    #endif
 
     func showSavePanel(image: CGImage, defaultFilename: String, directoryURL: URL?, filetype: UTType) {
         #if os(macOS)

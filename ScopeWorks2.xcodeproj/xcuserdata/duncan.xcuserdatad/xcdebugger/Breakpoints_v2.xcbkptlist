@@ -82,6 +82,36 @@
             endingLineNumber = "424"
             landmarkName = "windowWillClose(_:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "FF198C3C-9D4A-4380-A42D-B26868B947BC - 520ac46bf3e22822"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "ScopeWorks2.ExternalDisplayViewManager.windowWillClose(Foundation.Notification) -&gt; ()"
+                  moduleName = "ScopeWorks2.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/ExternalDisplayViewManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "424"
+                  endingLineNumber = "424">
+               </Location>
+               <Location
+                  uuid = "FF198C3C-9D4A-4380-A42D-B26868B947BC - ca901ce586fa39f5"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 @Swift.MainActor () -&gt; () in ScopeWorks2.ExternalDisplayViewManager.windowWillClose(Foundation.Notification) -&gt; ()"
+                  moduleName = "ScopeWorks2.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/duncan/Desktop/Development/ScopeWorks2/ScopeWorks2/Shared/ExternalDisplayViewManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "425"
+                  endingLineNumber = "425">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -145,6 +175,22 @@
             startingLineNumber = "150"
             endingLineNumber = "150"
             landmarkName = "selectedDisplayID"
+            landmarkType = "24">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "AF49B105-32B8-45AF-8CB4-CC5300E2071B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ScopeWorks2/Shared/ExternalDisplayManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "30"
+            endingLineNumber = "30"
+            landmarkName = "description"
             landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>

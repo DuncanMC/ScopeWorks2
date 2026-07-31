@@ -27,7 +27,7 @@ struct DisplayInfo: Identifiable, Hashable, CustomStringConvertible {
         return calcAspectAndMultiplier(width: Int(size.width), height: Int(size.height))
     }
     var description: String {
-        return "Display \"\(name)\" (\(size?.width ?? 0)x\(size?.height ?? 0)). Aspect \(aspect?.width ?? 0):\(aspect?.height ?? 0). Multiplier = \(aspect?.multiplier ?? 0)"
+        return "Display \"\(name)\" (\(Int((size?.width ?? 0) * scale))x\(Int((size?.height ?? 0) * scale))). Aspect \(Int(aspect?.width ?? 0)):\(Int(aspect?.height ?? 0)). Scale = \(scale)"
     }
 }
 
@@ -77,9 +77,9 @@ final class ExternalDisplayManager {
         }
         ExternalDisplayManager.availableDisplays = displays
 #endif
-        for aDisplay in ExternalDisplayManager.availableDisplays {
-            print(aDisplay.description)
-        }
+//        for aDisplay in ExternalDisplayManager.availableDisplays {
+//            print(aDisplay.description)
+//        }
         NotificationCenter.default.post(name: displaysChangedNotification, object: nil)
 
     }
