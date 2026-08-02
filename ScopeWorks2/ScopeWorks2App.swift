@@ -11,6 +11,10 @@ import SwiftUI
 struct ScopeWorks2App: App {
     
     init () {
+        UserDefaults.standard.register(defaults: [
+            UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue: true
+        ])
+
         if let bundlePath = Bundle.main.resourcePath {
             print("----------------------------")
             print("BundlePath = \(bundlePath)")
@@ -83,6 +87,19 @@ struct ScopeWorks2App: App {
         .commands {
             ScopeWorksCommands()
         }
+#if os(iOS)
+        // Customizes the document launch screen (shown when no document is
+        // open) with an action to rebuild a kaleidoscope from image metadata,
+        // alongside the standard create-document action.
+        DocumentGroupLaunchScene("ScopeWorks 2") {
+            NewDocumentButton("Create New Kaleidoscope")
+            // Prompts for an image with embedded kaleidoscope info and opens
+            // the prepared state as a new untitled document.
+            NewDocumentButton("Create Kaleidoscope from Image Data", for: ScopeDocument.self) {
+                try await MetadataImport.prepareDocument()
+            }
+        }
+#endif
 #if os(macOS)
         Settings {
             SettingsView(

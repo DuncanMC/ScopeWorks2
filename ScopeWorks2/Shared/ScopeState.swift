@@ -1599,6 +1599,40 @@ class ScopeState: ObservableObject, Codable {
         #endif
     }
     
+    // MARK: - Kaleidoscope info in image metadata
+
+    /// The document state encoded as JSON for embedding in saved images,
+    /// with security-scoped bookmark data stripped out.
+    func kaleidoscopeInfoJSON() -> String? {
+        guard let encoded = try? JSONEncoder().encode(self),
+              var object = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            return nil
+        }
+        object.removeValue(forKey: CodingKeys.bookmarkData.rawValue)
+        if var info = object["imageSourceInfo"] as? [String: Any] {
+            info.removeValue(forKey: "bookmarkData")
+            object["imageSourceInfo"] = info
+        }
+        guard let stripped = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) else {
+            return nil
+        }
+        return String(data: stripped, encoding: .utf8)
+    }
+
+    /// Extracts kaleidoscope info JSON previously embedded in an image's
+    /// EXIF UserComment field, or nil if the image has none.
+    static func kaleidoscopeInfoData(fromImageAt url: URL) -> Data? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any],
+              let comment = exif[kCGImagePropertyExifUserComment] as? String,
+              comment.hasPrefix("{"),
+              comment.contains("imageSourceInfo") else {
+            return nil
+        }
+        return comment.data(using: .utf8)
+    }
+
     @discardableResult
     private func writeImage(_ image: CGImage, to url: URL, type: UTType) -> Bool {
         // Encode image data in memory, then write to disk.
@@ -1609,7 +1643,19 @@ class ScopeState: ObservableObject, Codable {
             print("Failed to create image destination for type \(type.identifier)")
             return false
         }
-        CGImageDestinationAddImage(destination, image, nil)
+
+        // Embed the document state as JSON in the image's EXIF UserComment,
+        // so a kaleidoscope can later be rebuilt from the saved image.
+        var properties: CFDictionary? = nil
+        if UserDefaults.standard.bool(
+            forKey: UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue),
+           let json = kaleidoscopeInfoJSON() {
+            properties = [
+                kCGImagePropertyExifDictionary: [kCGImagePropertyExifUserComment: json]
+            ] as CFDictionary
+        }
+
+        CGImageDestinationAddImage(destination, image, properties)
         guard CGImageDestinationFinalize(destination) else {
             print("Failed to finalize image data")
             return false

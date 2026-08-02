@@ -30,6 +30,7 @@ enum UserDefaultsKeys: String {
     case lastUsedImageDirectoryBookmark
     case lastUsedExportDirectoryBookmark
     case lastUsedDocumentDirectoryPath
+    case includeKaleidoscopeInfoInSavedImages
 }
 
 
@@ -139,6 +140,9 @@ struct SettingsView: View {
     
     @AppStorage(UserDefaultsKeys.snapshotFileType.rawValue) var snapshotFileType: Int = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
 
+    @AppStorage(UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue)
+    var includeKaleidoscopeInfo: Bool = true
+
 
     var snapshotTypePickerLeading: CGFloat {
         #if os(macOS)
@@ -202,6 +206,10 @@ struct SettingsView: View {
                     }
                         .frame(maxHeight: 25)
                         .frame(minWidth: 250)
+
+                    Toggle("Include kaleidoscope info in saved images",
+                           isOn: $includeKaleidoscopeInfo)
+                        .padding(.leading, snapshotTypeTitleLeading)
 
                     Divider()
                         .padding(.horizontal, 20)

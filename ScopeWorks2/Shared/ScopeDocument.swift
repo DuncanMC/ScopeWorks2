@@ -82,6 +82,13 @@ final class ScopeDocument: ReferenceFileDocument {
     }
 
 
+    /// Creates a document from an already-decoded state, e.g. one rebuilt
+    /// from kaleidoscope info embedded in a saved image's metadata.
+    init(scopeState: ScopeState) {
+        self.scopeState = scopeState
+        doInitSetup()
+    }
+
     required init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)

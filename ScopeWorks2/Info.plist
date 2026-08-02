@@ -2,10 +2,43 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>KSp2</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>ScopeWorks document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.wareto.scopeworks2.document</string>
+			</array>
+			<key>NSUbiquitousDocumentUserActivityType</key>
+			<string>com.wareto.scopeworks2.document</string>
+		</dict>
+	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.graphics-design</string>
 	<key>NSCameraUsageDescription</key>
 	<string>ScopeWorks uses your camera to create live kaleidoscope effects.</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.com.wareto.scopeworks2</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>ScopeWorks2</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -23,27 +56,8 @@
 			</array>
 		</dict>
 	</dict>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>KSp2</string>
-			</array>
-			<key>CFBundleTypeName</key>
-			<string>ScopeWorks document</string>
-			<key>NSUbiquitousDocumentUserActivityType</key>
-			<string>com.wareto.scopeworks2.document</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.wareto.scopeworks2.document</string>
-			</array>
-		</dict>
-	</array>
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -66,18 +80,6 @@
 			</dict>
 		</dict>
 	</array>
-	<key>NSUbiquitousContainers</key>
-	<dict>
-		<key>iCloud.com.wareto.scopeworks2</key>
-		<dict>
-			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<true/>
-			<key>NSUbiquitousContainerSupportedFolderLevels</key>
-			<string>Any</string>
-			<key>NSUbiquitousContainerName</key>
-			<string>ScopeWorks2</string>
-		</dict>
-	</dict>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>

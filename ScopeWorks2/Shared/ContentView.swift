@@ -343,7 +343,7 @@ struct ContentView: View {
                             .padding(.leading, backgroundColorLeading)
                     }
                     .padding(.leading, 0)
-                    
+
                 }
                 
                 .padding(.leading, 10)
