@@ -1005,7 +1005,40 @@ class ScopeState: ObservableObject, Codable {
     
     func adjustTrianglePoints(trianglePoints: TrianglePoints) -> AdjustmentResult {
         let textureLimits: RangeLimits = (minX: 0, maxX: texAspect, minY: 0, maxY: 1)
-        let triangleLimits = triangleLimits(trianglePoints: trianglePoints)
+        var triangleLimits = calcTriangleLimits(trianglePoints: trianglePoints)
+        var shrunk = false
+        
+        func shrinkTriangleIfNeeded(trianglePoints: TrianglePoints) -> TrianglePoints {
+            let newTriangleLimits = calcTriangleLimits(trianglePoints: trianglePoints)
+            var shrinkageNeeded: Float? = nil
+            let widthChange =  (newTriangleLimits.maxX - newTriangleLimits.minX) / (textureLimits.maxX - textureLimits.minX)
+            if widthChange > 1 {
+                shrinkageNeeded = widthChange
+            }
+            let heightChange =  (newTriangleLimits.maxY - newTriangleLimits.minY) / (textureLimits.maxY - textureLimits.minY)
+            if heightChange > 1 && heightChange > widthChange {
+                shrinkageNeeded = heightChange
+            }
+            if let shrinkageNeeded {
+                shrunk = true
+                // Return shrunk triangle here
+                let triangleCenter = centerPoint(trianglePoints: trianglePoints)
+                // Calculate the triangle points as vectors from the centerpoint, adjusted by the amount of shrinkage needed.
+                let adjustedPoint1 = (trianglePoints.point1 - triangleCenter)  / shrinkageNeeded + triangleCenter
+                let adjustedPoint2 = (trianglePoints.point2 - triangleCenter) / shrinkageNeeded + triangleCenter
+                let adjustedPoint3 = (trianglePoints.point3 - triangleCenter) / shrinkageNeeded + triangleCenter
+                let result = TrianglePoints(point1: adjustedPoint1, point2: adjustedPoint2, point3: adjustedPoint3)
+                return result
+            }
+            return trianglePoints
+        }
+        
+        // First shrink the triangle around it's center if it is too tall or too wide for the texture bounds
+        var newTrianglePoints = shrinkTriangleIfNeeded(trianglePoints: trianglePoints)
+        
+        // Now check to see if any of the corners of the (possibly shrunk) triangle are
+        // out-of-bounds and shift the triangle back on-screen if so.
+        triangleLimits = calcTriangleLimits(trianglePoints: newTrianglePoints)
         var dx: Float? = nil
         var dy: Float? = nil
         //if out of range in x, calc x adjustment
@@ -1023,13 +1056,14 @@ class ScopeState: ObservableObject, Codable {
         if adjusted {
             let deltaX = dx ?? 0.0
             let deltaY = dy ?? 0.0
-            let newTrianglePoints = TrianglePoints(
-                point1: SIMD2<Float>(trianglePoints.point1.x + deltaX, trianglePoints.point1.y + deltaY),
-                point2: SIMD2<Float>(trianglePoints.point2.x + deltaX, trianglePoints.point2.y + deltaY),
-                point3: SIMD2<Float>(trianglePoints.point3.x + deltaX, trianglePoints.point3.y + deltaY))
+            newTrianglePoints = TrianglePoints(
+                point1: SIMD2<Float>(newTrianglePoints.point1.x + deltaX, newTrianglePoints.point1.y + deltaY),
+                point2: SIMD2<Float>(newTrianglePoints.point2.x + deltaX, newTrianglePoints.point2.y + deltaY),
+                point3: SIMD2<Float>(newTrianglePoints.point3.x + deltaX, newTrianglePoints.point3.y + deltaY))
+
             return (newTrianglePoints, true, dx, dy)
         }
-        return (trianglePoints, false, dx, dy)
+        return (newTrianglePoints, shrunk, dx, dy)
     }
     
     func calcTrianglePoints(typeChanged: Bool) -> TrianglePoints {
@@ -1099,13 +1133,15 @@ class ScopeState: ObservableObject, Codable {
     
     func metalPointToView(_ metalPoint: SIMD2<Float>) -> CGPoint {
         return CGPoint(
-            x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(imageViewSize.width)) * 1),
-            y: (imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(imageViewSize.height)) )) * CGFloat(1))
+            x: CGFloat(metalPoint.x.interpolated(from: 0...1, to: 0...Float(imageViewSize.width)) * 1) / aspectAdjustment.width,
+            // / aspectAdjustment.width,
+            y: (imageViewSize.height - CGFloat(metalPoint.y.interpolated(from: 0...1, to: 0...Float(imageViewSize.height)) )) / aspectAdjustment.height)
+            // / aspectAdjustment.height)
     }
     
     func viewPointToMetal(_ viewPoint: CGPoint ) -> SIMD2<Float> {
         return SIMD2<Float>(
-            x: Float(viewPoint.x).interpolated(from:0...Float(imageViewSize.width), to: 0...1),
+            x: Float(viewPoint.x).interpolated(from:0...Float(imageViewSize.width), to: 0...1) * texAspect,
             y: Float(imageViewSize.height-viewPoint.y).interpolated(from:0...Float(imageViewSize.height), to: 0...1)
         )
     }
@@ -1189,7 +1225,7 @@ class ScopeState: ObservableObject, Codable {
         //        let aspect = imageViewSize.width / imageViewSize.height
         let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
         //print("Adjusted tap point = \(adjusted)")
-        let result = matchPoint(adjusted, inPoints: points)
+        let result = matchPoint(startLocation, inPoints: points)
         return result
     }
     
@@ -1255,14 +1291,14 @@ class ScopeState: ObservableObject, Codable {
         guard let lastDragLocation = lastDragLocation else { return }
         let aspect = imageViewSize.width / imageViewSize.height
         
-        let deltaX = (value.location.x - lastDragLocation.x) * aspect
+        let deltaX = (value.location.x - lastDragLocation.x) 
         let deltaY = value.location.y - lastDragLocation.y
         //print("You moved by (x: \(deltaX), y: \(deltaY)")
         
         switch draggingState {
         case .inTrianglePoint1, .inTrianglePoint2, .inTrianglePoint3:
-            let triangleCGPoint = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
-            let centerCGPoint = centerCGPoint(triangleCGPoints: triangleCGPoint)
+            let triangleCGPoints = TriangleCGPoints(point1: trianglePoint1, point2: trianglePoint2, point3: trianglePoint3)
+            let centerCGPoint = centerCGPoint(triangleCGPoints: triangleCGPoints)
             let startingDistance = distanceBetween(p1: centerCGPoint, p2: lastDragLocation)
             let currentDistance = distanceBetween(p1: centerCGPoint, p2: value.location)
             let sizeChange = Float(currentDistance/startingDistance)

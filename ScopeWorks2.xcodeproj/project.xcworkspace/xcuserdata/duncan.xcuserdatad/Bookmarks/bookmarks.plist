@@ -76,15 +76,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>0</string>
+					<string>12</string>
 					<key>EndingLineNumber</key>
-					<string>205</string>
+					<string>409</string>
 					<key>StartingColumnNumber</key>
-					<string>0</string>
+					<string>4</string>
 					<key>StartingLineNumber</key>
-					<string>204</string>
+					<string>409</string>
 					<key>Timestamp</key>
-					<string>806441066.539887</string>
+					<string>807550142.420354</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -100,255 +100,19 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    
-</string>
+				<string>var body</string>
 				<key>leading</key>
-				<string>        
-    }
-</string>
+				<string>    }
+
+    </string>
 				<key>trailing</key>
-				<string>    private func label(for value: Double) -&gt; some View {
-        Text(String(format: "%.2f", value))
-    }
-</string>
-			</dict>
-			<key>title</key>
-			<string>SourceImageViewRepresentable</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>199</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>198</string>
-					<key>Timestamp</key>
-					<string>806441066.539829</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ContentView.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string>        return .leading
-</string>
-				<key>leading</key>
-				<string>    var toggleAlignment: Alignment {
-#if os(macOS)
-</string>
-				<key>trailing</key>
-				<string>#else
-        return .trailing
-#endif
+				<string>: some View {
+        VStack {
+            HStack {
 </string>
 			</dict>
 			<key>title</key>
 			<string>ContentView body</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>842</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>841</string>
-					<key>Timestamp</key>
-					<string>807209531.64634</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ScopeState.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string>        point2: SIMD2&lt;Float&gt;(0.6, 0.25),
-</string>
-				<key>leading</key>
-				<string>    var trianglePoints = TrianglePoints(
-        point1: SIMD2&lt;Float&gt;(0.4, 0.25),
-</string>
-				<key>trailing</key>
-				<string>        point3: SIMD2&lt;Float&gt;(0.5, 0.42320508))
-    
-    var rotationCenter: SIMD2&lt;Float&gt; = [0.5, 0.5] {
-</string>
-			</dict>
-			<key>title</key>
-			<string>splitTriangle didSet</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>935</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>934</string>
-					<key>Timestamp</key>
-					<string>807209585.0358469</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ScopeState.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string>    var aspectAdjustment: CGSize = .zero
-</string>
-				<key>leading</key>
-				<string>    @Published var firstLaunch = UserDefaults.standard.bool(forKey: "firstLaunch")
-    
-</string>
-				<key>trailing</key>
-				<string>    var imageViewSize: CGSize = CGSizeZero {
-        willSet {
-            //print("about to change imageViewSize")
-</string>
-			</dict>
-			<key>title</key>
-			<string>texture.didSet</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>988</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>987</string>
-					<key>Timestamp</key>
-					<string>807209585.03584</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ScopeState.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string>            return
-</string>
-				<key>leading</key>
-				<string>        //availableDisplays
-        guard let currentIndex = availableDisplays.firstIndex(where:  { $0.id == chosenDisplayID }) else {
-</string>
-				<key>trailing</key>
-				<string>        }
-        let nextIndex = (currentIndex + 1) % availableDisplays.count
-        chosenDisplayID = availableDisplays[nextIndex].id
-</string>
-			</dict>
-			<key>title</key>
-			<string>func adjustTrianglePoints</string>
-			<key>type</key>
-			<string>bookmark</string>
-		</dict>
-		<dict>
-			<key>destination</key>
-			<dict>
-				<key>location-parameters</key>
-				<dict>
-					<key>EndingColumnNumber</key>
-					<string>0</string>
-					<key>EndingLineNumber</key>
-					<string>1017</string>
-					<key>StartingColumnNumber</key>
-					<string>0</string>
-					<key>StartingLineNumber</key>
-					<string>1016</string>
-					<key>Timestamp</key>
-					<string>807209585.035809</string>
-				</dict>
-				<key>rebasable-url</key>
-				<dict>
-					<key>base</key>
-					<string>workspace</string>
-					<key>payload</key>
-					<dict>
-						<key>relative-path</key>
-						<string>ScopeWorks2/Shared/ScopeState.swift</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>text-context</key>
-			<dict>
-				<key>focused</key>
-				<string>        if triangleLimits.minY &lt; textureLimits.minY {
-</string>
-				<key>leading</key>
-				<string>            dx = textureLimits.maxX - triangleLimits.maxX
-        }
-</string>
-				<key>trailing</key>
-				<string>            dy = textureLimits.minY - triangleLimits.minY
-        } else if triangleLimits.maxY &gt; textureLimits.maxY {
-            dy = textureLimits.maxY - triangleLimits.maxY
-</string>
-			</dict>
-			<key>title</key>
-			<string>func calcTrianglePoints</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>

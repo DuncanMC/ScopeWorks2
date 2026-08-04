@@ -165,7 +165,7 @@ extension simd_float2 {
     }
 }
 
-func triangleLimits(trianglePoints: TrianglePoints) -> RangeLimits {
+func calcTriangleLimits(trianglePoints: TrianglePoints) -> RangeLimits {
     let minX = min(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)
     let maxX = max(trianglePoints.point1.x, trianglePoints.point2.x, trianglePoints.point3.x)
     let minY = min(trianglePoints.point1.y, trianglePoints.point2.y, trianglePoints.point3.y)
