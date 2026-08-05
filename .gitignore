@@ -8,8 +8,8 @@
 **/*.xcworkspace/xcshareddata/*.xcscmblueprint
 **/*.playground/**/timeline.xctimeline
 .idea/
-xcuserdata/*
-*xcbkptlist
+*.xcuserdatad
+xcuserdata/
 
 # Build
 **/.build/
