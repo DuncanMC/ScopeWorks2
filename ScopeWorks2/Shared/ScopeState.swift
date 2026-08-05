@@ -1245,7 +1245,14 @@ class ScopeState: ObservableObject, Codable {
         }
         
         let pivotPoint = centerPoint(trianglePoints: trianglePoints)
-        trianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: rotationAngle, aroundCenter: pivotPoint)
+        let newTrianglePoints = rotateTriangle(trianglePoints: trianglePoints, angle: rotationAngle, aroundCenter: pivotPoint)
+        let adjustment = adjustTrianglePoints(trianglePoints: newTrianglePoints)
+        trianglePoints = adjustment.points
+        if adjustment.adjusted {
+            rotationCenter = rotationCenter.adjustedBy(dx: adjustment.dx ?? 0, dy: adjustment.dy ?? 0)
+            rotationCenterPoint = metalPointToView(rotationCenter)
+        }
+
         if trianglePoints.point1.x.isNaN {
             print("NAN!")
         }
