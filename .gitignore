@@ -9,6 +9,7 @@
 **/*.playground/**/timeline.xctimeline
 .idea/
 xcuserdata/*
+*xcbkptlist
 
 # Build
 **/.build/
