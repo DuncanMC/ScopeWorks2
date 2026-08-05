@@ -14,6 +14,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     case showCropRect
     case showFullscreenView
     case selectNextFullScreenDisplay
+    case moveRotationCenter
 
     var id: Self { self }
 
@@ -35,6 +36,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .showFullscreenView: return "Show Full-screen Kaleidoscope"
         case .selectNextFullScreenDisplay:
                                   return "Select next full-screen display"
+        case .moveRotationCenter: return "Move rotation center to triangle center"
         }
     }
 
@@ -52,6 +54,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .showFullscreenView: return "f"
         case .selectNextFullScreenDisplay: 
                                     return "x"
+        case .moveRotationCenter: return "m"
         }
     }
 
@@ -82,6 +85,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
             return .control
         case .selectNextFullScreenDisplay:
             return .control
+        case .moveRotationCenter:
+            return .option
         }
     }
 
@@ -100,7 +105,9 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .showFullscreenView: return "^F"
         case .selectNextFullScreenDisplay:
                                   return "^X"
-
+        case .moveRotationCenter:
+            return "⌥M"
+            
         }
     }
 
@@ -108,7 +115,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         switch self {
         case .reverseAnimation,
                 .advanceAnimation,
-                .selectNextFullScreenDisplay:
+                .selectNextFullScreenDisplay,
+                .moveRotationCenter:
             return false
         default: return true
         }
@@ -126,7 +134,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case
                 .reverseAnimation,
                 .advanceAnimation,
-                .selectNextFullScreenDisplay:
+                .selectNextFullScreenDisplay,
+                .moveRotationCenter:
                                     return nil
         case .showCropRect:
                                     return \.showCropRect
@@ -146,6 +155,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
             state.movementSpeed *= -1
         case .selectNextFullScreenDisplay:
             state.selectNextFullScreenDisplay()
+        case .moveRotationCenter:
+            state.moveRotationCenter()
         default:
             if let kp = keyPath {
                 withAnimation {

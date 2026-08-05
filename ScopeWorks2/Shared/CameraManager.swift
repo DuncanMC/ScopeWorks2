@@ -82,7 +82,7 @@ class CameraManager: NSObject, ObservableObject {
         )
 #else
         let discoverySession = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera, .builtInTripleCamera, .builtInUltraWideCamera],
+            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera, .builtInTripleCamera, .builtInUltraWideCamera,  .external],
             mediaType: .video,
             position: .unspecified
         )

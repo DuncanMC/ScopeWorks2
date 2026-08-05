@@ -97,7 +97,6 @@ struct ImageSouceView: View {
             Divider().padding(.horizontal, 20)
 
             // MARK: - Camera
-#if os(macOS)
             if !cameraManager.availableDevices.isEmpty {
                 Menu("Camera") {
                     ForEach(cameraManager.availableDevices, id: \.uniqueID) { device in
@@ -111,7 +110,7 @@ struct ImageSouceView: View {
                     }
                 }
             }
-#else
+        /*
             Button("Front Camera") {
                 Task {
                     let frontDevice = AVCaptureDevice.default(
@@ -131,7 +130,7 @@ struct ImageSouceView: View {
                     dismissClosure()
                 }
             }
-#endif
+*/
 
             if scopeState.imageSourceMode != .staticImage {
                 Button("Stop Camera") {

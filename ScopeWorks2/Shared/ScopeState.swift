@@ -991,6 +991,11 @@ class ScopeState: ObservableObject, Codable {
         chosenDisplayID = availableDisplays[nextIndex].id
     }
     
+    func moveRotationCenter() {
+        print("\(#function) not yet implemented")
+        rotationCenter = centerPoint(trianglePoints: trianglePoints)
+    }
+    
     func animateByElapsed(_ elapsed: Double) {
         
         let degrees = Float(elapsed * Double(rotationSpeed))
