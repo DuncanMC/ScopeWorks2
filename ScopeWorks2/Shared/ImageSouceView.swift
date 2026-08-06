@@ -103,6 +103,7 @@ struct ImageSouceView: View {
                         Button(device.localizedName) {
                             Task {
                                 scopeState.cameraDescription = device.localizedName
+                                scopeState.cameraID = device.uniqueID
                                 await scopeState.startCamera(deviceID: device.uniqueID)
                                 dismissClosure()
                             }

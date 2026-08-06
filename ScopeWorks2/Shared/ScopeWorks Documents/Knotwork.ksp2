@@ -1,0 +1,45 @@
+{
+  "animate" : false,
+  "backgroundColor" : {
+    "alpha" : 1,
+    "blue" : 0.6229400634765625,
+    "green" : 0,
+    "red" : 0
+  },
+  "drawWithReflection" : true,
+  "flipAlternates" : false,
+  "imageID" : null,
+  "imageSourceInfo" : {
+    "filename" : "circles twirled 2.png",
+    "fullURL" : "file:\/\/\/Users\/duncan\/Library\/Mobile%20Documents\/com~apple~CloudDocs\/ScopeWorks2\/ScopeWorks%20Source%20Images\/circles%20twirled%202.png",
+    "relativePathFromSourceImages" : "circles twirled 2.png",
+    "sourceType" : "file"
+  },
+  "imageURL" : "file:\/\/\/Users\/duncan\/Library\/Mobile%20Documents\/com~apple~CloudDocs\/ScopeWorks2\/ScopeWorks%20Source%20Images\/circles%20twirled%202.png",
+  "movementSpeed" : 0,
+  "polygonSides" : 6,
+  "radiusScale" : 1,
+  "rotationCenter" : {
+    "x" : 0.29708242,
+    "y" : 0.9205383
+  },
+  "rotationSpeed" : -5,
+  "selectedScopeType" : 1,
+  "showOutlines" : false,
+  "splitTriangle" : true,
+  "trianglePoints" : {
+    "point1" : {
+      "x" : 0.8074696,
+      "y" : 0.43862078
+    },
+    "point2" : {
+      "x" : 0.4504488,
+      "y" : 0.466745
+    },
+    "point3" : {
+      "x" : 0.43420765,
+      "y" : 0.2606306
+    }
+  },
+  "zoom" : 3.1305528846153847
+}

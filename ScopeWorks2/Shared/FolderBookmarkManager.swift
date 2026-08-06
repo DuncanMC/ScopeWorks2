@@ -176,19 +176,42 @@ class FolderBookmarkManager: ObservableObject {
             subdirectory: "ScopeWorks source images"
         ) else { return }
         
-        for imageURL in bundleImageURLs {
-            let destURL = destFolder.appendingPathComponent(imageURL.lastPathComponent)
+        for fileURL in bundleImageURLs {
+            let destURL = destFolder.appendingPathComponent(fileURL.lastPathComponent)
             if !FileManager.default.fileExists(atPath: destURL.path) {
                 do {
-                    try FileManager.default.copyItem(at: imageURL, to: destURL)
-                    print("Copied bundle image: \(imageURL.lastPathComponent)")
+                    try FileManager.default.copyItem(at: fileURL, to: destURL)
+                    print("Copied bundle image: \(fileURL.lastPathComponent)")
                 } catch {
-                    print("Failed to copy \(imageURL.lastPathComponent): \(error.localizedDescription)")
+                    print("Failed to copy \(fileURL.lastPathComponent): \(error.localizedDescription)")
                 }
             }
         }
     }
     
+    func copyBundleDocumentsToDocumentsFolder() {
+        guard let destFolder = documentsURL else { return }
+        let accessing = destFolder.startAccessingSecurityScopedResource()
+        defer { if accessing { destFolder.stopAccessingSecurityScopedResource() } }
+        
+        guard let bundleDocumentURLs = Bundle.main.urls(
+            forResourcesWithExtension: nil,
+            subdirectory: "ScopeWorks documents"
+        ) else { return }
+        
+        for fileURL in bundleDocumentURLs {
+            let destURL = destFolder.appendingPathComponent(fileURL.lastPathComponent)
+            if !FileManager.default.fileExists(atPath: destURL.path) {
+                do {
+                    try FileManager.default.copyItem(at: fileURL, to: destURL)
+                    print("Copied document: \(fileURL.lastPathComponent)")
+                } catch {
+                    print("Failed to copy \(fileURL.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+        }
+        
+    }
     private init() {
         
     }

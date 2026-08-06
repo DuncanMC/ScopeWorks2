@@ -27,6 +27,7 @@ struct ScopeWorks2App: App {
             FolderBookmarkManager.shared.resolveAllBookmarks()
             // Copy any new bundle images added in app updates
             FolderBookmarkManager.shared.copyBundleImagesToSourceFolder()
+            FolderBookmarkManager.shared.copyBundleDocumentsToDocumentsFolder()
         }
 
         #if os(macOS)

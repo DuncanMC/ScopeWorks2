@@ -110,6 +110,8 @@ class ScopeState: ObservableObject, Codable {
     
     // Camera textures have top-left origin; static images use bottom-left (via MTKTextureLoader)
     var cameraDescription: String = ""
+    var cameraID: String? = nil
+    
     var flipTextureY: Bool = false
     
     // MARK: - Document loading state (transient, not persisted)

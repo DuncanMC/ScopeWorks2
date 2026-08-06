@@ -51,6 +51,22 @@ class CameraManager: NSObject, ObservableObject {
         self.textureCache = cache
 
         refreshDeviceList()
+        NotificationCenter.default.addObserver(
+            forName: AVCaptureDevice.wasDisconnectedNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshDeviceList()
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: AVCaptureDevice.wasConnectedNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshDeviceList()
+            }
+        }
 
 #if os(iOS)
         NotificationCenter.default.addObserver(
