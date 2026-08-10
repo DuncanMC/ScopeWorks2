@@ -6,18 +6,19 @@ import PhotosUI
 enum ActiveModal: Identifiable {
     case imageSource
     case settings
+    case help
     
     var id: String {
         switch self {
         case .imageSource: "imageSource"
         case .settings: "settings"
+        case .help: "help"
         }
     }
 }
 
 struct ContentView: View {
     
-    @State private var presentedModal: ActiveModal?
     @AppStorage("folderSetupComplete") private var folderSetupComplete = false
     @State private var showRelocationAlert = false
     @State private var showRelocationPicker = false
@@ -327,7 +328,7 @@ struct ContentView: View {
                                       let size = display.size else { continue }
                                 print("\(display.name), (\(size.width),\(size.height)) aspect: \(aspect.width):\(aspect.height)")
                             }
-                            presentedModal = .imageSource
+                            scopeState.presentedModal = .imageSource
                         }
                         #if os(macOS)
                             .padding(.leading, 0)
@@ -391,8 +392,7 @@ struct ContentView: View {
             #if os(iOS)
                 .overlay(alignment: .bottomTrailing) {
                     Button {
-                        print("Settings button tapped")
-                        presentedModal = .settings
+                        scopeState.presentedModal = .settings
                         
                     } label:  {
                         Image(systemName: "gear")
@@ -490,20 +490,23 @@ struct ContentView: View {
         }
         #endif
 
-        .sheet(item: $presentedModal) { modalType in
+        .sheet(item: $scopeState.presentedModal) { modalType in
             switch modalType {
             case .settings:
                 SettingsView(
                     selectedAspectRatio: scopeState.selectedAspectRatio,
                     doneButtonAction: {
-                        presentedModal = nil
+                        scopeState.presentedModal = nil
                     },
                 )
             case .imageSource:
                 ImageSouceView(scopeState: scopeState,
                                dismissClosure: {
-                    presentedModal = nil
+                    scopeState.presentedModal = nil
                 })
+            case .help:
+                HelpView()
+                    .frame(maxWidth: .infinity)
             }
         }
         .sheet(isPresented: Binding(
@@ -620,14 +623,24 @@ struct ContentView: View {
                                        get: { scopeState[keyPath: kp] },
                                        set: { scopeState[keyPath: kp] = $0 }
                                    ))
+                            .disabled(command.disableCommandClosure(scopeState))
                         } else {
                             Button("\(command.label) (\(command.shortcutHint))") {
                                 command.performAction(on: scopeState)
                             }
+                            .disabled(command.disableCommandClosure(scopeState))
                         }
                     }
                 }
             }
+            // Place help menu here
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Help", systemImage: "questionmark") {
+                    print("Help button tapped")
+                    scopeState.presentedModal = .help
+                }
+            }
+
         }
 #endif
 

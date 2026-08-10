@@ -30,16 +30,42 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .flipAlternates:     return "Flip alternates"
         case .drawWithReflection: return "Draw with reflection"
         case .animate:            return "Animate"
-        case .reverseAnimation:   return "Reverse Animation"
+        case .reverseAnimation:   return "Reverse animation"
         case .advanceAnimation:   return "Advance animation 1 frame"
         case .showCropRect:       return "Show crop rectangle"
-        case .showFullscreenView: return "Show Full-screen Kaleidoscope"
+        case .showFullscreenView: return "Show full-screen Kaleidoscope"
         case .selectNextFullScreenDisplay:
                                   return "Select next full-screen display"
         case .moveRotationCenter: return "Move rotation center to triangle center"
         }
     }
 
+    var disableCommandClosure: ((ScopeState?) -> Bool) {
+        switch self {
+        case .showControls,
+                .showSourceImage,
+                .showOutlines,
+                .drawWithReflection,
+                .animate,
+                .reverseAnimation,
+                .advanceAnimation,
+                .showCropRect,
+                .showFullscreenView,
+                .moveRotationCenter:
+            return { $0 == nil }
+        case .flipAlternates:
+            return { scopeState in
+                guard let scopeState else { return true }
+                return scopeState.selectedScopeType > 1
+            }
+        case .selectNextFullScreenDisplay:
+            return { scopeState in
+                guard let scopeState else { return true }
+                return scopeState.availableDisplays.count < 2
+            }
+        }
+    }
+    
     var shortcutKey: KeyEquivalent {
         switch self {
         case .showControls:       return "c"
@@ -229,17 +255,20 @@ struct ScopeCommandButtons: View {
             ForEach(ScopeCommand.viewCommands) { command in
                 if command.isToggle, let kp = command.keyPath {
                     Toggle(command.label, isOn: toggleBinding(for: kp))
+                        .disabled(command.disableCommandClosure(scopeState))
                         .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                     // A second hidden control for commands with an alternate key
                     // (e.g. Enter also toggles animation, in addition to Return).
                     if let altKey = command.alternateShortcutKey {
                         Toggle(command.label, isOn: toggleBinding(for: kp))
+                            .disabled(command.disableCommandClosure(scopeState))
                             .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
                     }
                 } else {
                     Button(command.label) {
                         command.performAction(on: scopeState)
                     }
+                    .disabled(command.disableCommandClosure(scopeState))
                     .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
                 }
             }

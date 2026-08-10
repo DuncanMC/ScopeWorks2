@@ -36,8 +36,6 @@ enum UserDefaultsKeys: String {
 
 struct SettingsView: View {
     
-
-
     
     static let savedAspectRatios: [AspectRatio] = [
         AspectRatio(
@@ -210,6 +208,7 @@ struct SettingsView: View {
                     Toggle("Include kaleidoscope info in saved images",
                            isOn: $includeKaleidoscopeInfo)
                         .padding(.leading, snapshotTypeTitleLeading)
+                        .padding(.trailing, 50)
 
                     Divider()
                         .padding(.horizontal, 20)

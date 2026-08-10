@@ -76,15 +76,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>12</string>
+					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>409</string>
+					<string>411</string>
 					<key>StartingColumnNumber</key>
-					<string>4</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>409</string>
+					<string>410</string>
 					<key>Timestamp</key>
-					<string>807550142.420354</string>
+					<string>807805195.726338</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -100,15 +100,16 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>var body</string>
+				<string>        VStack {
+</string>
 				<key>leading</key>
-				<string>    }
-
-    </string>
+				<string>
+    var body: some View {
+</string>
 				<key>trailing</key>
-				<string>: some View {
-        VStack {
-            HStack {
+				<string>            HStack {
+                // to hide source image in fullscreen mode, change if statement to read
+                // "if scopeState.showSourceImage &amp;&amp; !isFullScreen"
 </string>
 			</dict>
 			<key>title</key>

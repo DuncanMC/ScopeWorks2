@@ -49,14 +49,14 @@ struct ScopeWorksCommands: Commands {
                         }
                     ))
                     .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
-                    .disabled(scopeState == nil)
+                    .disabled(command.disableCommandClosure(scopeState))
                 } else {
                     Button(command.label) {
                         guard let scopeState else { return }
                         command.performAction(on: scopeState)
                     }
                     .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
-                    .disabled(scopeState == nil)
+                    .disabled(command.disableCommandClosure(scopeState))
                 }
             }
 
@@ -68,6 +68,13 @@ struct ScopeWorksCommands: Commands {
             }
             .keyboardShortcut(.escape, modifiers: [])
             .disabled(scopeState?.externalDisplayViewManager?.selectedDisplayID == nil)
+        }
+        CommandGroup(replacing: .help) {
+            Button("ScopeWorks Help", systemImage: "questionmark") {
+                scopeState?.presentedModal = .help
+            }
+            .keyboardShortcut("/")
+            .disabled(scopeState == nil)
         }
     }
 

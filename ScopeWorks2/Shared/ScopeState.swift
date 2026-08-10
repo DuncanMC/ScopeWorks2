@@ -82,7 +82,11 @@ private var notificationTokens: [NSObjectProtocol]?
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
-    @Published var availableDisplays: [DisplayInfo] = []
+    @Published var availableDisplays: [DisplayInfo] = [] {
+        didSet {
+            print("in availableDisplays didSet")
+        }
+    }
     @Published var selectedAspectRatio: AspectRatio
     
     var useButton: Bool = true
@@ -131,6 +135,10 @@ class ScopeState: ObservableObject, Codable {
     
     // MARK: - Export state (transient, not persisted)
     @Published var activeRecorder: VideoRecorder? = nil
+    /// The modal sheet currently presented over the document's ContentView.
+    /// Lives here (not as view @State) so menu commands can present modals
+    /// via the focused ScopeState — e.g. the Help menu.
+    @Published var presentedModal: ActiveModal? = nil
 #if os(iOS)
     @Published var showExportImageSheet: Bool = false
     @Published var showRecordVideoSheet: Bool = false
@@ -140,30 +148,34 @@ class ScopeState: ObservableObject, Codable {
     
     func updateDisplays() {
         availableDisplays = ExternalDisplayManager.availableDisplays
-        if chosenDisplayID == nil {
+        if chosenDisplayID == nil ||
+            availableDisplays.first(where: { $0.id == chosenDisplayID }) == nil {
             chosenDisplayID = availableDisplays.last?.id
         }
+//        else if availableDisplays.first(where: { $0.id == chosenDisplayID }) == nil {
+//            chosenDisplayID = availableDisplays.last?.id
+//        }
         
         /*
          let displays = ExternalDisplayManager.availableDisplays
          //Add code here to upate list of all aspect ratios
-         allAsepectRatios = SavedAspectRatios
-         for display in displays {
-         guard let aspect = display.aspect else { continue }
-         var found = false
-         for ratio in allAsepectRatios {
-         if ratio.width == aspect.width && ratio.height == aspect.height {
-         found = true
-         break
-         }
-         }
-         if !found {
-         allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height))
-         }
-         }
-         for aspect in allAsepectRatios {
-         print(aspect)
-         }
+         var allAsepectRatios = savedAspectRatios
+        for display in displays {
+            guard let aspect = display.aspect else { continue }
+            var found = false
+            for ratio in allAsepectRatios {
+                if ratio.width == aspect.width && ratio.height == aspect.height {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                allAsepectRatios.append(AspectRatio(title: display.name, width: aspect.width, height: aspect.height))
+            }
+        }
+        for aspect in allAsepectRatios {
+            print(aspect)
+        }
          */
     }
     
@@ -309,7 +321,7 @@ class ScopeState: ObservableObject, Codable {
             object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.availableDisplays = ExternalDisplayManager.availableDisplays
+                self?.updateDisplays()
             }
         }
         

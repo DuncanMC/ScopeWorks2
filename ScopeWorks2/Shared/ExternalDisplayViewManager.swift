@@ -351,7 +351,7 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
                     for command in ScopeCommand.viewCommands {
                         if command.matches(event: event) {
                             Task { @MainActor in
-                                if let scopeState = self?.scopeState {
+                                if !command.disableCommandClosure(scopeState) {
                                     command.performAction(on: scopeState)
                                 }
                             }
@@ -452,6 +452,7 @@ class ExternalDisplaySceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        //print("In ExternalDisplaySceneDelegate.scene(_:willConnectTo:options:)")
         guard let windowScene = scene as? UIWindowScene else { return }
 
         Task { @MainActor in
@@ -479,6 +480,8 @@ class ExternalDisplaySceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = nil
         Task { @MainActor in
             ExternalDisplayManager.shared.refreshDisplayList()
+            guard let scopeState = ExternalDisplayBridge.shared.activeScopeState else { return }
+            scopeState.updateDisplays()
         }
     }
 }
