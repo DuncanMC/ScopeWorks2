@@ -104,7 +104,9 @@ class SourceImageRenderer: NSObject, MTKViewDelegate {
         pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
         pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
         pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        // Porter-Duff "over" for the alpha channel: out = srcA + dstA*(1-srcA).
+        // See the matching comment in ScopeRenderer.makePipeline.
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .one
         pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
         
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)

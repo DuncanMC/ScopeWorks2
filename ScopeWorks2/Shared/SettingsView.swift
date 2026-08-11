@@ -37,7 +37,7 @@ enum UserDefaultsKeys: String {
 struct SettingsView: View {
     
     
-    static let savedAspectRatios: [AspectRatio] = [
+    static let defaultAspectRatios: [AspectRatio] = [
         AspectRatio(
             title: "Crop for Tiling",
             width: 0.6,
@@ -91,7 +91,8 @@ struct SettingsView: View {
     
     /// Returns saved aspect ratios plus any unique ratios from connected displays.
     static func allAspectRatios() -> [AspectRatio] {
-        var ratios = savedAspectRatios
+        var ratios = defaultAspectRatios
+
         let displays = ExternalDisplayManager.availableDisplays
         for display in displays {
             guard let aspect = display.aspect else { continue }
@@ -109,7 +110,7 @@ struct SettingsView: View {
         return ratios
     }
     
-    @State var allAsepectRatios: [AspectRatio] = SettingsView.savedAspectRatios
+    @State var allAsepectRatios: [AspectRatio] = SettingsView.defaultAspectRatios
 
     @State var selectedAspectRatio: AspectRatio {
         didSet {
@@ -126,7 +127,7 @@ struct SettingsView: View {
         let snapshotFileType = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
         self.snapshotFileType = snapshotFileType
         self.selection = snapshotFileType
-        self.allAsepectRatios = SettingsView.savedAspectRatios
+        self.allAsepectRatios = SettingsView.defaultAspectRatios
         self.selectedAspectRatio = selectedAspectRatio
         updateAspectRatios()
 
@@ -229,7 +230,7 @@ struct SettingsView: View {
                             }
                         }
                         .onChange(of: selectedAspectRatio) {
-                            print("selectedAspectRatio  changed to \(selectedAspectRatio). Posting notification.")
+                            //print("selectedAspectRatio  changed to \(selectedAspectRatio). Posting notification.")
                             NotificationCenter.default.post(name: defaultAspectRatioChangedNotification, object: nil, userInfo: ["selectedAspectRatio": selectedAspectRatio])
                         }
                     }

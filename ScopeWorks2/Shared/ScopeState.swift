@@ -37,12 +37,13 @@ struct MetalRect {
     var bottomRight: simd_float2
 }
 
-struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable {
+struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable, Codable {
     var id: Self { self }
     let title: String
     let width: Double
     let height: Double
     let defaultMultiplier: Int
+    var activeMultipler: Int? = nil
     let index: Int
     let isCropForTiling: Bool
     nonisolated var description: String {
@@ -82,11 +83,7 @@ private var notificationTokens: [NSObjectProtocol]?
 // rotationSpeed, movementSpeed, selectedScopeType
 class ScopeState: ObservableObject, Codable {
     
-    @Published var availableDisplays: [DisplayInfo] = [] {
-        didSet {
-            print("in availableDisplays didSet")
-        }
-    }
+    @Published var availableDisplays: [DisplayInfo] = []
     @Published var selectedAspectRatio: AspectRatio
     
     var useButton: Bool = true
@@ -312,7 +309,7 @@ class ScopeState: ObservableObject, Codable {
                         print("aspect ratio unchanged.")
                         return
                     }
-                    print("Received changed aspectRatio \(aspectRatio)")
+                    //print("Received changed aspectRatio \(aspectRatio)")
                     self.selectedAspectRatio = aspectRatio
                 }
             }
@@ -1434,10 +1431,11 @@ class ScopeState: ObservableObject, Codable {
                 print("Renderer not available for off-screen rendering")
                 return nil
             }
+            let multiplier = selectedAspectRatio.activeMultipler ?? selectedAspectRatio.defaultMultiplier
             guard let image = renderer.renderOffscreenImage(
-                width: Int(selectedAspectRatio.width * Double(selectedAspectRatio.defaultMultiplier)),
+                width: Int(selectedAspectRatio.width * Double(multiplier)),
 
-                height: Int(selectedAspectRatio.height * Double(selectedAspectRatio.defaultMultiplier)),
+                height: Int(selectedAspectRatio.height * Double(multiplier)),
                 aspectRatio: selectedAspectRatio
             ) else {
                 print("Off-screen render failed")

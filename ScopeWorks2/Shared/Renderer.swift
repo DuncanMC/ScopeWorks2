@@ -179,7 +179,11 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
         pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
         pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        // Porter-Duff "over" for the alpha channel: out = srcA + dstA*(1-srcA).
+        // The source factor must be .one (not .sourceAlpha) — otherwise drawing
+        // semi-transparent content onto an opaque background produces
+        // semi-transparent output, and saved PNGs end up partly transparent.
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .one
         pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
         
         pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDesc)

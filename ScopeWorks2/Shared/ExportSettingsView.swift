@@ -78,7 +78,8 @@ class ExportSettingsState: ObservableObject {
     func updateHeightFromWidth(aspectChanged: Bool) {
         guard selectedAspectRatio.width > 0 else { return }
         let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
-        let adjustedWidth = aspectChanged ? Int(selectedAspectRatio.width * Double(selectedAspectRatio.defaultMultiplier)) : exportWidth
+        let aspect = selectedAspectRatio.activeMultipler ?? selectedAspectRatio.defaultMultiplier
+        let adjustedWidth = aspectChanged ? Int(selectedAspectRatio.width * Double(aspect)) : exportWidth
         exportWidth = adjustedWidth
         let newHeight = max(1, Int(round(Double(adjustedWidth) * ratio)))
         guard newHeight != exportHeight else { return }

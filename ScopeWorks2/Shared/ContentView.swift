@@ -366,7 +366,7 @@ struct ContentView: View {
                             .frame(minWidth: 200, alignment: .leading)
                         //                                    .border(.black, width: 1)
                         
-                        Slider(value: $scopeState.zoom, in: 2.0 ... 5.0)
+                        Slider(value: $scopeState.zoom, in: 1.0 ... 5.0)
                             .frame(width: sliderWidth )
                             .frame(minWidth: 150 )
                         
