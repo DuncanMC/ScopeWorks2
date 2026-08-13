@@ -326,7 +326,7 @@ struct ContentView: View {
                             for display in ExternalDisplayManager.availableDisplays {
                                 guard let aspect = display.aspect,
                                       let size = display.size else { continue }
-                                print("\(display.name), (\(size.width),\(size.height)) aspect: \(aspect.width):\(aspect.height)")
+//                                print("\(display.name), (\(size.width),\(size.height)) aspect: \(aspect.width):\(aspect.height)")
                             }
                             scopeState.presentedModal = .imageSource
                         }
@@ -366,7 +366,7 @@ struct ContentView: View {
                             .frame(minWidth: 200, alignment: .leading)
                         //                                    .border(.black, width: 1)
                         
-                        Slider(value: $scopeState.zoom, in: 1.0 ... 5.0)
+                        Slider(value: $scopeState.zoom, in: 1.16 ... 5.0)
                             .frame(width: sliderWidth )
                             .frame(minWidth: 150 )
                         
@@ -494,7 +494,7 @@ struct ContentView: View {
             switch modalType {
             case .settings:
                 SettingsView(
-                    selectedAspectRatio: scopeState.selectedAspectRatio,
+                    selectedAspectRatioIndex: scopeState.selectedAspectRatio.index,
                     doneButtonAction: {
                         scopeState.presentedModal = nil
                     },

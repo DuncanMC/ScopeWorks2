@@ -38,16 +38,19 @@ struct MetalRect {
 }
 
 struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable, Codable {
-    var id: Self { self }
+    var id: Int { index }
+    static func == (lhs: AspectRatio, rhs: AspectRatio) -> Bool {
+        return lhs.index == rhs.index
+    }
     let title: String
-    let width: Double
-    let height: Double
-    let defaultMultiplier: Int
+    var width: Double
+    var height: Double
+    var defaultMultiplier: Int
     var activeMultipler: Int? = nil
-    let index: Int
+    var index: Int
     let isCropForTiling: Bool
     nonisolated var description: String {
-        return "\"\(title)\": \(width):\(height). Index = \(index)"
+        return "\"\(title)\": \(width):\(height). index = \(index). Multiplier = \(activeMultipler ?? defaultMultiplier)"
     }
     var cropRect: MetalRect {
         if isCropForTiling{
@@ -309,7 +312,7 @@ class ScopeState: ObservableObject, Codable {
                         print("aspect ratio unchanged.")
                         return
                     }
-                    //print("Received changed aspectRatio \(aspectRatio)")
+                    print("Received changed aspectRatio \(aspectRatio)")
                     self.selectedAspectRatio = aspectRatio
                 }
             }
@@ -563,13 +566,17 @@ class ScopeState: ObservableObject, Codable {
                     print("Error loading bookmark: \(error)")
                 }
             }
-            self.selectedAspectRatio = AspectRatio(
-                title: "16:9",
-                width: 16,
-                height: 9,
-                defaultMultiplier: 120,
-                index: 5,
-                isCropForTiling: false)
+//xxx
+            self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+            
+//            self.selectedAspectRatio = AspectRatio(
+//                title: "16:9",
+//                width: 16,
+//                height: 9,
+//                defaultMultiplier: 120,
+//                index: 5,
+//                isCropForTiling: false)
+//             
             if self.imageURL == nil {
                 self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
             }
@@ -578,13 +585,15 @@ class ScopeState: ObservableObject, Codable {
                 self.imageSourceInfo = .fromFile(url: url, bookmarkData: self.bookmarkData)
             }
 #else
-            self.selectedAspectRatio = AspectRatio(
-                title: "16:9",
-                width: 16,
-                height: 9,
-                defaultMultiplier: 120,
-                index: 5,
-                isCropForTiling: false)
+            self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+
+//            self.selectedAspectRatio = AspectRatio(
+//                title: "16:9",
+//                width: 16,
+//                height: 9,
+//                defaultMultiplier: 120,
+//                index: 5,
+//                isCropForTiling: false)
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
                 self.selectedImageID = imageID
                 self.imageSourceInfo = .fromPhotoLibrary(id: imageID)
@@ -620,7 +629,7 @@ class ScopeState: ObservableObject, Codable {
         
         self.showOutlines = try container.decode(Bool.self, forKey: .showOutlines)
         self.flipAlternates = try container.decode(Bool.self, forKey: .flipAlternates)
-        var tempSplit = try container.decode(Bool.self, forKey: .splitTriangle)
+        let tempSplit = try container.decode(Bool.self, forKey: .splitTriangle)
         var isRight: Bool = false
         if tempSplit {
             (isRight, _) = isRightTriangle(trianglePoints)
@@ -638,13 +647,15 @@ class ScopeState: ObservableObject, Codable {
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = AspectRatio(
-            title: "16:9",
-            width: 16,
-            height: 9,
-            defaultMultiplier: 120,
-            index: 5,
-            isCropForTiling: false)
+        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+
+//        self.selectedAspectRatio = AspectRatio(
+//            title: "16:9",
+//            width: 16,
+//            height: 9,
+//            defaultMultiplier: 120,
+//            index: 5,
+//            isCropForTiling: false)
         
         self.isLoadingFromFile = true
         
@@ -725,13 +736,15 @@ class ScopeState: ObservableObject, Codable {
         
         // Initialize other properties to defaults or empty values
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = AspectRatio(
-            title: "16:9",
-            width: 16,
-            height: 9,
-            defaultMultiplier: 120,
-            index: 5,
-            isCropForTiling: false)
+        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+
+//        self.selectedAspectRatio = AspectRatio(
+//            title: "16:9",
+//            width: 16,
+//            height: 9,
+//            defaultMultiplier: 120,
+//            index: 5,
+//            isCropForTiling: false)
         
         doInitSetup()
     }
@@ -742,13 +755,15 @@ class ScopeState: ObservableObject, Codable {
     
     init(){
         //        print("In ScopeState init. uuid = \(uuid)")
-        self.selectedAspectRatio = AspectRatio(
-            title: "16:9",
-            width: 16,
-            height: 9,
-            defaultMultiplier: 120,
-            index: 5,
-            isCropForTiling: false)
+        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+
+//        self.selectedAspectRatio = AspectRatio(
+//            title: "16:9",
+//            width: 16,
+//            height: 9,
+//            defaultMultiplier: 120,
+//            index: 5,
+//            isCropForTiling: false)
         
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
@@ -906,11 +921,7 @@ class ScopeState: ObservableObject, Codable {
     }
     
     /// Consolidated image source metadata, persisted in each .KSp2 document.
-    var imageSourceInfo = ImageSourceInfo() {
-        didSet {
-            print("In ScopeState.imageSourceInfo.didSet")
-        }
-    }
+    var imageSourceInfo = ImageSourceInfo()
     @Published var imageSourceDescription: String = ""
     
     
@@ -1239,7 +1250,7 @@ class ScopeState: ObservableObject, Codable {
             print("trianglePoint3 = \(trianglePoint3)")
         }
         //        let aspect = imageViewSize.width / imageViewSize.height
-        let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
+//        let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
         //print("Adjusted tap point = \(adjusted)")
         let result = matchPoint(startLocation, inPoints: points)
         return result
@@ -1464,11 +1475,11 @@ class ScopeState: ObservableObject, Codable {
             DispatchQueue.main.async {
                 self?._iCloudDocumentsURL = documentsURL
                 self?._iCloudURLResolved = true
-                if let documentsURL {
-                    //print("iCloud container resolved: \(documentsURL.path)")
-                } else {
-                    print("iCloud container not available")
-                }
+//                if let documentsURL {
+//                    //print("iCloud container resolved: \(documentsURL.path)")
+//                } else {
+//                    print("iCloud container not available")
+//                }
             }
         }
     }
