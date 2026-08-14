@@ -89,7 +89,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     /// toggles animation, in addition to Return.
     var alternateShortcutKey: KeyEquivalent? {
         switch self {
-        case .animate: return KeyEquivalent(Character("\u{3}"))
+        //case .animate: return KeyEquivalent(Character("\u{3}"))
         default:       return nil
         }
     }
@@ -156,7 +156,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .showOutlines:         return \.showOutlines
         case .flipAlternates:       return \.flipAlternates
         case .drawWithReflection:   return \.drawWithReflection
-        case .animate:              return \.animate
+        case .animate:
+            return \.animate
         case
                 .reverseAnimation,
                 .advanceAnimation,

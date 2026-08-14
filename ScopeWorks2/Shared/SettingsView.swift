@@ -280,6 +280,13 @@ struct SettingsView: View {
             return 45
         #endif
     }
+    
+    #if os(macOS)
+        let aspectRatioTitleWidth: CGFloat = 80
+    #else
+        let aspectRatioTitleWidth: CGFloat = 120
+    #endif
+
 
     var snapshotTypeTitleLeading: CGFloat {
         #if os(macOS)
@@ -354,15 +361,17 @@ struct SettingsView: View {
                             Text(" ")
                             HStack {
                                 Text("Aspect ratio:")
-                                    .frame(minWidth: 80, alignment: .leading)
+                                    .frame(minWidth: aspectRatioTitleWidth, alignment: .leading)
                                     .padding(.leading, snapshotTypeTitleLeading)
                                 Picker("", selection: $selectedAspectRatio) {
                                     ForEach(allAsepectRatios) { aspectRatio in
                                         Text("\(aspectRatio.title)")
+                                            .border(.blue, width: 2)
                                             .tag(aspectRatio, includeOptional: true)
-                                            .frame(minWidth: 150, alignment: .leading)
+                                            .frame(minWidth: 250, alignment: .leading)
                                     }
                                 }
+                                .frame(minWidth: 250)
                             }
                         }
                         .onChange(of: selectedAspectRatio) {
@@ -375,20 +384,24 @@ struct SettingsView: View {
                         VStack {
                             Text("Width")
                                 .frame(minWidth: 60, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+
 
                             Text(widthString)
                                 .frame(minWidth: 60, alignment: .leading)
                         }
                         VStack {
-                            Text("height")
+                            Text("Height")
                                 .frame(minWidth: 60, alignment: .leading)
+                                .multilineTextAlignment(.leading)
 
                             Text(heightString)
                                 .frame(minWidth: 60, alignment: .leading)
                         }
                         VStack {
-                            Text("multiplier")
+                            Text("Multiplier")
                                 .frame(minWidth: 60, alignment: .leading)
+                                .multilineTextAlignment(.leading)
 
                             Text(multiplierString)
                                 .frame(minWidth: 60, alignment: .leading)
@@ -397,6 +410,7 @@ struct SettingsView: View {
                         VStack {
                             Text("Pixel width")
                                 .frame(minWidth: 60, alignment: .leading)
+                                .multilineTextAlignment(.leading)
 
                             Text(String(Int(width * Double(multiplier))))
                                 .frame(minWidth: 60, alignment: .leading)
@@ -404,6 +418,7 @@ struct SettingsView: View {
                         VStack {
                             Text("Pixel height")
                                 .frame(minWidth: 60, alignment: .leading)
+                                .multilineTextAlignment(.leading)
 
                             Text(String(Int(height * Double(multiplier))))
                                 .frame(minWidth: 60, alignment: .leading)
@@ -509,6 +524,7 @@ struct SettingsView: View {
 #endif
         .sheet(isPresented: $showCustomAspectEditor) {
             CustomAspectRatioEditor(dismissClosure: { showCustomAspectEditor = false })
+                .frame(minWidth: 800)
         }
     }
 

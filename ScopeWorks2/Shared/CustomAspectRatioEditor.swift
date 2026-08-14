@@ -9,10 +9,15 @@ import SwiftUI
 
 struct CustomAspectRatioEditor: View {
     
+#if os(macOS)
     let labelWidth: CGFloat = 80
+    let buttonWidth: CGFloat = 140
+#else
+    let labelWidth: CGFloat = 110
+    let buttonWidth: CGFloat = 160
+#endif
     
     let textFieldWidth: CGFloat = 80
-    let buttonWidth: CGFloat = 140
     
     enum FocusedField {
         case name
@@ -22,7 +27,7 @@ struct CustomAspectRatioEditor: View {
         case pixelWidth
         case pixelHeight
     }
-
+    
     @State private var errorMessage = ""
     @State private var aspectName: String = "Custom"
     
@@ -36,7 +41,9 @@ struct CustomAspectRatioEditor: View {
     
     @State private var pixelHeight: Int = 1920
     
+    
     @FocusState private var focusedField: FocusedField?
+    @State private var selection: TextSelection?
 
     
     var dismissClosure: (() -> Void)?
@@ -70,50 +77,124 @@ struct CustomAspectRatioEditor: View {
         }
     }
     var body: some View {
+        
+        let aspectWidthBinding = Binding(
+            get: { String(self.aspectWidth) },
+            set: {
+                if let newValue = numberFormatter.number(from: $0) { self.aspectWidth = newValue.intValue
+                }
+            }
+        )
+
+        let aspectHeightBinding = Binding(
+            get: { String(self.aspectHeight) },
+            set: {
+                if let newValue = numberFormatter.number(from: $0) { self.aspectHeight = newValue.intValue
+                }
+            }
+        )
+        let aspectMultiplierBinding = Binding(
+            get: { String(self.aspectMultiplier) },
+            set: {
+                if let newValue = numberFormatter.number(from: $0) { self.aspectMultiplier = newValue.intValue
+                }
+            }
+        )
+        
+        let pixelWidthBinding = Binding(
+            get: { String(self.pixelWidth) },
+            set: {
+                if let newValue = numberFormatter.number(from: $0) { self.pixelWidth = newValue.intValue
+                }
+            }
+        )
+        
+        let pixelHeightBinding = Binding(
+            get: { String(self.pixelHeight) },
+            set: {
+                if let newValue = numberFormatter.number(from: $0) { self.pixelHeight = newValue.intValue
+                }
+            }
+        )
+
         VStack(alignment: .leading, spacing: 20) {
-            Text("Custom Aspect Ratio")
+            HStack {
+                Spacer()
+                Text("Custom Aspect Ratio")
+                    .frame(alignment: .center)
+                Spacer()
+            }
             
             Spacer()
             HStack {
                 Text("Name")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", text: $aspectName)
+                TextField("", text: $aspectName, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: 200)
                     .focused($focusedField, equals: .name)
                     .onSubmit {
                         handleField(focusedField)
                     }
+                    .onChange(of: focusedField) {
+                        if focusedField == .name {
+                            print("Enetering name field")
+                            selection = .init(range: aspectName.startIndex..<aspectName.endIndex)
+                        }
+                    }
             }
             HStack {
                 Text ("Width")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", value: $aspectWidth, formatter: numberFormatter)
+                TextField("", text: aspectWidthBinding, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: textFieldWidth)
                     .focused($focusedField, equals: .width)
                     .onSubmit {
                         handleField(focusedField)
                     }
+                    .onChange(of: focusedField) {
+                        if focusedField == .width {
+                            selection = .init(range: aspectWidthBinding.wrappedValue.startIndex..<aspectWidthBinding.wrappedValue.endIndex)
+                        }
+                    }
                 Text ("Height")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", value: $aspectHeight, formatter: numberFormatter)
+                TextField("", text: aspectHeightBinding, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: textFieldWidth)
                     .focused($focusedField, equals: .height)
                     .onSubmit {
                         handleField(focusedField)
                     }
+                    .onChange(of: focusedField) {
+                        if focusedField == .height {
+                            selection = .init(range: aspectHeightBinding.wrappedValue.startIndex..<aspectHeightBinding.wrappedValue.endIndex)
+                        }
+                    }
             }
+            /*
+             .onChange(of: focusedField) {
+                 if focusedField == .xxx {
+                     selection = .init(range: xxxBinding.wrappedValue.startIndex..<xxxBinding.wrappedValue.endIndex)
+                 }
+             }
+
+             */
             HStack {
                 Text("Multiplier")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", value: $aspectMultiplier, formatter: numberFormatter)
+                TextField("", text: aspectMultiplierBinding, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: textFieldWidth)
                     .focused($focusedField, equals: .multiplier)
                     .onSubmit {
                         handleField(focusedField)
+                    }
+                    .onChange(of: focusedField) {
+                        if focusedField == .multiplier {
+                            selection = .init(range: aspectMultiplierBinding.wrappedValue.startIndex..<aspectMultiplierBinding.wrappedValue.endIndex)
+                        }
                     }
                 Text("")
                     .frame(width: labelWidth)
@@ -134,21 +215,31 @@ struct CustomAspectRatioEditor: View {
             HStack {
                 Text ("Pixel width")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", value: $pixelWidth, formatter: numberFormatter)
+                TextField("", text: pixelWidthBinding, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: textFieldWidth)
                     .focused($focusedField, equals: .pixelWidth)
                     .onSubmit {
                         handleField(focusedField)
                     }
+                    .onChange(of: focusedField) {
+                        if focusedField == .pixelWidth {
+                            selection = .init(range: pixelWidthBinding.wrappedValue.startIndex..<pixelWidthBinding.wrappedValue.endIndex)
+                        }
+                    }
                 Text ("Pixel height")
                     .frame(width: labelWidth, alignment: .leading)
-                TextField("", value: $pixelHeight, formatter: numberFormatter)
+                TextField("", text: pixelHeightBinding, selection: $selection)
                     .padding(.trailing, 20)
                     .frame(width: textFieldWidth)
                     .focused($focusedField, equals: .pixelHeight)
                     .onSubmit {
                         handleField(focusedField)
+                    }
+                    .onChange(of: focusedField) {
+                        if focusedField == .pixelHeight {
+                            selection = .init(range: pixelHeightBinding.wrappedValue.startIndex..<pixelHeightBinding.wrappedValue.endIndex)
+                        }
                     }
                 Button("Calculate aspect") {
                     print("Calculating aspect")
@@ -190,6 +281,9 @@ struct CustomAspectRatioEditor: View {
         }
         .onChange(of: focusedField) { oldValue, newValue in
             handleField(oldValue)
+        }
+        .onAppear() {
+            focusedField = .name
         }
         .padding(.all, 20)
     }

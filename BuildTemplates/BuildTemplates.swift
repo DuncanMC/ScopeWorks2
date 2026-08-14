@@ -82,132 +82,173 @@ struct BuildTemplates: AsyncParsableCommand {
                 radius: 0.2,
                 startAngle: 0
             ),
-//            //Element 9
-//            ScopeElement(
-//                type: .polygon,
-//                center: CGPoint(x: 0.0, y: -2*sqrt3Over5),
-//                radius: 0.2,
-//                startAngle: 0
-//            ),
-            //Element 10
+            //Element 9
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.3, y: -3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 11
+            //Element 10
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.6, y: -sqrt3Over5),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 12
+            //Element 11
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.6, y: 0),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 13
+            //Element 12
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.6, y: sqrt3Over5),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 14
+            //Element 13
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.3, y: 3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-//            //Element 15
-//            ScopeElement(
-//                type: .polygon,
-//                center: CGPoint(x: 0.0, y: 2*sqrt3Over5),
-//                radius: 0.2,
-//                startAngle: 0
-//            ),
-            //Element 16
+            //Element 14
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.3, y: 3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 17
+            //Element 15
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.6, y: sqrt3Over5),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 18
+            //Element 16
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.6, y: 0),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 19
+            //Element 17
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.9, y: 3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 20
+            //Element 18
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.9, y: sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 21
+            //Element 19
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.9, y: -sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 22
+            //Element 20
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: 0.9, y: -3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 23
+            //Element 21
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.9, y: 3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 24
+            //Element 22
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.9, y: sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 25
+            //Element 23
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.9, y: -sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
-            //Element 26
+            //Element 24
             ScopeElement(
                 type: .polygon,
                 center: CGPoint(x: -0.9, y: -3*sqrt3Over10),
                 radius: 0.2,
                 startAngle: 0
             ),
+            // New elements
+
+            //Element 25
+            //0.6, -2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: 0.6, y: -2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            
+            //Element 26
+            //0, -2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: 0.0, y: -2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            
+            //Element 27
+            //-0.6, -2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: -0.6, y: -2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            //Element 28
+            //0.6, 2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: 0.6, y: 2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            
+            //Element 29
+            //0, 2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: 0.0, y: 2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            
+            //Element 30
+            //-0.6, 2*sqrt3Over5
+            ScopeElement(
+                type: .polygon,
+                center: CGPoint(x: -0.6, y: 2*sqrt3Over5),
+                radius: 0.2,
+                startAngle: 0
+            ),
+            
             ]
         return elements
     }

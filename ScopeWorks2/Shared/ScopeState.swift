@@ -64,12 +64,23 @@ struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, 
         }
         else {
             let aspectFactor = Float(height / width)
-            return  MetalRect(
-                topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0) * aspectFactor),
-                topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0) * aspectFactor),
-                bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0) * aspectFactor),
-                bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0) * aspectFactor)
-            )
+            let result: MetalRect
+            if aspectFactor < 1 {
+                result = MetalRect(
+                    topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0) * aspectFactor),
+                    topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0) * aspectFactor),
+                    bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0) * aspectFactor),
+                    bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0) * aspectFactor)
+                    )
+            } else {
+                result = MetalRect(
+                    topLeft:     simd_float2(x: Float(-1.0) / aspectFactor, y: Float( 1.0)),
+                    topRight:    simd_float2(x: Float( 1.0) / aspectFactor, y: Float( 1.0)),
+                    bottomLeft:  simd_float2(x: Float(-1.0) / aspectFactor, y: Float(-1.0)),
+                    bottomRight: simd_float2(x: Float( 1.0) / aspectFactor, y: Float(-1.0))
+                )
+            }
+            return  result
         }
     }
 }

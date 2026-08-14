@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>359</string>
+					<string>366</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>358</string>
+					<string>365</string>
 					<key>Timestamp</key>
-					<string>808329056.1636471</string>
+					<string>808336382.448662</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -150,13 +150,13 @@
 				<string>                                Picker("", selection: $selectedAspectRatio) {
 </string>
 				<key>leading</key>
-				<string>                                    .frame(minWidth: 80, alignment: .leading)
+				<string>                                    .frame(minWidth: aspectRatioTitleWidth, alignment: .leading)
                                     .padding(.leading, snapshotTypeTitleLeading)
 </string>
 				<key>trailing</key>
 				<string>                                    ForEach(allAsepectRatios) { aspectRatio in
                                         Text("\(aspectRatio.title)")
-                                            .tag(aspectRatio, includeOptional: true)
+                                            .border(.blue, width: 2)
 </string>
 			</dict>
 			<key>title</key>

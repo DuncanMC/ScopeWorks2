@@ -499,6 +499,7 @@ struct ContentView: View {
                         scopeState.presentedModal = nil
                     },
                 )
+                .frame(minWidth: 1000)
             case .imageSource:
                 ImageSouceView(scopeState: scopeState,
                                dismissClosure: {

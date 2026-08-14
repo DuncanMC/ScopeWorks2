@@ -175,11 +175,53 @@
       "radius" : 0.2,
       "startAngle" : 0,
       "type" : 0
+    },
+    {
+      "centerX" : 0.6,
+      "centerY" : -0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : 0,
+      "centerY" : -0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.6,
+      "centerY" : -0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : 0.6,
+      "centerY" : 0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : 0,
+      "centerY" : 0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
+    },
+    {
+      "centerX" : -0.6,
+      "centerY" : 0.6928203230275509,
+      "radius" : 0.2,
+      "startAngle" : 0,
+      "type" : 0
     }
   ],
   "index" : 1,
   "isCircular" : true,
-  "modifiedDate" : 806256135.065021,
+  "modifiedDate" : 808332524.060328,
   "name" : "Polygon grid",
   "sideCount" : 6
 }
