@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 
 // MARK: macOS menubar / iPadOS menu
 struct ScopeWorksCommands: Commands {
+
     @FocusedObject var scopeState: ScopeState?
     #if os(macOS)
     @Environment(\.newDocument) private var newDocument
@@ -70,7 +71,7 @@ struct ScopeWorksCommands: Commands {
             .disabled(scopeState?.externalDisplayViewManager?.selectedDisplayID == nil)
         }
         CommandGroup(replacing: .help) {
-            Button("ScopeWorks Help", systemImage: "questionmark") {
+            Button("ScopeWorks Help") {
                 scopeState?.presentedModal = .help
             }
             .keyboardShortcut("/")

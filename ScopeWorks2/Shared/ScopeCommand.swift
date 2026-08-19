@@ -89,7 +89,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     /// toggles animation, in addition to Return.
     var alternateShortcutKey: KeyEquivalent? {
         switch self {
-        //case .animate: return KeyEquivalent(Character("\u{3}"))
+        //Add the spacebar as an altenate key for the animate command.
+        case .animate: return KeyEquivalent(Character(" "))
         default:       return nil
         }
     }

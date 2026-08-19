@@ -1,25 +1,26 @@
 //
-//  HelpView.swift
+//  AboutView.swift
 //  ScopeWorks2
 //
-//  Created by Duncan Champney on 8/7/26.
+//  Created by Duncan Champney on 8/17/26.
 //
 
 import SwiftUI
 
-struct HelpView: View {
+struct AboutView: View
+{
     @Environment(\.dismiss) private var dismiss
 
-    var helpString: LocalizedStringKey {
-        let noHelpAvailableString = LocalizedStringKey("No Help Available")
-        guard let helpStringURL = Bundle.main.url(forResource: "help", withExtension: "md") else {
-            return noHelpAvailableString
+    static var aboutString: LocalizedStringKey {
+        let noAboutInfoAvailableString = LocalizedStringKey("No About Info Available")
+        guard let aboutStringURL = Bundle.main.url(forResource: "about", withExtension: "md") else {
+            return noAboutInfoAvailableString
         }
         do {
-            return LocalizedStringKey(try String(contentsOf: helpStringURL, encoding: .utf8))
+            return LocalizedStringKey(try String(contentsOf: aboutStringURL, encoding: .utf8))
         }
         catch {
-            return noHelpAvailableString
+            return noAboutInfoAvailableString
         }
     }
     
@@ -27,15 +28,16 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing:20) {
             HStack {
                 Spacer()
-                Text("ScopeWorks Help")
+                Text("About ScopeWorks")
                     .multilineTextAlignment(.center)
                     .font(Font.title.bold())
                     .padding([.top, .leading, .trailing], 20)
+                    .padding(.bottom, 20)
                 Spacer()
             }
 
             ScrollView(.vertical, showsIndicators: true) {
-                Text(helpString)
+                Text(AboutView.aboutString)
                     .padding([.leading, .trailing], 20)
             }
             Spacer()
@@ -58,7 +60,8 @@ struct HelpView: View {
         .presentationSizing(.fitted)
     }
 }
-
 #Preview {
-    HelpView()
+    AboutView()
 }
+
+

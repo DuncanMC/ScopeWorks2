@@ -69,7 +69,6 @@ class ExportSettingsState: ObservableObject {
     var isEightWayScope: Bool
 
     init(defaultAspectRatio: AspectRatio, isEightWayScope: Bool) {
-        print("In ExportSettingsState.init. isEightWayScope = \(isEightWayScope)")
         self.selectedAspectRatio = defaultAspectRatio
         self.isEightWayScope = isEightWayScope
         updateHeightFromWidth(aspectChanged: true)

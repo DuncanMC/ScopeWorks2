@@ -9,7 +9,8 @@ import SwiftUI
 
 @main
 struct ScopeWorks2App: App {
-    
+    @Environment(\.openWindow) public static var openWindow
+
     init () {
         UserDefaults.standard.register(defaults: [
             UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue: true
@@ -87,7 +88,25 @@ struct ScopeWorks2App: App {
         .defaultSize(width: 1800, height: 1125)
         .commands {
             ScopeWorksCommands()
+            #if os(macOS)
+            CommandGroup(replacing: CommandGroupPlacement.appInfo) {
+                Button(action: {
+                    // Open the "about" window
+                    ScopeWorks2App.openWindow(id: "about")
+                }, label: {
+                    Text("About ScopeWorks")
+                })
+            }
+            #endif
         }
+        #if os(macOS)
+
+            // Note the id "about" here
+            Window("About ScopeWorks", id: "about") {
+                Text(AboutView.aboutString)
+            }
+        #endif
+
 #if os(iOS)
         // Customizes the document launch screen (shown when no document is
         // open) with an action to rebuild a kaleidoscope from image metadata,

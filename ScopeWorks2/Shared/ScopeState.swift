@@ -320,10 +320,8 @@ class ScopeState: ObservableObject, Codable {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     guard aspectRatio != self.selectedAspectRatio  else {
-                        print("aspect ratio unchanged.")
                         return
                     }
-                    print("Received changed aspectRatio \(aspectRatio)")
                     self.selectedAspectRatio = aspectRatio
                 }
             }
@@ -470,15 +468,12 @@ class ScopeState: ObservableObject, Codable {
                 guard let self else { return }
                 query.stop()
                 
-                print("Spotlight search completed. Results: \(query.resultCount)")
                 if query.resultCount > 0,
                    let item = query.result(at: 0) as? NSMetadataItem {
                     if let path = item.value(forAttribute: NSMetadataItemPathKey) as? String {
                         self.relocatedImageCandidate = URL(fileURLWithPath: path)
-                        print("Spotlight found missing image at: \(path)")
                     } else if let url = item.value(forAttribute: NSMetadataItemURLKey) as? URL {
                         self.relocatedImageCandidate = url
-                        print("Spotlight found missing image (via URL) at: \(url.path)")
                     } else {
                         self.relocatedImageCandidate = nil
                         print("Spotlight found a result but could not extract its path")
@@ -494,7 +489,6 @@ class ScopeState: ObservableObject, Codable {
             
             self.metadataQuery = query
             let started = query.start()
-            print("Spotlight search for '\(filename)' started: \(started)")
             
             // Fallback timeout
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
@@ -1011,6 +1005,11 @@ class ScopeState: ObservableObject, Codable {
     private var trianglePoint3: CGPoint = CGPointZero
     private var rotationCenterPoint: CGPoint = CGPointZero
     
+    var isPolygonScope: Bool {
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        
+        return template.isCircular
+    }
     typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
     
     // MARK: Misc functions -

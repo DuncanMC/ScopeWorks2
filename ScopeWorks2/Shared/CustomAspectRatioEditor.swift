@@ -58,24 +58,8 @@ struct CustomAspectRatioEditor: View {
     }()
 
     func handleField(_ field: FocusedField?) {
-        switch field {
-        case .name:
-            print("Parse name")
-        case .width:
-            print("Parse width")
-        case .height:
-            print("Parse height")
-        case .multiplier:
-            print("Parse multiplier")
-        case .pixelWidth:
-            print("Parse pixelWidth")
-        case .pixelHeight:
-            print("Parse pixelHeight")
-        case nil:
-            print("handleField called with nil")
-
-        }
     }
+    
     var body: some View {
         
         let aspectWidthBinding = Binding(
@@ -138,7 +122,6 @@ struct CustomAspectRatioEditor: View {
                     }
                     .onChange(of: focusedField) {
                         if focusedField == .name {
-                            print("Enetering name field")
                             selection = .init(range: aspectName.startIndex..<aspectName.endIndex)
                         }
                     }
@@ -201,7 +184,6 @@ struct CustomAspectRatioEditor: View {
                 Text("")
                     .frame(width: textFieldWidth)
                 Button("Calculate pixels") {
-                    print("Calculating pixels")
                     let newAspect = calcAspectAndMultiplier(width:  aspectWidth, height: aspectHeight)
                     aspectWidth = Int(newAspect.width)
                     aspectHeight = Int(newAspect.height)
@@ -242,7 +224,6 @@ struct CustomAspectRatioEditor: View {
                         }
                     }
                 Button("Calculate aspect") {
-                    print("Calculating aspect")
                     let newAspect = calcAspectAndMultiplier(width: pixelWidth, height: pixelHeight)
                     aspectWidth = Int(newAspect.width)
                     aspectHeight = Int(newAspect.height)
@@ -260,7 +241,6 @@ struct CustomAspectRatioEditor: View {
                 Spacer()
                 Button("Save") {
                     guard aspectWidth * aspectMultiplier <= 16384 && aspectHeight * aspectMultiplier <= 16384 else {
-                        print("Pixel dimensions too large!")
                         errorMessage = "Pixel dimensions too large!"
                         return
                     }

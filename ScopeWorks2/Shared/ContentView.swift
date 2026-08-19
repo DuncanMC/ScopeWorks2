@@ -7,18 +7,22 @@ enum ActiveModal: Identifiable {
     case imageSource
     case settings
     case help
+    case about
     
     var id: String {
         switch self {
         case .imageSource: "imageSource"
         case .settings: "settings"
         case .help: "help"
+        case .about: "about"
         }
     }
 }
 
 struct ContentView: View {
     
+    @Namespace private var ns
+
     @AppStorage("folderSetupComplete") private var folderSetupComplete = false
     @State private var showRelocationAlert = false
     @State private var showRelocationPicker = false
@@ -310,6 +314,9 @@ struct ContentView: View {
                     
                         .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
                             //print("selectedScopeType = \(newValue)")
+                            if !scopeState.isPolygonScope {
+                                scopeState.splitTriangle = false
+                            }
                         }
                         .padding(.leading, kaleidoscopeTypeLeading)
                     
@@ -318,16 +325,12 @@ struct ContentView: View {
                         polygonSidesField
                         
                         Toggle("Split polygon triangles", isOn: $scopeState.splitTriangle)
-                            .padding(.leading, splitPolygonTrianglesLeading) // xxx
+                            .padding(.leading, splitPolygonTrianglesLeading)
+                            .disabled(!scopeState.isPolygonScope)
                     }
                     HStack {
                         //Image source button
                         Button("Image source") {
-                            for display in ExternalDisplayManager.availableDisplays {
-                                guard let aspect = display.aspect,
-                                      let size = display.size else { continue }
-//                                print("\(display.name), (\(size.width),\(size.height)) aspect: \(aspect.width):\(aspect.height)")
-                            }
                             scopeState.presentedModal = .imageSource
                         }
                         #if os(macOS)
@@ -508,6 +511,17 @@ struct ContentView: View {
             case .help:
                 HelpView()
                     .frame(maxWidth: .infinity)
+            case .about:
+                AboutView()
+                    .frame(maxWidth: 1000)
+                    #if os (iOS)
+                        .navigationTransition(.zoom(sourceID: 0, in: ns))
+                    #else
+                        .navigationTransition(.automatic)
+                    #endif
+                    .presentationSizing(.fitted)
+                
+
             }
         }
         .sheet(isPresented: Binding(
@@ -636,9 +650,15 @@ struct ContentView: View {
             }
             // Place help menu here
             ToolbarItem(placement: .secondaryAction) {
-                Button("Help", systemImage: "questionmark") {
-                    print("Help button tapped")
-                    scopeState.presentedModal = .help
+                Menu("Help", systemImage: "questionmark") {
+                    
+                    Button("ScopeWorks Help") {
+                        scopeState.presentedModal = .help
+                    }
+                    Button("About ScopeWorks") {
+                        print("About button tapped")
+                        scopeState.presentedModal = .about
+                    }
                 }
             }
 

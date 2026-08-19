@@ -219,11 +219,7 @@ struct SettingsView: View {
     }
 
     func updateAspectRatios() {
-        print("In \(#function)")
         allAsepectRatios = SettingsView.allAspectRatios()
-        for anAspect in allAsepectRatios {
-            print(anAspect)
-        }
 
     }
    

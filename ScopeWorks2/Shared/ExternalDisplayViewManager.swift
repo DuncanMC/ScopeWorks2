@@ -66,7 +66,6 @@ struct FullScreenOverlayView: View {
                 .help("Tap with 2 fingers to take a snapshot")
 
                 .gesture(TwoFingerTapGesture {
-                    print("Two finger tap detected in full-screen view")
                     scopeState.handleSnapshot(isFullScreenView: true)
                 })
 
