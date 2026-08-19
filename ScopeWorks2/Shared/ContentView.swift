@@ -586,7 +586,11 @@ struct ContentView: View {
 //option key = "⌥"
 
         .background {
-            ScopeCommandButtons(scopeState: scopeState)
+            ScopeCommandButtons(scopeState: scopeState, alternateShortcutCommandsOnly: false)
+        }
+#else
+        .background {
+            ScopeCommandButtons(scopeState: scopeState, alternateShortcutCommandsOnly: true)
         }
 #endif
         .focusedSceneObject(scopeState)

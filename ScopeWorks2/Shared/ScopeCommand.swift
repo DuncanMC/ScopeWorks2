@@ -94,6 +94,13 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         default:       return nil
         }
     }
+    
+    var alternateShortcutModifiers: EventModifiers {
+        switch self {
+        case .animate: return []
+        default:       return self.shortcutModifiers
+        }
+    }
 
     var shortcutModifiers: EventModifiers {
         switch self {
@@ -176,8 +183,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     func performAction(on state: ScopeState) {
         switch self {
         case .advanceAnimation:
-            //print("Advance animation menu item chosen")
-            state.animateByElapsed( 1.0 / 120.0)
+            state.animateByElapsed( 1.0 / 60.0)
         case .reverseAnimation:
             state.rotationSpeed *= -1
             state.movementSpeed *= -1
@@ -207,8 +213,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
         switch self {
         case .animate:
-            // 36 = Return, 76 = keypad Enter
-            return (event.keyCode == 36 || event.keyCode == 76) && flags.isEmpty
+            // 36 = Return, 76 = keypad Enter, 32 = space
+            return (event.keyCode == 36 || event.keyCode == 76 || event.keyCode == 49) && flags.isEmpty
         case .reverseAnimation:
             return flags == .command && event.charactersIgnoringModifiers?.lowercased() == "r"
         case .advanceAnimation:
@@ -240,6 +246,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
 /// Usage: `.background { ScopeCommandButtons(scopeState: scopeState) }`
 struct ScopeCommandButtons: View {
     @ObservedObject var scopeState: ScopeState
+    let alternateShortcutCommandsOnly: Bool
 
     private func toggleBinding(for kp: ReferenceWritableKeyPath<ScopeState, Bool>) -> Binding<Bool> {
         Binding(
@@ -255,23 +262,48 @@ struct ScopeCommandButtons: View {
     var body: some View {
         VStack {
             ForEach(ScopeCommand.viewCommands) { command in
-                if command.isToggle, let kp = command.keyPath {
-                    Toggle(command.label, isOn: toggleBinding(for: kp))
-                        .disabled(command.disableCommandClosure(scopeState))
-                        .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
-                    // A second hidden control for commands with an alternate key
-                    // (e.g. Enter also toggles animation, in addition to Return).
-                    if let altKey = command.alternateShortcutKey {
+                
+                if !alternateShortcutCommandsOnly {
+                    if command.isToggle, let kp = command.keyPath {
                         Toggle(command.label, isOn: toggleBinding(for: kp))
                             .disabled(command.disableCommandClosure(scopeState))
-                            .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
+                            .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                        // A second hidden control for commands with an alternate key
+                        // (e.g. Enter also toggles animation, in addition to Return).
+                        if let altKey = command.alternateShortcutKey {
+                            Toggle(command.label, isOn: toggleBinding(for: kp))
+                                .disabled(command.disableCommandClosure(scopeState))
+                                .keyboardShortcut(altKey, modifiers: command.alternateShortcutModifiers)
+                        }
+                    } else {
+                        Button(command.label) {
+                            command.performAction(on: scopeState)
+                        }
+                        .disabled(command.disableCommandClosure(scopeState))
+                        .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                        if let altKey = command.alternateShortcutKey {
+                            Button(command.label) {
+                                command.performAction(on: scopeState)
+                            }
+                            .disabled(command.disableCommandClosure(scopeState))
+                            .keyboardShortcut(altKey, modifiers: command.alternateShortcutModifiers)
+                        }
                     }
                 } else {
-                    Button(command.label) {
-                        command.performAction(on: scopeState)
+                    if let altKey = command.alternateShortcutKey {
+                        if command.isToggle, let kp = command.keyPath {
+                            Toggle(command.label, isOn: toggleBinding(for: kp))
+                                .disabled(command.disableCommandClosure(scopeState))
+                                .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
+                        } else {
+                            Button(command.label) {
+                                command.performAction(on: scopeState)
+                            }
+                            .disabled(command.disableCommandClosure(scopeState))
+                            .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
+                        }
                     }
-                    .disabled(command.disableCommandClosure(scopeState))
-                    .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+
                 }
             }
         }

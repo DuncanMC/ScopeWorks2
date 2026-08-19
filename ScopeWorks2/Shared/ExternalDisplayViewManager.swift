@@ -133,7 +133,7 @@ struct FullScreenOverlayView: View {
             overlayState.showExitButton()
         }
         .background {
-            ScopeCommandButtons(scopeState: scopeState)
+            ScopeCommandButtons(scopeState: scopeState, alternateShortcutCommandsOnly: false)
         }
 #endif
     }
