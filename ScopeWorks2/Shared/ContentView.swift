@@ -309,7 +309,7 @@ struct ContentView: View {
                     }
                     
                     //Kaleidoscope type picker
-                    ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType )
+                    ScopeTypePicker(title: "Kaleidoscope Type:", options: ScopeWorks2App.scopeTemplateNamesAndIndexes, selection: $scopeState.selectedScopeType)
                         .frame(width: 460)
                     
                         .onChange(of: scopeState.selectedScopeType) { oldValue, newValue in
@@ -378,11 +378,11 @@ struct ContentView: View {
                     HStack {
                         Text("Radius: \(radiusString)")
                             .frame(minWidth: 200, alignment: .leading)
-                        //                                    .border(.black, width: 1)
                         Slider(value: $scopeState.radiusScale, in: 0.5...1.0)
                             .frame(width: sliderWidth )
                             .frame(minWidth: 150 )
-                        
+                            .disabled(scopeState.selectedScopeType != .polygonGrid)
+
                     }
                     Text(scopeState.imageSourceDescription)
                         .frame(height: 25)

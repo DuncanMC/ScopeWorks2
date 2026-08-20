@@ -49,7 +49,7 @@ public func isRightTriangle(_ triangle: TrianglePoints) -> (isRight: Bool, right
     
     angle2 = atan2(triangle.point1.y - triangle.point3.y,
                    triangle.point1.x - triangle.point3.x)
-    let point1Angle = fmod(abs(angle1 - angle2), .pi)
+    //let point1Angle = fmod(abs(angle1 - angle2), .pi)
     //---------
 //    let point1String = String(format: "%.3f",point1Angle.radiansToDegrees)
 //    let point2String = String(format: "%.3f",point2Angle.radiansToDegrees)

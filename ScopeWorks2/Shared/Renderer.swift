@@ -326,16 +326,16 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let outerThickness: Float = 6.0
         let innerThickness: Float = 2.0
         
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
         
         if template.isCircular {
-            let multiplier: Float = scopeState.selectedScopeType == 1 ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
+            let multiplier: Float = scopeState.selectedScopeType == .polygonGrid ? Float(scopeState.zoom) : Float(scopeState.zoom) / 2.0
             for (_, anElement) in template.elements.enumerated() {
                 var center = simd_float2(anElement.center)
                 center.x *= multiplier
                 center.y *= multiplier
                 var radius: Float = Float(anElement.radius) * multiplier
-                if scopeState.selectedScopeType == 1 {
+                if scopeState.selectedScopeType == .polygonGrid {
                     radius *= scopeState.radiusScale
                 }
                 for i in 0..<scopeState.polygonSides {
@@ -627,7 +627,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         if scopeState.showCropRect && !skipOverlays && isMainDocumentScopeView {
             let cropRect: MetalRect
             // If isCropForTiling == true force all 'scope types but polygon grid to a square crop
-            if scopeState.selectedAspectRatio.isCropForTiling && scopeState.selectedScopeType != 1 {
+            if scopeState.selectedAspectRatio.isCropForTiling && scopeState.selectedScopeType != .polygonGrid {
                 cropRect = MetalRect(
                     topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0)),
                     topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
@@ -643,7 +643,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             let cropMultiplier: Float
             if !scopeState.selectedAspectRatio.isCropForTiling {
                 cropMultiplier = 1
-            } else if scopeState.selectedScopeType == 1 {
+            } else if scopeState.selectedScopeType == .polygonGrid {
                 cropMultiplier = Float(scopeState.zoom)
             } else {
                 cropMultiplier = Float(scopeState.zoom) / 2.0
@@ -732,7 +732,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     /// applying the zoom multiplier for tiling crops.
     func adjustedCropRect(for aspectRatio: AspectRatio) -> MetalRect {
         
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
         let cropRect: MetalRect
         if aspectRatio.isCropForTiling && !template.isCircular {
             cropRect = MetalRect(
@@ -748,7 +748,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         let cropMultiplier: Float
         if !aspectRatio.isCropForTiling {
             cropMultiplier = 1
-        } else if scopeState.selectedScopeType == 1 {
+        } else if scopeState.selectedScopeType == .polygonGrid {
             cropMultiplier = Float(scopeState.zoom)
         } else {
             cropMultiplier = Float(scopeState.zoom) / 2.0

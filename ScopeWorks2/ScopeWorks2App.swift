@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+struct ScopeTypeNameAndIndex: Identifiable, Hashable {
+    let title: String
+    let index: Int
+    var id: Self { self }
+}
+
 @main
 struct ScopeWorks2App: App {
     @Environment(\.openWindow) public static var openWindow
@@ -38,10 +44,16 @@ struct ScopeWorks2App: App {
         #endif
     }
     
-    static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {
-        return scopeTemplates.map { (title: $0.name, index: $0.index) }
+    static var scopeTemplateNamesAndIndexes: [ScopeTypeNameAndIndex] = {
+        return scopeTemplates.map { ScopeTypeNameAndIndex(title: $0.name, index: $0.index) }
     }()
 
+    /*
+     static var scopeTemplateNamesAndIndexes: [(title: String, index: Int)] = {
+         return scopeTemplates.map { (title: $0.name, index: $0.index) }
+     }()
+
+     */
     static var scopeTemplateNames: [String] = {
         return scopeTemplates.map { $0.name }
     }()

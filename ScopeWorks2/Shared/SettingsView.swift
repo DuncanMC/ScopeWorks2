@@ -201,7 +201,7 @@ struct SettingsView: View {
     var selectedAspectRatioIndex: Int = 0
     @State var selectedAspectRatio: AspectRatio {
         didSet {
-            print("In selectedAspectRatio.didSet. New value = \(String(describing: selectedAspectRatio)). old value = \(String(describing: oldValue))")
+            //print("In selectedAspectRatio.didSet. New value = \(String(describing: selectedAspectRatio)). old value = \(String(describing: oldValue))")
             width = selectedAspectRatio.width
             height = selectedAspectRatio.height
             

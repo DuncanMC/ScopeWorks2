@@ -56,7 +56,7 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .flipAlternates:
             return { scopeState in
                 guard let scopeState else { return true }
-                return scopeState.selectedScopeType > 1
+                return scopeState.selectedScopeType.rawValue > ScopeType.polygonGrid.rawValue
             }
         case .selectNextFullScreenDisplay:
             return { scopeState in

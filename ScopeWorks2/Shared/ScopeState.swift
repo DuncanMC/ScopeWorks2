@@ -4,6 +4,10 @@
 //
 //  Created by Duncan Champney on 4/28/26.
 //
+private struct ScopeError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
 
 import SwiftUI
 import Combine
@@ -35,6 +39,14 @@ struct MetalRect {
     var topRight: simd_float2
     var bottomLeft: simd_float2
     var bottomRight: simd_float2
+}
+
+enum ScopeType: Int, CaseIterable, Identifiable {
+    case polygon = 0        // .polygon
+    case polygonGrid = 1    // .polygonGrid
+    case eightWaySquare = 2 // .eightWaySquare
+    case eightWayTiles = 3  // .eightWayTiles
+    var id: Int  { self.rawValue }
 }
 
 struct AspectRatio: CustomStringConvertible, Identifiable, Hashable, Equatable, Sendable, Codable {
@@ -488,7 +500,7 @@ class ScopeState: ObservableObject, Codable {
             }
             
             self.metadataQuery = query
-            let started = query.start()
+//            let started = query.start()
             
             // Fallback timeout
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
@@ -571,17 +583,8 @@ class ScopeState: ObservableObject, Codable {
                     print("Error loading bookmark: \(error)")
                 }
             }
-//xxx
             self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
             
-//            self.selectedAspectRatio = AspectRatio(
-//                title: "16:9",
-//                width: 16,
-//                height: 9,
-//                defaultMultiplier: 120,
-//                index: 5,
-//                isCropForTiling: false)
-//             
             if self.imageURL == nil {
                 self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
             }
@@ -592,13 +595,6 @@ class ScopeState: ObservableObject, Codable {
 #else
             self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
 
-//            self.selectedAspectRatio = AspectRatio(
-//                title: "16:9",
-//                width: 16,
-//                height: 9,
-//                defaultMultiplier: 120,
-//                index: 5,
-//                isCropForTiling: false)
             if let imageID = try? container.decodeIfPresent(String.self, forKey: .imageID) {
                 self.selectedImageID = imageID
                 self.imageSourceInfo = .fromPhotoLibrary(id: imageID)
@@ -648,7 +644,11 @@ class ScopeState: ObservableObject, Codable {
         //        self.showControls = try container.decode(Bool.self, forKey: .showControls)
         self.rotationSpeed = try container.decode(CGFloat.self, forKey: .rotationSpeed)
         self.movementSpeed = try container.decode(CGFloat.self, forKey: .movementSpeed)
-        self.selectedScopeType = try container.decode(Int.self, forKey: .selectedScopeType)
+        let scopeTypeValue = try container.decode(Int.self, forKey: .selectedScopeType)
+        guard let scopeType = ScopeType(rawValue: scopeTypeValue) else {
+            throw(ScopeError(message: "invalid scopeType in key: selectedScopeType"))
+        }
+        self.selectedScopeType = scopeType
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
@@ -696,7 +696,7 @@ class ScopeState: ObservableObject, Codable {
         try container.encode(polygonSides, forKey: .polygonSides)
         try container.encode(rotationSpeed, forKey: .rotationSpeed)
         try container.encode(movementSpeed, forKey: .movementSpeed)
-        try container.encode(selectedScopeType, forKey: .selectedScopeType)
+        try container.encode(selectedScopeType.rawValue, forKey: .selectedScopeType)
     }
     
     // MARK: - Convenience initializer for creating from document values
@@ -720,7 +720,7 @@ class ScopeState: ObservableObject, Codable {
         polygonSides: Int = 6,
         rotationSpeed: CGFloat = 10.0,
         movementSpeed: CGFloat = 0,
-        selectedScopeType: Int = 0
+        selectedScopeType: ScopeType = .polygonGrid
     ) {
         self.imageURL = imageURL
         self.zoom = zoom
@@ -883,6 +883,9 @@ class ScopeState: ObservableObject, Codable {
     @Published var splitTriangle: Bool = false {
         //splitTriangle didSet
         didSet {
+            guard splitTriangle != oldValue else {
+                return
+            }
             if splitTriangle {
                 let midpoint = midpoint(p1: trianglePoints.point2, p2: trianglePoints.point3)
                 trianglePoints = TrianglePoints(point1: trianglePoints.point1, point2: midpoint, point3: trianglePoints.point3)
@@ -941,9 +944,20 @@ class ScopeState: ObservableObject, Codable {
     /// Notification posted when the relocation search finishes and the alert should be shown.
     static let relocationReadyNotification = Notification.Name("ScopeStateRelocationReady")
     
-    
-    @Published var selectedScopeType: Int = 1 {
+//    @Published var selectedScopeTypeValue: Int {
+//        get {
+//            return selectedScopeType.rawValue
+//        }
+//        set {
+//            selectedScopeType = ScopeType(rawValue: newValue) ?? .polygonGrid
+//        }
+//    }
+    @Published var selectedScopeType: ScopeType = .polygonGrid {
         didSet {
+            if (selectedScopeType == .eightWaySquare && oldValue == .eightWayTiles) ||
+                (selectedScopeType == .eightWayTiles && oldValue == .eightWaySquare) {
+                return
+            }
             trianglePoints = calcTrianglePoints(typeChanged: true)
         }
     }
@@ -1006,7 +1020,7 @@ class ScopeState: ObservableObject, Codable {
     private var rotationCenterPoint: CGPoint = CGPointZero
     
     var isPolygonScope: Bool {
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         
         return template.isCircular
     }
@@ -1111,7 +1125,7 @@ class ScopeState: ObservableObject, Codable {
                 point2: SIMD2<Float>(0.6, 0.25),
                 point3: SIMD2<Float>(0.5, 0.42320508))
         }
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         
         guard template.isCircular || typeChanged else {
             return trianglePoints
@@ -1183,8 +1197,7 @@ class ScopeState: ObservableObject, Codable {
         )
     }
     
-    func matchPoint(_  tapPoint: CGPoint, inPoints points: [DragPointTuple]) -> DragPointTuple? {
-        let slop: CGFloat = 20
+    func matchPoint(_  tapPoint: CGPoint, inPoints points: [DragPointTuple], slop: CGFloat = 20) -> DragPointTuple? {
         for (aPoint, location) in points {
             if tapPoint.x > aPoint.x - slop && tapPoint.x < aPoint.x + slop &&
                 tapPoint.y > aPoint.y - slop && tapPoint.y < aPoint.y + slop
@@ -1259,10 +1272,10 @@ class ScopeState: ObservableObject, Codable {
             print("trianglePoint2 = \(trianglePoint2)")
             print("trianglePoint3 = \(trianglePoint3)")
         }
-        //        let aspect = imageViewSize.width / imageViewSize.height
-//        let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
+        //let aspect = imageViewSize.width / imageViewSize.height
+        //let adjusted = CGPoint(x: startLocation.x * aspectAdjustment.width, y: startLocation.y * aspectAdjustment.height)
         //print("Adjusted tap point = \(adjusted)")
-        let result = matchPoint(startLocation, inPoints: points)
+        let result = matchPoint(startLocation, inPoints: points, slop: 10)
         return result
     }
     
@@ -1333,7 +1346,7 @@ class ScopeState: ObservableObject, Codable {
         flags: UInt
     ) {
         guard let lastDragLocation = lastDragLocation else { return }
-        let aspect = imageViewSize.width / imageViewSize.height
+//        let aspect = imageViewSize.width / imageViewSize.height
         
         let deltaX = (value.location.x - lastDragLocation.x) 
         let deltaY = value.location.y - lastDragLocation.y
@@ -1754,7 +1767,7 @@ class ScopeState: ObservableObject, Codable {
     
     func recordVideo() {
         #if os(macOS)
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             isEightWayScope:  !template.isCircular)
@@ -1810,7 +1823,7 @@ class ScopeState: ObservableObject, Codable {
             }
         }
         #elseif os(iOS)
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             isEightWayScope: !template.isCircular)
@@ -1837,7 +1850,7 @@ class ScopeState: ObservableObject, Codable {
 
     func saveImageAs() {
         #if os(macOS)
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
 
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
@@ -1900,7 +1913,7 @@ class ScopeState: ObservableObject, Codable {
             self.saveLastUsedExportDirectory(url.deletingLastPathComponent())
         }
         #elseif os(iOS)
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType]
+        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             isEightWayScope: !template.isCircular)

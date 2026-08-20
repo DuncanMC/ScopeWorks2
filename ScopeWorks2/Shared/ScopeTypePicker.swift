@@ -25,18 +25,30 @@ struct ScopeTypePicker: View {
         #endif
     }
     var title: String
-    var options: [(title: String, index: Int)]
-    @Binding var selection: Int
+    var options: [ScopeTypeNameAndIndex]
+    @Binding var selection: ScopeType {
+        didSet {
+            if selectionIndex != selection.rawValue {
+                selectionIndex = selection.rawValue
+            }
+        }
+    }
+    @State private var selectionIndex: Int = 0
 
     var body: some View {
         HStack {
             Text(title)
                 .frame(minWidth: 140, alignment: .leading)
                 .padding(.leading, scopeTypeTitleLeading)
-            Picker(title, selection: $selection) {
+            Picker(title, selection: $selectionIndex) {
                 ForEach(options, id: \.self.index) { option in
                     Text("\(option.title)")
                         .frame(minWidth: 150, alignment: .leading)
+                }
+            }
+            .onChange(of: selectionIndex) {
+                if let scopeType = ScopeType(rawValue: selectionIndex) {
+                    selection = scopeType
                 }
             }
             .labelsHidden()
@@ -46,11 +58,11 @@ struct ScopeTypePicker: View {
         }
             .frame(maxHeight: 25)
             .frame(minWidth: 250)
-
-
-            
-
-        
+            .onAppear {
+                if selectionIndex != selection.rawValue {
+                    selectionIndex = selection.rawValue
+                }
+            }
     }
 }
 
