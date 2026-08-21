@@ -359,7 +359,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         if scopeState.flipAlternates  {
                             verts = [center, midpoint, point3]
                             verts += [center, midpoint, point2]
-
+                            
                         } else {
                             verts = [center, point3, midpoint]
                             verts += [center, midpoint, point2]
@@ -396,7 +396,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                             if scopeState.flipAlternates  {
                                 verts = [center, point3, midpoint]
                                 verts += [center, point2, midpoint]
-
+                                
                             } else {
                                 verts = [center, midpoint, point3]
                                 verts += [center, point2, midpoint]
@@ -464,7 +464,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                           thickness: outerThickness / Float(drawableWidth),
                                           orthoMatrix: orthoMatrix,
                                           texAspect: texAspect)
-
+                            
                         }
                         
                         drawThickLine(encoder: encoder,
@@ -510,7 +510,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     // Only draw the crop rect if the user requested it, skipOverLays = false,
                     // and this is the main document scope view.
                     // (skipOverlays is true in off-screen rendering)
-
+                    
                 }
             }
         } else {
@@ -520,8 +520,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
             var uniforms: Uniforms
             
             let multiplier: Float =  Float(scopeState.zoom) / 2.0
-
-
+            
+            
             for (_, anElement) in template.elements.enumerated() {
                 uniforms = Uniforms(
                     color: simd_float4(1, 1, 1, 1),
@@ -534,8 +534,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 )
                 encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
                 encoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
-
-
+                
+                
                 guard anElement.type == .eightWay else { continue }
                 let center = simd_float2(anElement.center) * multiplier
                 let radius: Float = Float(anElement.radius) * multiplier
@@ -561,7 +561,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                         TrianglePoints(point1: center, point2: middleLeft, point3: topLeft), // T7
                         TrianglePoints(point1: topLeft, point2: topMiddle, point3: center), // T8 flipped
                     ]
-
+                    
                 } else {
                     triangles = [
                         TrianglePoints(point1: center, point2: topMiddle, point3: topRight), // T1
@@ -615,7 +615,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                                       thickness: outerThickness / Float(drawableWidth),
                                       orthoMatrix: orthoMatrix,
                                       texAspect: texAspect)
-
+                        
                         // Now draw a thinner white outline of each triangle
                         drawThickLine(encoder: encoder,
                                       p1: aTriangle.point1, p2: aTriangle.point2,
@@ -648,9 +648,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
                     bottomLeft:  simd_float2(x: Float(-1.0), y: Float(-1.0)),
                     bottomRight: simd_float2(x: Float( 1.0), y: Float(-1.0))
-                    )
+                )
             } else {
-                 cropRect = scopeState.selectedAspectRatio.cropRect
+                cropRect = scopeState.selectedAspectRatio.cropRect
             }
             let colorsAndThicknesses: [(simd_float4, Float)] = [
                 (blue, 6),
@@ -691,7 +691,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                               orthoMatrix: orthoMatrix,
                               texAspect: texAspect)
             }
-        }    }
+        }
+    }
 
     // MARK: - Off-screen rendering
 
@@ -749,7 +750,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
         let cropRect: MetalRect
-        if aspectRatio.isCropForTiling && !template.isCircular {
+        if aspectRatio.isCropForTiling && scopeState.selectedScopeType != .polygonGrid {
             cropRect = MetalRect(
                 topLeft:     simd_float2(x: Float(-1.0), y: Float( 1.0)),
                 topRight:    simd_float2(x: Float( 1.0), y: Float( 1.0)),
@@ -779,7 +780,15 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     /// Render the current kaleidoscope state off-screen at the specified resolution and return a CGImage.
     /// The `aspectRatio` determines which portion of the kaleidoscope to capture (its cropRect).
     func renderOffscreenImage(width: Int, height: Int, aspectRatio: AspectRatio) -> CGImage? {
-        guard let target = makeOffscreenRenderTarget(width: width, height: height),
+        let exportCrop = adjustedCropRect(for: aspectRatio)
+        let adjustedHeight: Int
+        if aspectRatio.isCropForTiling && scopeState.selectedScopeType != .polygonGrid {
+            adjustedHeight = width
+        } else {
+            adjustedHeight = height
+        }
+
+        guard let target = makeOffscreenRenderTarget(width: width, height: adjustedHeight),
               let pipeline = pipeline,
               let sourceTexture = scopeState.texture else { return nil }
 
@@ -804,10 +813,9 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(sourceTexture, index: 0)
 
-        let exportCrop = adjustedCropRect(for: aspectRatio)
         renderToEncoder(encoder: encoder,
                         drawableWidth: Double(width),
-                        drawableHeight: Double(height),
+                        drawableHeight: Double(adjustedHeight),
                         skipOverlays: true,
                         exportCropRect: exportCrop)
 

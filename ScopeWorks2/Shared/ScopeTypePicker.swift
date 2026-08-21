@@ -48,7 +48,9 @@ struct ScopeTypePicker: View {
             }
             .onChange(of: selectionIndex) {
                 if let scopeType = ScopeType(rawValue: selectionIndex) {
-                    selection = scopeType
+                    if selection != scopeType {
+                        selection = scopeType
+                    }
                 }
             }
             .labelsHidden()

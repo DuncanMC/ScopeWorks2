@@ -871,7 +871,11 @@ class ScopeState: ObservableObject, Codable {
     var trianglePoints = TrianglePoints(
         point1: SIMD2<Float>(0.4, 0.25),
         point2: SIMD2<Float>(0.6, 0.25),
-        point3: SIMD2<Float>(0.5, 0.42320508))
+        point3: SIMD2<Float>(0.5, 0.42320508)) {
+            didSet {
+                print("In trianglePoints didSet. new value = \(trianglePoints)")
+            }
+        }
     
     var rotationCenter: SIMD2<Float> = [0.5, 0.5] {
         didSet {
@@ -1465,6 +1469,7 @@ class ScopeState: ObservableObject, Codable {
                 print("Renderer not available for off-screen rendering")
                 return nil
             }
+            // TODO: Check to see if  the selectedAspectRatio is cropForTiling and the kaleidoscope type is anything but polygon grid. If so, force the crop rect to square.
             let multiplier = selectedAspectRatio.activeMultipler ?? selectedAspectRatio.defaultMultiplier
             guard let image = renderer.renderOffscreenImage(
                 width: Int(selectedAspectRatio.width * Double(multiplier)),
