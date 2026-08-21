@@ -51,13 +51,9 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
                 .advanceAnimation,
                 .showCropRect,
                 .showFullscreenView,
-                .moveRotationCenter:
+                .moveRotationCenter,
+                .flipAlternates:
             return { $0 == nil }
-        case .flipAlternates:
-            return { scopeState in
-                guard let scopeState else { return true }
-                return scopeState.selectedScopeType.rawValue > ScopeType.polygonGrid.rawValue
-            }
         case .selectNextFullScreenDisplay:
             return { scopeState in
                 guard let scopeState else { return true }

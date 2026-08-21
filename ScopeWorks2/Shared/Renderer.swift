@@ -549,16 +549,31 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 let bottomMiddle = center + simd_float2(0, -radius)
                 
                 //Build the 8 right triangles for this 8-way square
-                let triangles: [TrianglePoints] = [
-                    TrianglePoints(point1: center, point2: topMiddle, point3: topRight), // T1
-                    TrianglePoints(point1: center, point2: middleRight, point3: topRight), // T2
-                    TrianglePoints(point1: center, point2: middleRight, point3: bottomRight), // T3
-                    TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomRight), // T4
-                    TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomLeft), // T5
-                    TrianglePoints(point1: center, point2: middleLeft, point3: bottomLeft), // T6
-                    TrianglePoints(point1: center, point2: middleLeft, point3: topLeft), // T7
-                    TrianglePoints(point1: center, point2: topMiddle, point3: topLeft), // T8
-                ]
+                let triangles: [TrianglePoints]
+                if !scopeState.flipAlternates {
+                    triangles = [
+                        TrianglePoints(point1: center, point2: topMiddle, point3: topRight), // T1
+                        TrianglePoints(point1: topRight, point2: middleRight, point3: center), // T2 flipped
+                        TrianglePoints(point1: center, point2: middleRight, point3: bottomRight), // T3
+                        TrianglePoints(point1: bottomRight, point2: bottomMiddle, point3: center), // T4 flipped
+                        TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomLeft), // T5
+                        TrianglePoints(point1: bottomLeft, point2: middleLeft, point3: center), // T6 flipped
+                        TrianglePoints(point1: center, point2: middleLeft, point3: topLeft), // T7
+                        TrianglePoints(point1: topLeft, point2: topMiddle, point3: center), // T8 flipped
+                    ]
+
+                } else {
+                    triangles = [
+                        TrianglePoints(point1: center, point2: topMiddle, point3: topRight), // T1
+                        TrianglePoints(point1: center, point2: middleRight, point3: topRight), // T2
+                        TrianglePoints(point1: center, point2: middleRight, point3: bottomRight), // T3
+                        TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomRight), // T4
+                        TrianglePoints(point1: center, point2: bottomMiddle, point3: bottomLeft), // T5
+                        TrianglePoints(point1: center, point2: middleLeft, point3: bottomLeft), // T6
+                        TrianglePoints(point1: center, point2: middleLeft, point3: topLeft), // T7
+                        TrianglePoints(point1: center, point2: topMiddle, point3: topLeft), // T8
+                    ]
+                }
                 // Build the vertex array from the triangles
                 var verts: [simd_float2] = []
                 for aTriangle in triangles {
