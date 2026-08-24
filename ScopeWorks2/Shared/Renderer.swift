@@ -391,7 +391,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: verts.count)
                     
                     if scopeState.drawWithReflection {
-                        if scopeState.splitTriangle {
+                        if scopeState.splitTriangle && template.isCircular {
                             let midpoint = (point2 + point3) / 2
                             if scopeState.flipAlternates  {
                                 verts = [center, point3, midpoint]
@@ -748,7 +748,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
     /// applying the zoom multiplier for tiling crops.
     func adjustedCropRect(for aspectRatio: AspectRatio) -> MetalRect {
         
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
+        //let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
         let cropRect: MetalRect
         if aspectRatio.isCropForTiling && scopeState.selectedScopeType != .polygonGrid {
             cropRect = MetalRect(

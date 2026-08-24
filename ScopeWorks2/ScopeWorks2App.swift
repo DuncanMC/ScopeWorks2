@@ -134,9 +134,7 @@ struct ScopeWorks2App: App {
 #endif
 #if os(macOS)
         Settings {
-            SettingsView(
-                selectedAspectRatioIndex: 5,
-                doneButtonAction: {} )
+            SettingsView(doneButtonAction: {} )
         }
 #endif
     }

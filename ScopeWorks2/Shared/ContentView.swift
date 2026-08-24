@@ -496,9 +496,7 @@ struct ContentView: View {
         .sheet(item: $scopeState.presentedModal) { modalType in
             switch modalType {
             case .settings:
-                SettingsView(
-                    selectedAspectRatioIndex: scopeState.selectedAspectRatio.index,
-                    doneButtonAction: {
+                SettingsView(doneButtonAction: {
                         scopeState.presentedModal = nil
                     },
                 )

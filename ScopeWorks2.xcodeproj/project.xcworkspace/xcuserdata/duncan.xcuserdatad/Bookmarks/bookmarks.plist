@@ -125,13 +125,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>362</string>
+					<string>381</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>361</string>
+					<string>380</string>
 					<key>Timestamp</key>
-					<string>808675775.275363</string>
+					<string>809098903.836059</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -202,7 +202,7 @@
 </string>
 				<key>trailing</key>
 				<string>        
-        let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
+        //let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[scopeState.selectedScopeType.rawValue]
         let cropRect: MetalRect
 </string>
 			</dict>

@@ -32,6 +32,7 @@ enum UserDefaultsKeys: String {
     case lastUsedDocumentDirectoryPath
     case includeKaleidoscopeInfoInSavedImages
     case savedAspects
+    case savedCurrentAspect
 }
 
 
@@ -69,6 +70,7 @@ struct SettingsView: View {
     }
     
     static var customAspectRatios: [AspectRatio] = []
+    
     static let defaultAspectRatios: [AspectRatio] = [
         AspectRatio(
             title: "Crop for Tiling",
@@ -168,6 +170,23 @@ struct SettingsView: View {
             isCropForTiling: false),
     ]
     
+    static func savedAspectRatioindex() -> Int {
+        let defaults = UserDefaults.standard
+        return defaults.integer(forKey: UserDefaultsKeys.savedCurrentAspect.rawValue)
+    }
+    
+    static func savedAspectRatio() -> AspectRatio {
+        let index = savedAspectRatioindex()
+        let aspectRatios = allAspectRatios()
+        let savedAspectRatio = aspectRatios.first(where: { $0.index == index }) ?? aspectRatios.first!
+        return savedAspectRatio
+    }
+    
+    static func saveDefaultAspectRatio(index: Int) {
+        let defaults = UserDefaults.standard
+        defaults.set(index, forKey: UserDefaultsKeys.savedCurrentAspect.rawValue)
+    }
+    
     /// Returns saved aspect ratios plus any unique ratios from connected displays.
     static func allAspectRatios() -> [AspectRatio] {
         var ratios = defaultAspectRatios
@@ -241,8 +260,7 @@ struct SettingsView: View {
         }
     }
     
-    init(selectedAspectRatioIndex: Int, doneButtonAction: @escaping () -> Void) {
-        self.doneButtonAction = doneButtonAction
+    init(doneButtonAction: @escaping () -> Void) {
         let snapshotFileType = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
         self.snapshotFileType = snapshotFileType
         self.selection = snapshotFileType
@@ -255,7 +273,8 @@ struct SettingsView: View {
 //            defaultMultiplier: 120,
 //            index: 5,
 //            isCropForTiling: false)
-        self.selectedAspectRatioIndex = selectedAspectRatioIndex
+        self.selectedAspectRatioIndex = SettingsView.savedAspectRatioindex()
+        self.doneButtonAction = doneButtonAction
         doInitSetup()
     }
     
@@ -373,7 +392,7 @@ struct SettingsView: View {
                         .onChange(of: selectedAspectRatio) {
                             self.selectedAspectRatio = selectedAspectRatio
                             //isEditing = selectedAspectRatio.index == allAsepectRatios.count - 1
-                            
+                            SettingsView.saveDefaultAspectRatio(index: selectedAspectRatio.index)
                             print("selectedAspectRatio  changed to \(selectedAspectRatio). Posting notification.")
                             NotificationCenter.default.post(name: defaultAspectRatioChangedNotification, object: nil, userInfo: ["selectedAspectRatio": selectedAspectRatio])
                         }

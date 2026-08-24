@@ -652,15 +652,8 @@ class ScopeState: ObservableObject, Codable {
         
         // Set default values for properties not persisted
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+        self.selectedAspectRatio =  SettingsView.savedAspectRatio()
 
-//        self.selectedAspectRatio = AspectRatio(
-//            title: "16:9",
-//            width: 16,
-//            height: 9,
-//            defaultMultiplier: 120,
-//            index: 5,
-//            isCropForTiling: false)
         
         self.isLoadingFromFile = true
         
@@ -741,16 +734,7 @@ class ScopeState: ObservableObject, Codable {
         
         // Initialize other properties to defaults or empty values
         self.photoManager = PhotoLibraryManager()
-        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
-
-//        self.selectedAspectRatio = AspectRatio(
-//            title: "16:9",
-//            width: 16,
-//            height: 9,
-//            defaultMultiplier: 120,
-//            index: 5,
-//            isCropForTiling: false)
-        
+        self.selectedAspectRatio = SettingsView.savedAspectRatio()
         doInitSetup()
     }
     
@@ -760,20 +744,10 @@ class ScopeState: ObservableObject, Codable {
     
     init(){
         //        print("In ScopeState init. uuid = \(uuid)")
-        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
-
-//        self.selectedAspectRatio = AspectRatio(
-//            title: "16:9",
-//            width: 16,
-//            height: 9,
-//            defaultMultiplier: 120,
-//            index: 5,
-//            isCropForTiling: false)
-        
+        self.selectedAspectRatio = SettingsView.savedAspectRatio()
         Task { @MainActor in
             try await photoManager.setupAlbumOnFirstLaunch()
         }
-        
         doInitSetup()
     }
     
@@ -961,6 +935,9 @@ class ScopeState: ObservableObject, Codable {
             if (selectedScopeType == .eightWaySquare && oldValue == .eightWayTiles) ||
                 (selectedScopeType == .eightWayTiles && oldValue == .eightWaySquare) {
                 return
+            }
+            if selectedScopeType == .eightWaySquare || selectedScopeType == .eightWayTiles{
+                splitTriangle = false
             }
             trianglePoints = calcTrianglePoints(typeChanged: true)
         }
