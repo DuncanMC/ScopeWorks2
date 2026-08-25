@@ -1752,6 +1752,7 @@ class ScopeState: ObservableObject, Codable {
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
+            defaultFileType:  .JPEG, //Ignored for video
             isEightWayScope:  !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: true))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 170)
@@ -1833,9 +1834,10 @@ class ScopeState: ObservableObject, Codable {
     func saveImageAs() {
         #if os(macOS)
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
-
+        let defaultFileFormat = SnapshotFormat.allCases[ScopeState.snapshotFileTypeIndex]
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
+            defaultFileType: defaultFileFormat,
             isEightWayScope: !template.isCircular)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: false))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 210)

@@ -264,7 +264,12 @@ struct SettingsView: View {
         let snapshotFileType = UserDefaults.standard.integer(forKey: UserDefaultsKeys.snapshotFileType.rawValue)
         self.snapshotFileType = snapshotFileType
         self.selection = snapshotFileType
-        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == 5 })!
+        // ---------------------------
+        // TODO: Fix this!
+        let selectedAspectRatioIndex = SettingsView.savedAspectRatioindex()
+        self.selectedAspectRatioIndex = selectedAspectRatioIndex
+        self.selectedAspectRatio = SettingsView.allAspectRatios().first(where: { $0.index == selectedAspectRatioIndex })!
+        // ---------------------------
 
 //        self.selectedAspectRatio =         AspectRatio(
 //            title: "16:9",
@@ -273,7 +278,6 @@ struct SettingsView: View {
 //            defaultMultiplier: 120,
 //            index: 5,
 //            isCropForTiling: false)
-        self.selectedAspectRatioIndex = SettingsView.savedAspectRatioindex()
         self.doneButtonAction = doneButtonAction
         doInitSetup()
     }

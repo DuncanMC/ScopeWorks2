@@ -22,6 +22,20 @@
 			<key>NSUbiquitousDocumentUserActivityType</key>
 			<string>com.wareto.scopeworks2.document</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Image with kaleidoscope info</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.png</string>
+				<string>public.jpeg</string>
+				<string>public.tiff</string>
+			</array>
+		</dict>
 	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.graphics-design</string>

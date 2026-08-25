@@ -16,6 +16,7 @@ class ExportSettingsState: ObservableObject {
     @Published var exportWidth: Int = 1920
     @Published var exportHeight: Int = 1080
 
+
     /// The largest texture dimension the GPU supports. Exporting beyond this crashes,
     /// so we surface the limit to the user and block exports that exceed it.
     let maxTextureSize = ScopeState.getMaxTextureSize()
@@ -68,10 +69,12 @@ class ExportSettingsState: ObservableObject {
 
     var isEightWayScope: Bool
 
-    init(defaultAspectRatio: AspectRatio, isEightWayScope: Bool) {
+    init(defaultAspectRatio: AspectRatio, defaultFileType: SnapshotFormat, isEightWayScope: Bool) {
         self.selectedAspectRatio = defaultAspectRatio
         self.isEightWayScope = isEightWayScope
         updateHeightFromWidth(aspectChanged: true)
+        //TODO set up the file format and default image size based on the user's choices in SettingsView
+        self.selectedFormat = defaultFileType
     }
 
     func updateHeightFromWidth(aspectChanged: Bool) {

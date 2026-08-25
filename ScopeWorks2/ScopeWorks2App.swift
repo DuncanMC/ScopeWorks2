@@ -13,9 +13,106 @@ struct ScopeTypeNameAndIndex: Identifiable, Hashable {
     var id: Self { self }
 }
 
+#if os(iOS)
+/// On iOS, DocumentGroup's machinery swallows incoming file-open URLs before
+/// SwiftUI's onOpenURL handlers see them, so images arriving via Files
+/// "Open in ScopeWorks" must be intercepted at the UIKit scene level.
+/// This delegate assigns ImportSceneDelegate to the app's window scenes,
+/// preserving the Info.plist configuration for the external-display role.
+class IOSAppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        if connectingSceneSession.role == .windowExternalDisplayNonInteractive {
+            // Loads the "External Display" configuration from Info.plist,
+            // including its ExternalDisplaySceneDelegate.
+            return UISceneConfiguration(name: "External Display",
+                                        sessionRole: connectingSceneSession.role)
+        }
+        let config = UISceneConfiguration(name: nil,
+                                          sessionRole: connectingSceneSession.role)
+        config.delegateClass = ImportSceneDelegate.self
+        return config
+    }
+}
+
+/// Receives file-open URLs for the app's main window scenes. Image URLs are
+/// queued and imported once the scene is active (on a cold launch the UI
+/// isn't ready to present alerts when the URL arrives).
+class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
+    private var pendingImportURLs: [URL] = []
+
+    func scene(_ scene: UIScene,
+               willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions) {
+        queueImports(connectionOptions.urlContexts)
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        queueImports(URLContexts)
+        processPendingImports()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        processPendingImports()
+    }
+
+    private func queueImports(_ contexts: Set<UIOpenURLContext>) {
+        pendingImportURLs.append(
+            contentsOf: contexts.map(\.url).filter(MetadataImport.isImportableImage)
+        )
+    }
+
+    private func processPendingImports() {
+        guard !pendingImportURLs.isEmpty else { return }
+        let urls = pendingImportURLs
+        pendingImportURLs = []
+        // Deferred so the scene's UI is fully established before the pending
+        // import drives modal presentation — on a cold launch, setting it
+        // during activation races the launch screen's own setup.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+            for url in urls {
+                MetadataImport.createKaleidoscope(fromImageAt: url)
+            }
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+/// Routes files the Finder asks the app to open ("Open With", dragging files
+/// onto the app or dock icon). PNG/JPEG/TIFF images run the
+/// create-kaleidoscope-from-image-metadata import; everything else (.ksp2)
+/// goes through the normal document machinery. Implementing
+/// application(_:open:) takes over ALL open requests, so the forwarding for
+/// non-image files is required.
+class MacAppDelegate: NSObject, NSApplicationDelegate {
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            if MetadataImport.isImportableImage(url) {
+                MetadataImport.createKaleidoscope(fromImageAt: url)
+            } else {
+                NSDocumentController.shared.openDocument(
+                    withContentsOf: url, display: true
+                ) { _, _, error in
+                    if let error {
+                        NSApp.presentError(error)
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
 @main
 struct ScopeWorks2App: App {
     @Environment(\.openWindow) public static var openWindow
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
+    #elseif os(iOS)
+    @UIApplicationDelegateAdaptor(IOSAppDelegate.self) private var appDelegate
+    #endif
 
     init () {
         UserDefaults.standard.register(defaults: [
