@@ -303,14 +303,6 @@ class ScopeState: ObservableObject, Codable {
     }
     
     func doInitSetup() {
-        //        if splitTriangle {
-        //            let (isRightTriangle, index) = isRightTriangle(trianglePoints)
-        //            if !isRightTriangle {
-        //                print("splitTriangle = true but it's not a right triangle!")
-        //                splitTriangle = false
-        //            }
-        //        }
-        //print("Adding observers")
         NotificationCenter.default.addObserver(
             forName: settingsChangedNotification,
             object: nil,
@@ -847,7 +839,7 @@ class ScopeState: ObservableObject, Codable {
         point2: SIMD2<Float>(0.6, 0.25),
         point3: SIMD2<Float>(0.5, 0.42320508)) {
             didSet {
-                print("In trianglePoints didSet. new value = \(trianglePoints)")
+                //print("In trianglePoints didSet. new value = \(trianglePoints)")
             }
         }
     
@@ -1008,6 +1000,38 @@ class ScopeState: ObservableObject, Codable {
     typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
     
     // MARK: Misc functions -
+    
+    func handleArrowKey(_ keyPress: KeyPress, isShifted: Bool) {
+        var vector: SIMD2<Float>
+        var step: Float = 0.00025
+        if let texture {
+            step = min( 1.0 / Float(texture.width), 1.0 / Float(texture.height))
+        }
+        switch keyPress.key {
+        case .leftArrow:
+            vector = .init(x: -step, y: 0)
+        case .rightArrow:
+            vector = .init(x: step, y: 0)
+        case .upArrow:
+            vector = .init(x: 0, y: step)
+        case .downArrow:
+            vector = .init(x: 0, y: -step)
+        default:
+            return
+        }
+        if isShifted {
+            vector *= 10
+        }
+        var changed = trianglePoints
+        changed.point1 += vector
+        changed.point2 += vector
+        changed.point3 += vector
+
+        let adjusted  = adjustTrianglePoints(trianglePoints: changed)
+        trianglePoints = adjusted.points
+
+        // TODO: Edit trianglePoints
+    }
     
     func selectNextFullScreenDisplay() {
         //availableDisplays
@@ -1807,8 +1831,10 @@ class ScopeState: ObservableObject, Codable {
         }
         #elseif os(iOS)
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
+        let defaultFileFormat = SnapshotFormat.allCases[ScopeState.snapshotFileTypeIndex]
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
+            defaultFileType: defaultFileFormat,
             isEightWayScope: !template.isCircular)
         showRecordVideoSheet = true
         #endif
@@ -1898,8 +1924,10 @@ class ScopeState: ObservableObject, Codable {
         }
         #elseif os(iOS)
         let template: ScopeTemplate = ScopeWorks2App.scopeTemplates[selectedScopeType.rawValue]
+        let defaultFileFormat = SnapshotFormat.allCases[ScopeState.snapshotFileTypeIndex]
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
+            defaultFileType: defaultFileFormat,
             isEightWayScope: !template.isCircular)
         showExportImageSheet = true
         #endif

@@ -423,6 +423,16 @@ struct ContentView: View {
                         .gesture(ExclusiveGesture(dragGesture, rotateGesture))
                         .border(.blue, width: 1)
                         .transition(.move(edge: .leading))
+                        .focusable(true)
+                        .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow], phases: [.down, .repeat]) { press in
+                            let isShifted =  press.modifiers.contains(.shift)
+                            if press.modifiers.contains(.option)  {
+                                return .ignored
+                            }
+                            scopeState.handleArrowKey(press, isShifted: isShifted)
+                            return .handled
+                        }
+
                 }
                 ZStack {
                     #if os(iOS) || os(iPadOS)
@@ -444,6 +454,7 @@ struct ContentView: View {
                         allowImageExport: true,
                         isMainDocumentScopeView: true,
                         )
+
                     .help("Tap to take a snapshot")
 
                         .onTapGesture {

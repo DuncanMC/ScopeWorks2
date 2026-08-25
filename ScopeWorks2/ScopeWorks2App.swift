@@ -191,7 +191,7 @@ struct ScopeWorks2App: App {
     var body: some Scene {
         DocumentGroup(newDocument: { ScopeDocument() }) { configuration in
             ContentView(scopeState: configuration.document.scopeState)
-                .focusable()
+//                .focusable()
                 .focusedSceneObject(configuration.document.scopeState)
         }
         .defaultSize(width: 1800, height: 1125)

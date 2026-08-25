@@ -653,8 +653,8 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 cropRect = scopeState.selectedAspectRatio.cropRect
             }
             let colorsAndThicknesses: [(simd_float4, Float)] = [
-                (blue, 6),
-                (red, 4)]
+                (red, 10),
+                (black, 4)]
             let cropMultiplier: Float
             if !scopeState.selectedAspectRatio.isCropForTiling {
                 cropMultiplier = 1
@@ -669,7 +669,7 @@ class ScopeRenderer: NSObject, MTKViewDelegate {
                 drawThickLine(encoder: encoder,
                               p1: adjustedCropRect.topLeft, p2: adjustedCropRect.topRight,
                               color: color,
-                              thickness: 4 / Float(drawableWidth),
+                              thickness: thickness / Float(drawableWidth),
                               orthoMatrix: orthoMatrix,
                               texAspect: texAspect)
                 drawThickLine(encoder: encoder,
