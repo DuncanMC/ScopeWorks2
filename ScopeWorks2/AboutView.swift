@@ -59,6 +59,9 @@ struct AboutView: View
                minHeight: 500, idealHeight: 700, maxHeight: .infinity)
         .presentationSizing(.fitted)
     }
+    init() {
+        print("In AboutView \(#function)")
+    }
 }
 #Preview {
     AboutView()

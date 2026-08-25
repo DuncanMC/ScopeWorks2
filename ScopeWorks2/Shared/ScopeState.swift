@@ -161,7 +161,11 @@ class ScopeState: ObservableObject, Codable {
     /// The modal sheet currently presented over the document's ContentView.
     /// Lives here (not as view @State) so menu commands can present modals
     /// via the focused ScopeState — e.g. the Help menu.
-    @Published var presentedModal: ActiveModal? = nil
+    @Published var presentedModal: ActiveModal? = nil {
+        didSet {
+            print("In presentedModal didSet")
+        }
+    }
 #if os(iOS)
     @Published var showExportImageSheet: Bool = false
     @Published var showRecordVideoSheet: Bool = false
