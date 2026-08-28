@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ScopeTypeNameAndIndex: Identifiable, Hashable {
     let title: String
@@ -87,6 +88,27 @@ class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
 /// application(_:open:) takes over ALL open requests, so the forwarding for
 /// non-image files is required.
 class MacAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Force-refresh this app's LaunchServices registration. Older builds
+        // declared .ksp2 as a flat JSON type; if a stale declaration stays
+        // active, the .ksp2 UTType doesn't conform to com.apple.package and
+        // the Finder reports "no application set to open that package type"
+        // for the new package documents.
+        LSRegisterURL(Bundle.main.bundleURL as CFURL, true)
+
+        // Then claim default-handler status for .ksp2 documents.
+        Task {
+            do {
+                try await NSWorkspace.shared.setDefaultApplication(
+                    at: Bundle.main.bundleURL,
+                    toOpen: .scopeworksDocument
+                )
+            } catch {
+                print("Failed to register as default .ksp2 handler: \(error)")
+            }
+        }
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if MetadataImport.isImportableImage(url) {
@@ -116,7 +138,8 @@ struct ScopeWorks2App: App {
 
     init () {
         UserDefaults.standard.register(defaults: [
-            UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue: true
+            UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue: true,
+            UserDefaultsKeys.embedThumbnailsInDocuments.rawValue: true
         ])
 
         if let bundlePath = Bundle.main.resourcePath {
@@ -157,7 +180,6 @@ struct ScopeWorks2App: App {
     
     static var scopeTemplates: [ScopeTemplate] = {
         
-//#if os(macOS)
         let fileManager = FileManager.default
         let folderName = "Kaleidoscope_templates"
         do {

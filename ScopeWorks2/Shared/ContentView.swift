@@ -128,7 +128,15 @@ struct ContentView: View {
         return formatter
     }()
     
-    @FocusState private var isFocused
+    enum FocusedField: Hashable {
+        case textField
+        case sourceImageView
+    }
+
+//    @FocusState private var sourceImageFocused: Bool
+    @FocusState private var focusedField: FocusedField?
+
+    //@FocusState private var isFocused
     @State private var selection: TextSelection?
     @State private var site = ""
     
@@ -160,6 +168,14 @@ struct ContentView: View {
             }
     }
     
+    var tapGesture: some Gesture {
+        TapGesture(count: 1)
+            .onEnded { _ in
+                Task { @MainActor in
+                    focusedField = .sourceImageView
+                }
+            }
+    }
     var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
@@ -234,14 +250,15 @@ struct ContentView: View {
                     return
                 }
                 scopeState.polygonSides = value.intValue
-                isFocused = false
+                focusedField = .sourceImageView
+//                isFocused = false
             }
 
             )
             .padding(.leading, 0)
             .textFieldStyle(.customRoundedBorderTextFieldStyle(borderColor: .gray))
             .frame(minWidth: 35, maxWidth: 35)
-            .focused($isFocused)
+           // .focused($focusedField, equals: .textField)
             .onAppear() {
 #if os(macOS)
                 Task { @MainActor in
@@ -250,8 +267,8 @@ struct ContentView: View {
 #endif
             }
 
-            .onChange(of: isFocused) {
-                if isFocused {
+            .onChange(of: focusedField) {
+                if focusedField == .textField {
                     Task { @MainActor in
 #if os(macOS)
                         NSApplication.shared.tryToPerform(#selector(NSResponder.selectAll(_:)), with: nil)
@@ -396,7 +413,6 @@ struct ContentView: View {
                 .overlay(alignment: .bottomTrailing) {
                     Button {
                         scopeState.presentedModal = .settings
-                        
                     } label:  {
                         Image(systemName: "gear")
                             .resizable(resizingMode: .stretch)
@@ -417,13 +433,17 @@ struct ContentView: View {
                 // "if scopeState.showSourceImage && !isFullScreen"
                 if scopeState.showSourceImage {
                     SourceImageViewRepresentable(scopeState: scopeState)
+                        .gesture(tapGesture
+                            .exclusively(before: dragGesture
+                                .exclusively(before: rotateGesture)
+                            )
+                        )
+                        .focusable(interactions: .edit)
+                        .focused($focusedField, equals: .sourceImageView)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
-                        .gesture(ExclusiveGesture(dragGesture, rotateGesture))
-                        .border(.blue, width: 1)
                         .transition(.move(edge: .leading))
-                        .focusable(true)
                         .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow], phases: [.down, .repeat]) { press in
                             let isShifted =  press.modifiers.contains(.shift)
                             if press.modifiers.contains(.option)  {
@@ -432,8 +452,8 @@ struct ContentView: View {
                             scopeState.handleArrowKey(press, isShifted: isShifted)
                             return .handled
                         }
-
                 }
+                
                 ZStack {
                     #if os(iOS) || os(iPadOS)
                         ScopeViewRepresentable(
@@ -496,10 +516,15 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.2), value: scopeState.showSourceImage)
         #if os(macOS)
         // Remember the folder containing this document whenever it's opened or
-        // saved, so the next document open/save panel starts there.
+        // saved, so the next document open/save panel starts there. Also track
+        // the URL on the state (for post-save Finder icon updates) and apply
+        // the icon from the package's thumbnail when the URL appears (open,
+        // first save, save-as).
         .onChange(of: documentConfiguration?.fileURL, initial: true) { _, newURL in
+            scopeState.documentFileURL = newURL
             if let newURL {
                 ScopeState.recordDocumentDirectory(forDocumentAt: newURL)
+                //ScopeDocument.applyFinderIcon(forDocumentAt: newURL)
             }
         }
         #endif

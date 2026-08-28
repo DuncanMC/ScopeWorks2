@@ -319,7 +319,14 @@ enum MetadataImport {
             destination = folder.appendingPathComponent("\(baseName) \(counter).ksp2")
             counter += 1
         }
-        try data.write(to: destination)
+        // Write in the current package format (a directory containing
+        // document.json), matching what ScopeDocument saves.
+        let json = FileWrapper(regularFileWithContents: data)
+        json.preferredFilename = ScopeDocument.packageJSONFilename
+        let package = FileWrapper(directoryWithFileWrappers: [
+            ScopeDocument.packageJSONFilename: json
+        ])
+        try package.write(to: destination, options: .atomic, originalContentsURL: nil)
         return destination
     }
 

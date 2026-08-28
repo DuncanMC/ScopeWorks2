@@ -18,6 +18,47 @@ import UniformTypeIdentifiers
 import ImageIO
 
 
+// MARK: - test code
+import QuickLookThumbnailing
+import UniformTypeIdentifiers
+func testThumbnailProvider() {
+    let path = "/Users/duncan/Documents/test2.ksp2"
+    let url = URL(fileURLWithPath: path)
+    testThumbnailProvider(for: url)
+}
+
+func testThumbnailProvider(for url: URL) {
+    print("In \(#function). url path = \(url.path)")
+    let request = QLThumbnailGenerator.Request(
+        fileAt: url,
+        size: CGSize(width: 512, height: 512),
+        scale: 2,
+        representationTypes: .all
+    )
+    
+    request.contentType = .scopeworksDocument
+
+
+    QLThumbnailGenerator.shared.generateBestRepresentation(
+        for: request
+    ) { thumbnail, error in
+
+        if let error {
+            NSLog("SCOPEWORKS THUMBNAIL TEST ERROR: \(error)")
+            return
+        }
+
+        if let thumbnail {
+            NSLog(
+                "SCOPEWORKS THUMBNAIL TEST: type=%@",
+                String(describing: thumbnail.type)
+            )
+        } else {
+            NSLog("SCOPEWORKS THUMBNAIL TEST: nil thumbnail")
+        }
+    }
+}
+// MARK: - end test code
 enum DragLocations: String {
     case inRotationCenter
     case inTrianglePoint1
@@ -155,6 +196,13 @@ class ScopeState: ObservableObject, Codable {
     
     weak var documentMetalView: MTKView? = nil
     weak var documentRenderer: ScopeRenderer? = nil
+
+#if os(macOS)
+    /// The document's file URL, kept current by ContentView (from the
+    /// document configuration). Used to apply per-file Finder icons after
+    /// saves. Nil for unsaved untitled documents.
+    var documentFileURL: URL?
+#endif
     
     // MARK: - Export state (transient, not persisted)
     @Published var activeRecorder: VideoRecorder? = nil
@@ -1453,9 +1501,7 @@ class ScopeState: ObservableObject, Codable {
         }
         if isFullscreenView {
             guard let drawableTexture = metalView.currentDrawable?.texture else { return nil }
-            
-            //TODO: For the document metal view, set the drawable size to a size for the current crop rect
-            
+                        
             let ciContext = CIContext()
             // The texture format is .bgra8Unorm (not _srgb), so the framebuffer stores
             // sRGB-encoded values without automatic conversion. Tell CIImage the values
@@ -1488,6 +1534,48 @@ class ScopeState: ObservableObject, Codable {
             return image
         }
     }
+    // MARK: - Document thumbnail
+
+    /// A 512×512 medium-quality JPEG snapshot of the current kaleidoscope,
+    /// embedded in saved document packages when the "Embed image thumbnails
+    /// in documents" setting is on. Returns nil when nothing can be rendered
+    /// (e.g. no image loaded or no renderer available).
+    func documentThumbnailJPEG() -> Data? {
+        guard let snapshot = snapshotImage(isFullscreenView: false) else { return nil }
+
+        let side = 512
+        guard let context = CGContext(
+            data: nil, width: side, height: side,
+            bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        // Aspect-fill the square thumbnail, centered, over white (JPEG has
+        // no alpha, so transparent regions would otherwise go black).
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: side, height: side))
+        let scale = min(CGFloat(side) / CGFloat(snapshot.width),
+                        CGFloat(side) / CGFloat(snapshot.height))
+        let scaledWidth = CGFloat(snapshot.width) * scale
+        let scaledHeight = CGFloat(snapshot.height) * scale
+        context.interpolationQuality = .high
+        context.draw(snapshot, in: CGRect(
+            x: (CGFloat(side) - scaledWidth) / 2,
+            y: (CGFloat(side) - scaledHeight) / 2,
+            width: scaledWidth, height: scaledHeight))
+        guard let thumbnail = context.makeImage() else { return nil }
+
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            data as CFMutableData, UTType.jpeg.identifier as CFString, 1, nil
+        ) else { return nil }
+        let options = [kCGImageDestinationLossyCompressionQuality: 0.5] as CFDictionary
+        CGImageDestinationAddImage(destination, thumbnail, options)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return data as Data
+    }
+
     /// Cached iCloud Documents URL, resolved once on a background queue at startup.
     private var _iCloudDocumentsURL: URL?
     private var _iCloudURLResolved = false

@@ -4,6 +4,8 @@ Introduction:
 
 ScopeWorks is a program for Macs and iPads that lets you create stunning kaleidoscopes using still images or feeds from an attached video camera.
 
+ScopeWorks works best on iPads with external keyboards.
+
 It is a document based application. Once you launch it, you will need to create a new document and provide a source image. You will then work with ScopeWorks document windows.
 
 The first time you create a new document after installing the program, you will be prompted to create or select existing folders for your ScopeWorks documents, Kaleidoscope Source images, and saved images or videos. We suggest you create these folders on your iCloud Drive so you can share them between copies of ScopeWorks running on different Macs and iPads that have access to the same iCloud Drive. 
@@ -21,12 +23,15 @@ The document window displays your source image in the top left, and your kaleido
 **Image source view**:  
 Once you select an image source, the image source view on the top left of the document window will display that image, along with an outline of the triangular section of the source image that is currently being used to create your kaleidoscope. There will also be a small circle showing the center of rotation used to animate the source triangle and an arrow showing the direction of rotation, clockwise or counterclockwise. 
 
-If you drag the rotation center you can move it around on the source image. If you drag inside the source triangle, you can move the triangle around on the source image. If you drag outside the source triangle, you can manually rotate it around the rotation center point. If you option-drag (on macOS) outside the source triangle, you can rotate it around the center of the triangle.  
-If you drag one of the corners of the triangle you can resize the image triangle.
+If you drag the rotation center you can move it around on the source image. If you drag inside the source triangle, you can move the triangle around on the source image. If you drag outside the source triangle, you can manually rotate it around the rotation center point. If you option-drag (on macOS) outside the source triangle, you can rotate it around the center of the triangle. On iPad use two-finger rotation to rotate the source triangle around its center point.
+
+If you drag one of the corners of the triangle you can resize the source triangle.
+
+If you tap in the image source view (or press tab on an external keyboard to select it on iOS) it gains focus and will show a light blue outline. When the image source view is in focus, pressing one of the arrow keys on your keyboard (including an external keyboard on an iPad) will shift the source triangle 1 pixel in that direction. If you hold down the shift key and press an arrow key, the source triangle will be shifted by 10 pixels.
 
 **Kaleidoscope view**  
-The kaleidoscope view in the top right of the document window shows a small view of your kaleidoscope. The "Show outlines" view menu toggle shows the triangular sections of your source image that are tiled together to create your kaleidoscope.  
-The "Show crop rectangle" view menu toggle shows the section of your kaleidoscope that will be saved if you tap (or two-finger tap on iOS) on your kaleidoscope view. It also indicates the section of your kaleidoscope that will be saved if you choose "Save image as" from the file menu and don't change the aspect ratio in the save dialog, and the portion of your kaleidoscope that will be used to create a video with the file menu “Record Video” command.
+The kaleidoscope view in the top right of the document window shows a small view of your kaleidoscope. The "Show outlines" view menu toggle shows the outlines of the triangular sections of your source image that are tiled together to create your kaleidoscope.  
+The "Show crop rectangle" view menu toggle shows the section of your kaleidoscope that will be saved if you tap (or two-finger tap on iOS) on your kaleidoscope view. It also indicates the section of your kaleidoscope that will be saved if you choose "Save image as" from the file menu and don't change the aspect ratio in the save dialog, and the portion of your kaleidoscope that will be used to create a video with the file menu “Record Video” command. The shape of this crop rectangle is controlled by the aspect ratio you select in the Settings screen.
 
 **Controls**: 
 
@@ -39,14 +44,12 @@ If you choose a still image as your image source, and that image is a PNG or TIF
 **Kaleidoscope type**: (Default setting: Polygon grid)
 
 ScopeWorks currently supports polygon based "fan style" kaleidoscopes built from "pie slice" shaped triangular sections of your source image, or square-based kaleidoscopes that are built from triangles shaped like a square cut in half diagonally. (Triangles with an angle of 45°, 45°, and 90° and two equal sides.)  
-**Kaleidoscope types:**  
+**Kaleidoscope types:**   
 **Pologon**: A "polygon" Kaleidoscope is a single polygon centered in a square. It defaults to 6 sides, which creates a hexagon shape. By default alternate triangles are flipped, causing the edges of each triangular section to match with the mirrored adjacent image and creating an image without “seams”.  
-**Polygon Grid**: A polygon grid is, as the name suggests, a grid of polygons packed together. If you select the default 6-sided polygons, they pack together with no gaps. A 6-sided polygon grid creates kaleidoscopes like those from traditional 3 mirror kaleidoscopes where the mirrors are set at 60° angles. 
-
+**Polygon Grid**: A polygon grid is, as the name suggests, a grid of polygons packed together. If you select the default 6-sided polygons, they pack together with no gaps. A 6-sided polygon grid creates kaleidoscopes like those from traditional 3 mirror kaleidoscopes where the mirrors are set at 60° angles.   
 **8-way square**:   
-ScopeWorks takes a square and draws diagonal lines from the corners, then draws lines down the center horizontally and vertically. This creates 8 isosceles right triangles. (Triangles with an angle of 45°, 45°, and 90° and two equal sides.) A triangular slice of your source image is drawn in each of these 8 triangles. The 8-way kaleidoscopes ignore the “Flip Alternates” view menu toggle and alternate triangles are always flipped.  
-**8-way tiles**:
-
+ScopeWorks takes a square and draws diagonal lines from the corners, then draws lines down the center horizontally and vertically. This creates 8 isosceles right triangles. (Triangles with an angle of 45°, 45°, and 90° and two equal sides.) A triangular slice of your source image is drawn in each of these 8 triangles.   
+**8-way tiles**:  
 Four 8-way squares are stacked two-by-two, creating a repeating pattern of squares.
 
 **Polygon Sides**:  (Only used for Polygon and Polygon grid kaleidoscope types. Default setting: 6\)  
@@ -80,25 +83,26 @@ Use this option to show or hide the source image view in the front ScopeWorks wi
 **Show outlines:**  
 When checked, ScopeWorks draws lines in the kaleidoscope view showing the boundaries between the triangles that make up your kaleidoscope. These outlines will be saved in snapshots and in saved images.
 
-**Flip Alternates:** (Defaults to on. Only used for Polygon and Polygon grid kaleidoscope types)  
+**Flip Alternates:** (Defaults to on.)  
 When checked, each alternate triangle in the kaleidoscope is drawn flipped into a mirror image of its neighbors. This causes the "seams" of the triangular image sections to line up, creating a seamless image.
 
 **Draw With reflection:**  
 When checked, each triangle in your kaleidoscope is drawn twice: Once normally, and once flipped to its mirror image. This only makes a visible difference if your source image is partly transparent. In that case, the mirror image shows through the transparent areas of the source image, creating interesting [Moiré patterns](https://en.wikipedia.org/wiki/Moir%C3%A9_pattern).
 
 **Animate**  
-When checked, ScopeWorks rotates the image triangle around the center of rotation. The rotation speed slider controls how fast it animates.  
-**Reverse Animation**
+When checked, ScopeWorks rotates the source triangle around the center of rotation. The rotation speed slider controls how fast it animates.
 
-This menu item reverses the direction of the source triangle animation.  
+**Reverse Animation**  
+This menu item reverses the direction of the source triangle animation.
+
 **Advance animation one frame**  
-This menu option advances the animation by a single frame (the amount of change that would take place in 1/120th of a second.) It lets you fine-tune the look of your kaleidoscope if you are trying to create a specific effect. (Useful when animation is paused, in combination with the Reverse Animation menu option)  
-**Show Crop Rectangle**
+This menu option advances the animation by a single frame (the amount of change that would take place in 1/120th of a second.) It lets you fine-tune the look of your kaleidoscope if you are trying to create a specific effect. (Useful when animation is paused, in combination with the Reverse Animation menu option)
 
+**Show Crop Rectangle**  
 When checked, ScopeWorks shows an outline of the part of the kaleidoscope view that will be saved if you trigger a snapshot or use the "Save image as" file menu command with the currently selected aspect ratio.
 
 **Show Full-screen Kaleidoscope**   
-When checked, ScopeWorks fills the display specified with the "Fullscreen Display" popup with the kaleidoscope view of the front ScopeWorks window. On iOS, you can two-finger tap on the full screen display to take a snapshot. All the keyboard shortcuts are available when the full screen display is active. 
+When checked, ScopeWorks fills the display specified with the "Fullscreen Display" popup with the kaleidoscope view of the front ScopeWorks window. On iOS, you can two-finger tap on the full screen display to take a snapshot. All the keyboard shortcuts are available when the full screen display is active, even if it covers the document window. Note that on Macs with multiple monitors, each monitor can show a different full-screen kaleidoscope at the same time.
 
 **Select next full-screen display**  
 This menu item cycles the Fullscreen display popup between the available displays on your system. If the fullscreen display is active it will move it to the next display. It has no effect if you only have one available display.
@@ -137,6 +141,9 @@ This popup controls the filetype used for saving snapshots, and the default file
 **Include kaleidoscope info in saved images checkbox**:  
 When checked, ScopeWorks includes metadata in saved PNG, JPEG, and TIFF files that let you recreate the kaleidoscope document with the same settings that were used to create the saved image. (It won’t be able to recreate an image or snapshot created from a video feed.)
 
+**Embed image thumbnails in documents checkbox**:  
+When selected, ScopeWorks includes a thumbnail image of your kaleidoscope into ScopeWorks documents. On macOS, it also adds the thumbnail to the finder info for your document so the document shows its image thumbnail in the finder. On iOS ScopeWorks provides a “Thumbnail Extension” that allows the Files application to show these image thumbnails.
+
 **Image/Video aspect ratio** picker:  
 This popup controls the aspect ratio and default height and width values used to save images and videos. Note that snapshots of the full-screen kaleidoscope view ignore this setting and always take a snapshot of the whole fullscreen display. If you select “Show Crop Rectangle” in the view menu ScopeWorks will draw a rectangle in the kaleidoscope view indicating the section of your kaleidoscope that will used for saving snapshots, images, and videos (other than full-screen snapshots, as mentioned.) ScopeWorks shows the width and height of your selected aspect ratio (reduced by removing common factors, e.g. 1920:1080 will be reduced to 16:9) It will show the multiplier used to calculate the default pixel dimensions for saving, and also show those pixel dimensions.
 
@@ -160,5 +167,4 @@ To create a custom aspect ratio, give it a unique name, and then either enter an
 
 You can either enter an aspect ratio width and height and a multiplier and then click the “Calculate pixels” button, or enter your desired pixel dimensions and click the "Calculate aspect" button. If you enter pixel dimensions and click "Calculate aspect", ScopeWorks will reduce your pixel dimensions to an aspect ratio by removing all common factors from both numbers, and then calculate a multiplier that gives you the desired default pixel dimensions for your aspect ratio.
 
-Once you have set up your new custom aspect ratio, click “Save” to add it to your list of available aspect ratios. (ScopeWorks saves your custom aspect ratios to its “User Defaults” settings. Your custom aspect ratios should persist between versions of ScopeWorks, but will be lost if you delete the program.
-
+Once you have set up your new custom aspect ratio, click “Save” to add it to your list of available aspect ratios. (ScopeWorks saves your custom aspect ratios to its “User Defaults” settings. Your custom aspect ratios should persist between versions of ScopeWorks, but will be lost if you delete the program.)  

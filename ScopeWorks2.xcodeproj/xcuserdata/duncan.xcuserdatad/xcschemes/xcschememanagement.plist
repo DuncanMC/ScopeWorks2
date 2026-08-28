@@ -19,9 +19,19 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>ScopeWorksThumbnailExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>AE32B920303E249300F10F36</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>AEB49CE42F6B2D1700CD5690</key>
 		<dict>
 			<key>primary</key>

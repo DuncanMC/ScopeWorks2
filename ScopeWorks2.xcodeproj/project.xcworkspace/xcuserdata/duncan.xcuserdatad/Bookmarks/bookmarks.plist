@@ -78,13 +78,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>414</string>
+					<string>430</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>413</string>
+					<string>429</string>
 					<key>Timestamp</key>
-					<string>808866499.637163</string>
+					<string>809470915.25866</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -208,6 +208,100 @@
 			</dict>
 			<key>title</key>
 			<string>func adjustedCropRect</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>1543</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>1542</string>
+					<key>Timestamp</key>
+					<string>809621187.124863</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ScopeState.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    func documentThumbnailJPEG() -&gt; Data? {
+</string>
+				<key>leading</key>
+				<string>    /// in documents" setting is on. Returns nil when nothing can be rendered
+    /// (e.g. no image loaded or no renderer available).
+</string>
+				<key>trailing</key>
+				<string>        guard let snapshot = snapshotImage(isFullscreenView: false) else { return nil }
+
+        let side = 512
+</string>
+			</dict>
+			<key>title</key>
+			<string>func documentThumbnailJPEG</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>0</string>
+					<key>EndingLineNumber</key>
+					<string>2027</string>
+					<key>StartingColumnNumber</key>
+					<string>0</string>
+					<key>StartingLineNumber</key>
+					<string>2026</string>
+					<key>Timestamp</key>
+					<string>809621187.124882</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>ScopeWorks2/Shared/ScopeState.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string>    func handleSnapshot(isFullScreenView: Bool) {
+</string>
+				<key>leading</key>
+				<string>        #endif
+    }
+</string>
+				<key>trailing</key>
+				<string>        guard  (isFullScreenView ? fullscreenMetalView : documentMetalView) != nil else {
+            print("In \(#function), metalView = nil")
+            return
+</string>
+			</dict>
+			<key>title</key>
+			<string>func handleSnapshot</string>
 			<key>type</key>
 			<string>bookmark</string>
 		</dict>

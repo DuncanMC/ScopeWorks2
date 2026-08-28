@@ -179,6 +179,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     func performAction(on state: ScopeState) {
         switch self {
         case .advanceAnimation:
+            // xxx
+            testThumbnailProvider()
             state.animateByElapsed( 1.0 / 60.0)
         case .reverseAnimation:
             state.rotationSpeed *= -1

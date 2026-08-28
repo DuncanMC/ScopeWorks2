@@ -7,8 +7,10 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>KSp2</string>
+				<string>kspp</string>
 			</array>
+			<key>LSTypeIsPackage</key>
+			<true/>
 			<key>CFBundleTypeName</key>
 			<string>ScopeWorks document</string>
 			<key>CFBundleTypeRole</key>
@@ -17,10 +19,10 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.wareto.scopeworks2.document</string>
+				<string>com.wareto.scopeworks2.document-package</string>
 			</array>
 			<key>NSUbiquitousDocumentUserActivityType</key>
-			<string>com.wareto.scopeworks2.document</string>
+			<string>com.wareto.scopeworks2.document-package</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeName</key>
@@ -34,6 +36,18 @@
 				<string>public.png</string>
 				<string>public.jpeg</string>
 				<string>public.tiff</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ScopeWorks document (legacy)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.wareto.scopeworks2.document-legacy</string>
 			</array>
 		</dict>
 	</array>
@@ -75,43 +89,36 @@
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.json</string>
-			</array>
+			<key>UTTypeIdentifier</key>
+			<string>com.wareto.scopeworks2.document-package</string>
 			<key>UTTypeDescription</key>
 			<string>ScopeWorks document</string>
-			<key>UTTypeIdentifier</key>
-			<string>com.wareto.scopeworks2.document</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+			</array>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>KSp2</string>
+					<string>kspp</string>
 				</array>
-				<key>public.mime-type</key>
-				<string>application/vnd.scopeworks+json</string>
 			</dict>
 		</dict>
-	</array>
-	<key>UTImportedTypeDeclarations</key>
-	<array>
 		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.wareto.scopeworks2.document-legacy</string>
+			<key>UTTypeDescription</key>
+			<string>ScopeWorks document (legacy)</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.json</string>
 			</array>
-			<key>UTTypeDescription</key>
-			<string>ScopeWorks document</string>
-			<key>UTTypeIcons</key>
-			<dict/>
-			<key>UTTypeIdentifier</key>
-			<string>com.wareto.scopeworks2.document</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>KSp2</string>
+					<string>ksp2</string>
 				</array>
 			</dict>
 		</dict>

@@ -31,6 +31,7 @@ enum UserDefaultsKeys: String {
     case lastUsedExportDirectoryBookmark
     case lastUsedDocumentDirectoryPath
     case includeKaleidoscopeInfoInSavedImages
+    case embedThumbnailsInDocuments
     case savedAspects
     case savedCurrentAspect
 }
@@ -291,6 +292,9 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsKeys.includeKaleidoscopeInfoInSavedImages.rawValue)
     var includeKaleidoscopeInfo: Bool = true
 
+    @AppStorage(UserDefaultsKeys.embedThumbnailsInDocuments.rawValue)
+    var embedThumbnailsInDocuments: Bool = true
+
 
     var snapshotTypePickerLeading: CGFloat {
         #if os(macOS)
@@ -366,7 +370,12 @@ struct SettingsView: View {
                            isOn: $includeKaleidoscopeInfo)
                     .padding(.leading, snapshotTypeTitleLeading)
                     .padding(.trailing, 50)
-                    
+
+                    Toggle("Embed image thumbnails in documents",
+                           isOn: $embedThumbnailsInDocuments)
+                    .padding(.leading, snapshotTypeTitleLeading)
+                    .padding(.trailing, 50)
+
                     Divider()
                         .padding(.horizontal, 20)
                     
