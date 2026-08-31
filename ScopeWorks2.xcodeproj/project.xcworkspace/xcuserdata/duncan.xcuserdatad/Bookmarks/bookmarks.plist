@@ -78,13 +78,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>430</string>
+					<string>443</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>429</string>
+					<string>442</string>
 					<key>Timestamp</key>
-					<string>809470915.25866</string>
+					<string>809884188.139484</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -219,13 +219,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>1543</string>
+					<string>1552</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>1542</string>
+					<string>1551</string>
 					<key>Timestamp</key>
-					<string>809621187.124863</string>
+					<string>809896736.381137</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -248,9 +248,9 @@
     /// (e.g. no image loaded or no renderer available).
 </string>
 				<key>trailing</key>
-				<string>        guard let snapshot = snapshotImage(isFullscreenView: false) else { return nil }
-
-        let side = 512
+				<string>        guard let snapshot = snapshotImage(isFullscreenView: false) else {
+            return nil
+        }
 </string>
 			</dict>
 			<key>title</key>
@@ -266,13 +266,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>2027</string>
+					<string>2040</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>2026</string>
+					<string>2039</string>
 					<key>Timestamp</key>
-					<string>809621187.124882</string>
+					<string>809896736.381076</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>

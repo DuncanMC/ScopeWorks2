@@ -441,14 +441,18 @@ class ScopeState: ObservableObject, Codable {
             if let url = imageSourceInfo.fullURL,
                FileManager.default.fileExists(atPath: url.path) {
                 self.imageURL = url
-                return
+                if selectedImageData != nil {
+                    return
+                }
             }
             
             // 3. Try relative path from source images folder
             if let relativePath = imageSourceInfo.relativePathFromSourceImages,
                let url = FolderBookmarkManager.shared.resolveRelativePath(relativePath) {
                 self.imageURL = url
-                return
+                if selectedImageData != nil {
+                    return
+                }
             }
             
             // 4. Could not resolve — search via Spotlight and flag for relocation
@@ -544,7 +548,7 @@ class ScopeState: ObservableObject, Codable {
             }
             
             self.metadataQuery = query
-//            let started = query.start()
+            let started = query.start()
             
             // Fallback timeout
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
@@ -1052,6 +1056,11 @@ class ScopeState: ObservableObject, Codable {
     typealias AdjustmentResult = (points: TrianglePoints, adjusted: Bool, dx: Float?, dy: Float?)
     
     // MARK: Misc functions -
+    public func showFileInFinder(url: URL) {
+        #if os(macOS)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        #endif
+    }
     
     func handleArrowKey(_ keyPress: KeyPress, isShifted: Bool) {
         var vector: SIMD2<Float>
@@ -1541,7 +1550,9 @@ class ScopeState: ObservableObject, Codable {
     /// in documents" setting is on. Returns nil when nothing can be rendered
     /// (e.g. no image loaded or no renderer available).
     func documentThumbnailJPEG() -> Data? {
-        guard let snapshot = snapshotImage(isFullscreenView: false) else { return nil }
+        guard let snapshot = snapshotImage(isFullscreenView: false) else {
+            return nil
+        }
 
         let side = 512
         guard let context = CGContext(
@@ -1572,7 +1583,9 @@ class ScopeState: ObservableObject, Codable {
         ) else { return nil }
         let options = [kCGImageDestinationLossyCompressionQuality: 0.5] as CFDictionary
         CGImageDestinationAddImage(destination, thumbnail, options)
-        guard CGImageDestinationFinalize(destination) else { return nil }
+        guard CGImageDestinationFinalize(destination) else {
+            return nil
+        }
         return data as Data
     }
 

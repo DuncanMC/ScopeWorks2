@@ -180,7 +180,6 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         switch self {
         case .advanceAnimation:
             // xxx
-            testThumbnailProvider()
             state.animateByElapsed( 1.0 / 60.0)
         case .reverseAnimation:
             state.rotationSpeed *= -1

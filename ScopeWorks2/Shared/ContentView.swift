@@ -403,6 +403,19 @@ struct ContentView: View {
                     }
                     Text(scopeState.imageSourceDescription)
                         .frame(height: 25)
+                        .onTapGesture {
+                            if scopeState.imageSourceMode == .staticImage,
+                               let fileURL = scopeState.imageSourceInfo.fullURL {
+                                let fileName = fileURL.lastPathComponent
+                                #if os(macOS)
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(fileName, forType: .string)
+                                scopeState.showFileInFinder(url: fileURL)
+                                #else
+                                    UIPasteboard.general.string = fileName
+                                #endif
+                            }
+                        }
                 }
                 Spacer()
             }
