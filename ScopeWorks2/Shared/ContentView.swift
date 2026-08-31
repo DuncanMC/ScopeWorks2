@@ -523,6 +523,21 @@ struct ContentView: View {
         .onChange(of: documentConfiguration?.fileURL, initial: true) { _, newURL in
             scopeState.documentFileURL = newURL
             if let newURL {
+                // Legacy flat .ksp2 files must not be edited in place. This
+                // hook is the one macOS choke point that sees every open path
+                // (Finder, File > Open, Open Recent) — the document machinery
+                // claims readable types before the app delegate's
+                // application(_:open:) is ever called. Close the in-place
+                // document immediately (before it can autosave the package
+                // format over the flat file) and reopen it as an untitled
+                // "<name> (converted)" document.
+                if MetadataImport.isLegacyFlatDocument(newURL) {
+                    DispatchQueue.main.async {
+                        NSDocumentController.shared.document(for: newURL)?.close()
+                        MetadataImport.openConvertedLegacyDocument(at: newURL)
+                    }
+                    return
+                }
                 ScopeState.recordDocumentDirectory(forDocumentAt: newURL)
                 //ScopeDocument.applyFinderIcon(forDocumentAt: newURL)
             }

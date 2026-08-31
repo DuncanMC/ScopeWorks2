@@ -6,8 +6,12 @@
 //   thumbnail.jpg  — optional 512×512 preview of the kaleidoscope, included
 //                    when the "Embed image thumbnails in documents" setting
 //                    is on
-// Legacy documents (a flat JSON file) are still readable; they are converted
-// to the package format the next time they're saved.
+// Legacy .ksp2 documents (a flat JSON file) are never edited in place: every
+// open path converts them to a "<name> (converted)" document in the package
+// format (see MetadataImport.openConvertedLegacyDocument, ContentView's
+// fileURL onChange hook on macOS, and the document-browser delegate proxy on
+// iOS). A .ksp2 that is actually a DIRECTORY — a package saved by builds that
+// used the old extension — is a degenerate case that still opens in place.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -15,10 +19,11 @@ import Combine
 
 // Register custom document UTTypes.
 //
-// Both types claim the .ksp2 extension; LaunchServices picks per file based
-// on physical kind. A package-conforming type's extension tag only binds to
-// DIRECTORIES, so without the legacy type, old flat-JSON documents would
-// resolve to an anonymous dynamic type and be unopenable.
+// The package type claims the .kspp extension (directories only — a
+// package-conforming type's extension tag only binds to DIRECTORIES); the
+// legacy type claims the flat-JSON .ksp2 extension. Without the legacy type,
+// old flat-JSON documents would resolve to an anonymous dynamic type and be
+// unconvertible.
 extension UTType {
     /// The current document format: a package (directory) containing
     /// document.json and an optional thumbnail.jpg.
@@ -49,6 +54,12 @@ final class ScopeDocument: ReferenceFileDocument {
     nonisolated static let packageThumbnailFilename = "thumbnail.jpg"
 
     nonisolated static var readableContentTypes: [UTType] {
+        // The legacy type must stay readable on both platforms: it controls
+        // which files the macOS open panel and the iOS document browser let
+        // the user pick (dropping it dims .ksp2 files in the browser). Legacy
+        // flat files are never actually edited in place, though — every open
+        // path converts them to a "<name> (converted)" package document first
+        // (see MetadataImport.openConvertedLegacyDocument and its call sites).
         [.scopeworksDocument, .scopeworksDocumentLegacy]
     }
 
@@ -133,7 +144,7 @@ final class ScopeDocument: ReferenceFileDocument {
             }
             data = contents
         } else if let jsonWrapper = file.fileWrappers?[Self.packageJSONFilename],
-                  let contents = jsonWrapper.regularFileContents {
+                   let contents = jsonWrapper.regularFileContents {
             // Package format: JSON lives in document.json inside the package.
             data = contents
         } else {

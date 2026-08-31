@@ -37,9 +37,10 @@ class IOSAppDelegate: NSObject, UIApplicationDelegate {
     }
 }
 
-/// Receives file-open URLs for the app's main window scenes. Image URLs are
-/// queued and imported once the scene is active (on a cold launch the UI
-/// isn't ready to present alerts when the URL arrives).
+/// Receives file-open URLs for the app's main window scenes. Image URLs and
+/// legacy flat .ksp2 documents are queued and imported once the scene is
+/// active (on a cold launch the UI isn't ready to present alerts when the
+/// URL arrives).
 class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
     private var pendingImportURLs: [URL] = []
 
@@ -55,12 +56,18 @@ class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        // The launch screen's document browser exists by now; make sure
+        // legacy .ksp2 picks convert rather than open in place.
+        MetadataImport.installLegacyDocumentInterceptor()
         processPendingImports()
     }
 
     private func queueImports(_ contexts: Set<UIOpenURLContext>) {
         pendingImportURLs.append(
-            contentsOf: contexts.map(\.url).filter(MetadataImport.isImportableImage)
+            contentsOf: contexts.map(\.url).filter {
+                MetadataImport.isImportableImage($0)
+                    || MetadataImport.isLegacyFlatDocument($0)
+            }
         )
     }
 
@@ -73,7 +80,11 @@ class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
         // during activation races the launch screen's own setup.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
             for url in urls {
-                MetadataImport.createKaleidoscope(fromImageAt: url)
+                if MetadataImport.isLegacyFlatDocument(url) {
+                    MetadataImport.openConvertedLegacyDocument(at: url)
+                } else {
+                    MetadataImport.createKaleidoscope(fromImageAt: url)
+                }
             }
         }
     }
@@ -83,7 +94,8 @@ class ImportSceneDelegate: NSObject, UIWindowSceneDelegate {
 #if os(macOS)
 /// Routes files the Finder asks the app to open ("Open With", dragging files
 /// onto the app or dock icon). PNG/JPEG/TIFF images run the
-/// create-kaleidoscope-from-image-metadata import; everything else (.ksp2)
+/// create-kaleidoscope-from-image-metadata import; legacy flat .ksp2 files
+/// open as untitled "<name> (converted)" documents; everything else (.kspp)
 /// goes through the normal document machinery. Implementing
 /// application(_:open:) takes over ALL open requests, so the forwarding for
 /// non-image files is required.
@@ -113,6 +125,8 @@ class MacAppDelegate: NSObject, NSApplicationDelegate {
         for url in urls {
             if MetadataImport.isImportableImage(url) {
                 MetadataImport.createKaleidoscope(fromImageAt: url)
+            } else if MetadataImport.isLegacyFlatDocument(url) {
+                MetadataImport.openConvertedLegacyDocument(at: url)
             } else {
                 NSDocumentController.shared.openDocument(
                     withContentsOf: url, display: true

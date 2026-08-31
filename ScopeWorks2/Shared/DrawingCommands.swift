@@ -108,6 +108,8 @@ enum MetadataImportError: LocalizedError {
 /// The "Create Kaleidoscope from Image Data" implementation, shared by every
 /// entry point: the macOS File menu command and Finder "Open With"/dock
 /// drag-and-drop, and the iOS launch-screen button and Files "Open in".
+/// Also converts legacy flat .ksp2 documents arriving through the same entry
+/// points into new "<name> (converted)" .kspp package documents.
 enum MetadataImport {
 
     /// Image types that can carry embedded kaleidoscope info.
@@ -117,6 +119,21 @@ enum MetadataImport {
     static func isImportableImage(_ url: URL) -> Bool {
         guard let type = UTType(filenameExtension: url.pathExtension) else { return false }
         return importableTypes.contains { type.conforms(to: $0) }
+    }
+
+    /// True if the URL points to a legacy flat-file .ksp2 document (as
+    /// opposed to a directory, which is an old package saved with the .ksp2
+    /// extension).
+    static func isLegacyFlatDocument(_ url: URL) -> Bool {
+        guard url.pathExtension.lowercased() == "ksp2" else { return false }
+        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+        return values?.isDirectory != true
+    }
+
+    /// "<original name> (converted)" — the name given to the document created
+    /// when a legacy flat .ksp2 file is opened.
+    private static func convertedBaseName(forLegacyDocumentAt url: URL) -> String {
+        "\((url.lastPathComponent as NSString).deletingPathExtension) (converted)"
     }
 
     /// Decodes the ScopeState embedded in the given image's metadata.
@@ -203,6 +220,24 @@ enum MetadataImport {
         )
     }
 
+    /// Opens a legacy flat .ksp2 file as a new untitled "<name> (converted)"
+    /// document, leaving the original file untouched; saving writes the new
+    /// .kspp package format.
+    @MainActor
+    static func openConvertedLegacyDocument(at url: URL) {
+        do {
+            try NSDocumentController.shared.duplicateDocument(
+                withContentsOf: url,
+                copying: true,
+                displayName: convertedBaseName(forLegacyDocumentAt: url)
+            )
+            print("Opened legacy document \(url.lastPathComponent) as untitled converted document")
+        } catch {
+            print("Failed to open converted copy of \(url.lastPathComponent): \(error)")
+            NSApp.presentError(error)
+        }
+    }
+
     @MainActor
     private static func showAlert(title: String, message: String) {
         let alert = NSAlert()
@@ -231,7 +266,33 @@ enum MetadataImport {
         }
     }
 
-    /// Creates a real "Kaleidoscope from <image>.ksp2" document file and asks
+    /// Opens a legacy flat .ksp2 file by writing its contents as a new
+    /// "<name> (converted).kspp" package in the documents folder and opening
+    /// that copy in the document browser, so it lives (and auto-saves) in the
+    /// default documents directory. The original file is left untouched.
+    @MainActor
+    static func openConvertedLegacyDocument(at url: URL) {
+        do {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            let json = try Data(contentsOf: url)
+            // Validate the contents before creating a document from them.
+            _ = try JSONDecoder().decode(ScopeState.self, from: json)
+            let documentURL = try writeDocumentFile(
+                json: json,
+                baseName: convertedBaseName(forLegacyDocumentAt: url)
+            )
+            openInDocumentBrowser(documentURL, retriesRemaining: 3)
+        } catch {
+            showAlert(
+                title: "Couldn’t Open Document",
+                message: "“\(url.lastPathComponent)” could not be converted "
+                    + "to the current document format: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    /// Creates a real "Kaleidoscope from <image>.kspp" document file and asks
     /// the launch screen's document browser to open it — the same code path
     /// as the user tapping the file in the browser, which is the only
     /// reliable way to open a document on iOS (SwiftUI offers no programmatic
@@ -260,6 +321,33 @@ enum MetadataImport {
                     + "documents folder. Open it from the document browser."
             )
         }
+    }
+
+    /// The retained browser-delegate proxy (the browser holds its delegate
+    /// weakly).
+    @MainActor private static var legacyPickInterceptor: LegacyConvertingBrowserDelegate?
+
+    /// Wraps the launch screen document browser's delegate so that tapping a
+    /// legacy flat .ksp2 file converts it to a "<name> (converted).kspp"
+    /// package instead of opening it in place — the browser reports picks
+    /// directly to DocumentGroup, bypassing the scene delegate's URL
+    /// interception. Idempotent; retries briefly on a cold launch while the
+    /// browser is still being created.
+    @MainActor
+    static func installLegacyDocumentInterceptor(retriesRemaining: Int = 3) {
+        guard let browser = findDocumentBrowser() else {
+            if retriesRemaining > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    installLegacyDocumentInterceptor(retriesRemaining: retriesRemaining - 1)
+                }
+            }
+            return
+        }
+        guard let delegate = browser.delegate,
+              !(delegate is LegacyConvertingBrowserDelegate) else { return }
+        let interceptor = LegacyConvertingBrowserDelegate(wrapping: delegate)
+        legacyPickInterceptor = interceptor
+        browser.delegate = interceptor
     }
 
     /// The UIDocumentBrowserViewController hosted by the launch screen's
@@ -294,29 +382,31 @@ enum MetadataImport {
         return nil
     }
 
-    /// Writes the state as "Kaleidoscope from <image>.ksp2" in the designated
-    /// documents folder (falling back to the app's local Documents directory),
-    /// avoiding name collisions. Returns the URL of the new file.
     private static func writeDocumentFile(for state: ScopeState, imageName: String) throws -> URL {
-        let data = try documentData(for: state)
-        let baseName = documentBaseName(forImageName: imageName)
+        try writeDocumentFile(json: documentData(for: state),
+                              baseName: documentBaseName(forImageName: imageName))
+    }
 
+    /// Writes document JSON as "<baseName>.kspp" in the designated documents
+    /// folder (falling back to the app's local Documents directory),
+    /// avoiding name collisions. Returns the URL of the new file.
+    private static func writeDocumentFile(json: Data, baseName: String) throws -> URL {
         if let designated = FolderBookmarkManager.shared.documentsURL {
             let accessing = designated.startAccessingSecurityScopedResource()
             defer { if accessing { designated.stopAccessingSecurityScopedResource() } }
-            if let url = try? write(data, named: baseName, in: designated) {
+            if let url = try? write(json, named: baseName, in: designated) {
                 return url
             }
         }
         let localDocuments = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return try write(data, named: baseName, in: localDocuments)
+        return try write(json, named: baseName, in: localDocuments)
     }
 
     private static func write(_ data: Data, named baseName: String, in folder: URL) throws -> URL {
-        var destination = folder.appendingPathComponent(baseName + ".ksp2")
+        var destination = folder.appendingPathComponent(baseName + ".kspp")
         var counter = 2
         while FileManager.default.fileExists(atPath: destination.path) {
-            destination = folder.appendingPathComponent("\(baseName) \(counter).ksp2")
+            destination = folder.appendingPathComponent("\(baseName) \(counter).kspp")
             counter += 1
         }
         // Write in the current package format (a directory containing
@@ -377,6 +467,43 @@ enum MetadataImport {
 }
 
 #if os(iOS)
+/// Wraps DocumentGroup's document-browser delegate so that picking a legacy
+/// flat .ksp2 file converts it to a "<name> (converted).kspp" package (which
+/// is then opened) instead of opening the legacy file in place. Every other
+/// delegate callback passes through to the wrapped delegate untouched.
+@MainActor
+private final class LegacyConvertingBrowserDelegate: NSObject,
+                                                     UIDocumentBrowserViewControllerDelegate {
+    nonisolated(unsafe) private let wrapped: UIDocumentBrowserViewControllerDelegate
+
+    init(wrapping wrapped: UIDocumentBrowserViewControllerDelegate) {
+        self.wrapped = wrapped
+    }
+
+    func documentBrowser(_ controller: UIDocumentBrowserViewController,
+                         didPickDocumentsAt documentURLs: [URL]) {
+        var passthrough: [URL] = []
+        for url in documentURLs {
+            if MetadataImport.isLegacyFlatDocument(url) {
+                MetadataImport.openConvertedLegacyDocument(at: url)
+            } else {
+                passthrough.append(url)
+            }
+        }
+        if !passthrough.isEmpty {
+            wrapped.documentBrowser?(controller, didPickDocumentsAt: passthrough)
+        }
+    }
+
+    nonisolated override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || wrapped.responds(to: aSelector)
+    }
+
+    nonisolated override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        wrapped.responds(to: aSelector) ? wrapped : super.forwardingTarget(for: aSelector)
+    }
+}
+
 /// Document picker delegate for the metadata import flow. The picker holds
 /// its delegate weakly, so `active` keeps it alive while the picker is shown.
 /// `onFinish` is always called exactly once — with the picked URL, or nil on
