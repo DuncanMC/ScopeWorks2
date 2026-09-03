@@ -357,6 +357,16 @@ class ExternalDisplayViewManager: NSObject, ObservableObject {
                             return nil
                         }
                     }
+                    for command in ScopeCommand.editCommands {
+                        if command.matches(event: event) {
+                            Task { @MainActor in
+                                if !command.disableCommandClosure(scopeState) {
+                                    command.performAction(on: scopeState)
+                                }
+                            }
+                            return nil
+                        }
+                    }
                 }
             }
 

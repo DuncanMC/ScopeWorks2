@@ -2,8 +2,8 @@
   "animate" : false,
   "backgroundColor" : {
     "alpha" : 1,
-    "blue" : 0.6859481930732727,
-    "green" : 0.13517069816589355,
+    "blue" : 0.6859483122825623,
+    "green" : 0.13517066836357117,
     "red" : 0.011526860296726227
   },
   "drawWithReflection" : true,
@@ -17,29 +17,29 @@
     "sourceType" : "file"
   },
   "imageURL" : "file:\/\/\/Users\/duncan\/Library\/Mobile%20Documents\/com~apple~CloudDocs\/ScopeWorks2\/ScopeWorks%20Source%20Images\/example.png",
-  "movementSpeed" : 0,
+  "movementSpeed" : -0,
   "polygonSides" : 6,
   "radiusScale" : 1,
   "rotationCenter" : {
-    "x" : 0.5,
-    "y" : 0.5
+    "x" : 0.52497697,
+    "y" : 0.50493926
   },
-  "rotationSpeed" : 5,
+  "rotationSpeed" : -5,
   "selectedScopeType" : 1,
   "showOutlines" : false,
   "splitTriangle" : true,
   "trianglePoints" : {
     "point1" : {
-      "x" : 0.64973354,
-      "y" : 0.27621505
+      "x" : 0.0085039735,
+      "y" : 0.4108416
     },
     "point2" : {
-      "x" : 0.66305935,
-      "y" : 0.44890672
+      "x" : 0.18123075,
+      "y" : 0.42363358
     },
     "point3" : {
-      "x" : 0.56335586,
-      "y" : 0.45660022
+      "x" : 0.17384446,
+      "y" : 0.52335936
     }
   },
   "zoom" : 2.7599519230769234

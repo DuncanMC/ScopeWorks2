@@ -1062,13 +1062,13 @@ class ScopeState: ObservableObject, Codable {
         #endif
     }
     
-    func handleArrowKey(_ keyPress: KeyPress, isShifted: Bool) {
+    func handleArrowKey(_ key: KeyEquivalent, isShifted: Bool) {
         var vector: SIMD2<Float>
         var step: Float = 0.00025
         if let texture {
             step = min( 1.0 / Float(texture.width), 1.0 / Float(texture.height))
         }
-        switch keyPress.key {
+        switch key {
         case .leftArrow:
             vector = .init(x: -step, y: 0)
         case .rightArrow:

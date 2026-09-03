@@ -439,6 +439,15 @@ struct ContentView: View {
         }
     }
 
+    func name(for command: ScopeCommand) -> String {
+        if command.shortcutHint.isEmpty {
+            return command.label
+        } else {
+            return "\(command.label) (\(command.shortcutHint))"
+        }
+    }
+
+
     var body: some View {
         VStack {
             HStack {
@@ -451,20 +460,20 @@ struct ContentView: View {
                                 .exclusively(before: rotateGesture)
                             )
                         )
-                        .focusable(interactions: .edit)
+//                        .focusable(interactions: .edit)
                         .focused($focusedField, equals: .sourceImageView)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
                         .aspectRatio(scopeState.texSize, contentMode: .fit)
                         .transition(.move(edge: .leading))
-                        .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow], phases: [.down, .repeat]) { press in
-                            let isShifted =  press.modifiers.contains(.shift)
-                            if press.modifiers.contains(.option)  {
-                                return .ignored
-                            }
-                            scopeState.handleArrowKey(press, isShifted: isShifted)
-                            return .handled
-                        }
+//                        .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow], phases: [.down, .repeat]) { press in
+//                            let isShifted =  press.modifiers.contains(.shift)
+//                            if press.modifiers.contains(.option)  {
+//                                return .ignored
+//                            }
+//                            scopeState.handleArrowKey(press.key, isShifted: isShifted)
+//                            return .handled
+//                        }
                 }
                 
                 ZStack {
@@ -692,6 +701,28 @@ struct ContentView: View {
                         undoManager?.undo()
                     }
                     .disabled(!(undoManager?.canUndo ?? false))
+                    Menu("Nudge source triangle") {
+                        ForEach(ScopeCommand.editCommands) { command in
+                            if command.isToggle, let kp = command.keyPath {
+                                Toggle(name(for: command),
+                                       isOn: Binding(
+                                        get: {
+                                            return scopeState[keyPath: kp] },
+                                        set: {
+                                            scopeState[keyPath: kp] = $0 }
+                                       ))
+                                .keyboardShortcut(for: command)
+                                .disabled(command.disableCommandClosure(scopeState))
+                            } else {
+                                Button(name(for: command)) {
+                                    //                                print("Triggering button \(command.label) from scissors menu.")
+                                    command.performAction(on: scopeState)
+                                }
+                                .keyboardShortcut(for: command)
+                                .disabled(command.disableCommandClosure(scopeState))
+                            }
+                        }
+                    }
                 }
             }
             // MARK: - iOS menubar

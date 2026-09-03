@@ -27,8 +27,6 @@ If you drag the rotation center you can move it around on the source image. If y
 
 If you drag one of the corners of the triangle you can resize the source triangle.
 
-If you tap in the image source view (or press tab on an external keyboard to select it on iOS) it gains focus and will show a light blue outline. When the image source view is in focus, pressing one of the arrow keys on your keyboard (including an external keyboard on an iPad) will shift the source triangle 1 pixel in that direction. If you hold down the shift key and press an arrow key, the source triangle will be shifted by 10 pixels.
-
 **Kaleidoscope view**  
 The kaleidoscope view in the top right of the document window shows a small view of your kaleidoscope. The "Show outlines" view menu toggle shows the outlines of the triangular sections of your source image that are tiled together to create your kaleidoscope.  
 The "Show crop rectangle" view menu toggle shows the section of your kaleidoscope that will be saved if you tap (or two-finger tap on iOS) on your kaleidoscope view. It also indicates the section of your kaleidoscope that will be saved if you choose "Save image as" from the file menu and don't change the aspect ratio in the save dialog, and the portion of your kaleidoscope that will be used to create a video with the file menu “Record Video” command. The shape of this crop rectangle is controlled by the aspect ratio you select in the Settings screen.
@@ -130,6 +128,14 @@ This menu item prompts you to select a ScopeWorks image file. It attempts to cre
 All the other items in the File menu are standard system menu items.
 
 	
+
+**The Edit Menu (Scissors icon on iPad)**
+
+**Nudge source triangle**:
+
+These commands let you move the source triangle around in the source image by 1 or 10 pixels at a time. You can use ⌘  
+ arrow keys (or shift-⌘  
+ arrow keys) as keyboard shortcuts to trigger these menu items, even if a full-screen ScopeWorks window has focus. (Using the keyboard shortcuts on iPad requires an external keyboard.)
 
 **The settings screen**:
 

@@ -15,8 +15,25 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
     case showFullscreenView
     case selectNextFullScreenDisplay
     case moveRotationCenter
+    case moveUp
+    case moveUp10
+    case moveDown
+    case moveDown10
+    case moveLeft
+    case moveLeft10
+    case moveRight
+    case moveRight10
 
     var id: Self { self }
+    
+    var isEditMenuCommand: Bool {
+        switch self {
+        case .moveUp, .moveDown, .moveLeft, .moveRight, .moveUp10, .moveDown10, .moveLeft10, .moveRight10:
+            return true
+        default:
+            return false
+        }
+    }
 
     var description: String {
         return self.label
@@ -37,6 +54,14 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .selectNextFullScreenDisplay:
                                   return "Select next full-screen display"
         case .moveRotationCenter: return "Move rotation center to triangle center"
+        case .moveUp:             return "Up"
+        case .moveDown:           return "Down"
+        case .moveLeft:           return "Left"
+        case .moveRight:          return "Right"
+        case .moveUp10:             return "Up 10 pixels"
+        case .moveDown10:           return "Down 10 pixels"
+        case .moveLeft10:           return "Left 10 pixels"
+        case .moveRight10:          return "Right 10 pixels"
         }
     }
 
@@ -52,7 +77,15 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
                 .showCropRect,
                 .showFullscreenView,
                 .moveRotationCenter,
-                .flipAlternates:
+                .flipAlternates,
+                .moveUp,
+                .moveDown,
+                .moveLeft,
+                .moveRight,
+                .moveUp10,
+                .moveDown10,
+                .moveLeft10,
+                .moveRight10:
             return { $0 == nil }
         case .selectNextFullScreenDisplay:
             return { scopeState in
@@ -77,6 +110,14 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .selectNextFullScreenDisplay: 
                                     return "x"
         case .moveRotationCenter: return "m"
+        case .moveUp, .moveUp10:
+            return .upArrow
+        case .moveDown, .moveDown10:
+            return .downArrow
+        case .moveLeft, .moveLeft10:
+            return .leftArrow
+        case .moveRight, .moveRight10:
+            return .rightArrow
         }
     }
 
@@ -117,6 +158,22 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
             return .control
         case .moveRotationCenter:
             return .option
+        // On iPadOS the system focus engine consumes unmodified arrow keys
+        // for keyboard navigation before app shortcuts see them (and shift
+        // alone is the only modifier it leaves free), so the nudge shortcuts
+        // use ⌘-arrow / ⇧⌘-arrow there. macOS keeps plain and shifted arrows.
+        case
+                .moveUp,
+                .moveDown,
+                .moveLeft,
+                .moveRight:
+            return .command
+        case
+                .moveUp10,
+                .moveDown10,
+                .moveLeft10,
+                .moveRight10:
+            return [.shift, .command]
         }
     }
 
@@ -137,7 +194,18 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
                                   return "^X"
         case .moveRotationCenter:
             return "⌥M"
-            
+        // These hints are only displayed on iOS, where the nudge shortcuts
+        // are ⌘-arrow / ⇧⌘-arrow. Real arrow glyphs are used because
+        // KeyEquivalent.upArrow.character and friends are the non-printable
+        // function-key code points (U+F700…), which don't render in titles.
+        case .moveUp:             return "⌘↑"
+        case .moveDown:           return "⌘↓"
+        case .moveLeft:           return "⌘←"
+        case .moveRight:          return "⌘→"
+        case .moveUp10:             return "⇧⌘↑"
+        case .moveDown10:           return "⇧⌘↓"
+        case .moveLeft10:           return "⇧⌘←"
+        case .moveRight10:          return "⇧⌘→"
         }
     }
 
@@ -166,7 +234,15 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
                 .reverseAnimation,
                 .advanceAnimation,
                 .selectNextFullScreenDisplay,
-                .moveRotationCenter:
+                .moveRotationCenter,
+                .moveUp,
+                .moveDown,
+                .moveLeft,
+                .moveRight,
+                .moveUp10,
+                .moveDown10,
+                .moveLeft10,
+                .moveRight10:
                                     return nil
         case .showCropRect:
                                     return \.showCropRect
@@ -188,6 +264,23 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
             state.selectNextFullScreenDisplay()
         case .moveRotationCenter:
             state.moveRotationCenter()
+        case .moveUp:
+            state.handleArrowKey(self.shortcutKey, isShifted: false)
+
+        case .moveDown:
+            state.handleArrowKey(self.shortcutKey, isShifted: false)
+        case .moveLeft:
+            state.handleArrowKey(self.shortcutKey, isShifted: false)
+        case .moveRight:
+            state.handleArrowKey(self.shortcutKey, isShifted: false)
+        case .moveUp10:
+            state.handleArrowKey(self.shortcutKey, isShifted: true)
+        case .moveDown10:
+            state.handleArrowKey(self.shortcutKey, isShifted: true)
+        case .moveLeft10:
+            state.handleArrowKey(self.shortcutKey, isShifted: true)
+        case .moveRight10:
+            state.handleArrowKey(self.shortcutKey, isShifted: true)
         default:
             if let kp = keyPath {
                 withAnimation {
@@ -197,7 +290,8 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         }
     }
 
-    static let viewCommands: [ScopeCommand] = ScopeCommand.allCases
+    static let viewCommands: [ScopeCommand] = ScopeCommand.allCases.filter { !$0.isEditMenuCommand}
+    static let editCommands: [ScopeCommand] = ScopeCommand.allCases.filter { $0.isEditMenuCommand}
 
     // MARK: - NSEvent matching (macOS full-screen window)
 
@@ -217,6 +311,22 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         case .advanceAnimation:
             let chars = event.charactersIgnoringModifiers?.lowercased()
             return chars == "a" && flags == [.option, .command]
+        case .moveUp:
+            return event.keyCode == 126 && flags.isEmpty
+        case .moveDown:
+            return event.keyCode == 125 && flags.isEmpty
+        case .moveLeft:
+            return event.keyCode == 123 && flags.isEmpty
+        case .moveRight:
+            return event.keyCode == 124 && flags.isEmpty
+        case .moveUp10:
+            return event.keyCode == 126 && flags == [.shift]
+        case .moveDown10:
+            return event.keyCode == 125 && flags == [.shift]
+        case .moveLeft10:
+            return event.keyCode == 123 && flags == [.shift]
+        case .moveRight10:
+            return event.keyCode == 124 && flags == [.shift]
         default:
             // Lowercase because caps lock uppercases charactersIgnoringModifiers.
             guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return false }
@@ -235,6 +345,15 @@ enum ScopeCommand: CaseIterable, Identifiable, CustomStringConvertible {
         }
     }
 #endif
+}
+
+// MARK: - Shortcut registration helper
+
+extension View {
+    /// Applies the command's keyboard shortcut.
+    func keyboardShortcut(for command: ScopeCommand) -> some View {
+        self.keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+    }
 }
 
 // MARK: - Reusable hidden buttons view for iOS keyboard shortcuts
@@ -258,13 +377,13 @@ struct ScopeCommandButtons: View {
 
     var body: some View {
         VStack {
-            ForEach(ScopeCommand.viewCommands) { command in
+            ForEach(ScopeCommand.viewCommands + ScopeCommand.editCommands) { command in
                 
                 if !alternateShortcutCommandsOnly {
                     if command.isToggle, let kp = command.keyPath {
                         Toggle(command.label, isOn: toggleBinding(for: kp))
                             .disabled(command.disableCommandClosure(scopeState))
-                            .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                            .keyboardShortcut(for: command)
                         // A second hidden control for commands with an alternate key
                         // (e.g. Enter also toggles animation, in addition to Return).
                         if let altKey = command.alternateShortcutKey {
@@ -274,12 +393,14 @@ struct ScopeCommandButtons: View {
                         }
                     } else {
                         Button(command.label) {
+//                            print("Triggering button \(command.label) from ScopeCommandButtons")
                             command.performAction(on: scopeState)
                         }
                         .disabled(command.disableCommandClosure(scopeState))
-                        .keyboardShortcut(command.shortcutKey, modifiers: command.shortcutModifiers)
+                        .keyboardShortcut(for: command)
                         if let altKey = command.alternateShortcutKey {
                             Button(command.label) {
+//                                print("Triggering button \(command.label) from ScopeCommandButtons")
                                 command.performAction(on: scopeState)
                             }
                             .disabled(command.disableCommandClosure(scopeState))
@@ -294,6 +415,7 @@ struct ScopeCommandButtons: View {
                                 .keyboardShortcut(altKey, modifiers: command.shortcutModifiers)
                         } else {
                             Button(command.label) {
+//                                print("Triggering button \(command.label) from ScopeCommandButtons")
                                 command.performAction(on: scopeState)
                             }
                             .disabled(command.disableCommandClosure(scopeState))

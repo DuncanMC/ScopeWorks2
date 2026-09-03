@@ -15,9 +15,45 @@ import UniformTypeIdentifiers
 struct ScopeWorksCommands: Commands {
 
     @FocusedObject var scopeState: ScopeState?
+    func name(for command: ScopeCommand) -> String {
+        if command.isEditMenuCommand {
+            return command.label
+        } else {
+            return "\(command.label) (\(command.shortcutHint))"
+        }
+    }
 
     var body: some Commands {
 
+        CommandGroup(after: .pasteboard){
+            Menu("Nudge source triangle") {
+                ForEach(ScopeCommand.editCommands) { command in
+                    if command.isToggle, let kp = command.keyPath {
+                        Toggle(name(for: command),
+                               isOn: Binding(
+                                   get: {
+                                       guard let scopeState else { return false }
+                                       return scopeState[keyPath: kp] },
+                                   set: {
+                                       guard let scopeState else { return  }
+                                       scopeState[keyPath: kp] = $0 }
+                               ))
+                        .keyboardShortcut(for: command)
+                        .disabled(command.disableCommandClosure(scopeState))
+                    } else {
+                        Button(name(for: command)) {
+                            guard let scopeState else { return  }
+//                            print("Triggering button \(command.label)")
+                            command.performAction(on: scopeState)
+                        }
+                        .keyboardShortcut(for: command)
+                        .disabled(command.disableCommandClosure(scopeState))
+                    }
+                }
+            }
+            .disabled(scopeState == nil)
+
+        }
         CommandGroup(before: .saveItem) {
             Button("Save Image as") {
                 scopeState?.saveImageAs()
