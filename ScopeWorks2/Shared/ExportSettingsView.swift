@@ -63,15 +63,15 @@ class ExportSettingsState: ObservableObject {
     /// Height as a fraction of width for the current aspect ratio.
     private var heightToWidthRatio: Double {
         guard selectedAspectRatio.width > 0 else { return 0 }
-        return (isEightWayScope && selectedAspectRatio.isCropForTiling)
+        return ((scopeType != .polygonGrid) && selectedAspectRatio.isCropForTiling)
             ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
     }
+    var scopeType: ScopeType;
+    //var isEightWayScope: Bool
 
-    var isEightWayScope: Bool
-
-    init(defaultAspectRatio: AspectRatio, defaultFileType: SnapshotFormat, isEightWayScope: Bool) {
+    init(defaultAspectRatio: AspectRatio, defaultFileType: SnapshotFormat, scopeType: ScopeType) {
         self.selectedAspectRatio = defaultAspectRatio
-        self.isEightWayScope = isEightWayScope
+        self.scopeType = scopeType
         updateHeightFromWidth(aspectChanged: true)
         //TODO set up the file format and default image size based on the user's choices in SettingsView
         self.selectedFormat = defaultFileType
@@ -79,7 +79,7 @@ class ExportSettingsState: ObservableObject {
 
     func updateHeightFromWidth(aspectChanged: Bool) {
         guard selectedAspectRatio.width > 0 else { return }
-        let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
+        let ratio = ((scopeType != .polygonGrid) && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.height / selectedAspectRatio.width
         let aspect = selectedAspectRatio.activeMultipler ?? selectedAspectRatio.defaultMultiplier
         let adjustedWidth = aspectChanged ? Int(selectedAspectRatio.width * Double(aspect)) : exportWidth
         exportWidth = adjustedWidth
@@ -90,7 +90,8 @@ class ExportSettingsState: ObservableObject {
 
     func updateWidthFromHeight() {
         guard selectedAspectRatio.height > 0 else { return }
-        let ratio = (isEightWayScope && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.width / selectedAspectRatio.height
+        //TODO: Change the ratio to 1 for polygon type as well
+        let ratio = ((scopeType != .polygonGrid) && selectedAspectRatio.isCropForTiling) ? 1 : selectedAspectRatio.width / selectedAspectRatio.height
         let newWidth = max(1, Int(round(Double(exportHeight) * ratio)))
         guard newWidth != exportWidth else { return }
         exportWidth = newWidth

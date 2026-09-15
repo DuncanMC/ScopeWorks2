@@ -259,7 +259,7 @@ struct ScopeWorks2App: App {
             NewDocumentButton("Create New Kaleidoscope")
             // Prompts for an image with embedded kaleidoscope info and opens
             // the prepared state as a new untitled document.
-            NewDocumentButton("Create Kaleidoscope from Image Data", for: ScopeDocument.self) {
+            NewDocumentButton("New Kaleidoscope from Image Data", for: ScopeDocument.self) {
                 try await MetadataImport.prepareDocument()
             }
         }

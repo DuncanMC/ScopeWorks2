@@ -122,7 +122,7 @@ Shows a save panel/picker and saves an image of the current kaleidoscope to the 
 **Record video**:  
 Displays a control that lets you start recording the current kaleidoscope to a movie file. It uses the aspect ratio specified in the settings window.
 
-**Create Kaleidoscope from Image Data**:  
+**New Kaleidoscope from Image Data**:  
 This menu item prompts you to select a ScopeWorks image file. It attempts to create a ScopeWorks document with settings embedded in the image metadata that were used to create the image. It only works for ScopeWorks image files saved with the “Include kaleidoscope info in saved images” settings checkbox checked.
 
 All the other items in the File menu are standard system menu items.

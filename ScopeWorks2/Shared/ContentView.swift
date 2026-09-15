@@ -405,14 +405,14 @@ struct ContentView: View {
                         .frame(height: 25)
                         .onTapGesture {
                             if scopeState.imageSourceMode == .staticImage,
-                               let fileURL = scopeState.imageSourceInfo.fullURL {
-                                let fileName = fileURL.lastPathComponent
+                               let fileURL = scopeState.imageURL {
+                                let filename = fileURL.lastPathComponent
                                 #if os(macOS)
                                     NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(fileName, forType: .string)
+                                    NSPasteboard.general.setString(filename, forType: .string)
                                 scopeState.showFileInFinder(url: fileURL)
                                 #else
-                                    UIPasteboard.general.string = fileName
+                                    UIPasteboard.general.string = filename
                                 #endif
                             }
                         }
@@ -460,7 +460,7 @@ struct ContentView: View {
                                 .exclusively(before: rotateGesture)
                             )
                         )
-//                        .focusable(interactions: .edit)
+                        .focusable(interactions: .edit)
                         .focused($focusedField, equals: .sourceImageView)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
@@ -686,13 +686,18 @@ struct ContentView: View {
 #if os(iOS)
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
+                
+                
                 Menu("File", systemImage: "doc") {
-                    Button("Save Image as...") {
+                    Button("Save Image as... (^S)") {
                         scopeState.saveImageAs()
                     }
-                    Button("Create Video...") {
+                    .keyboardShortcut("s", modifiers: .control)
+
+                    Button("Create Video... (⌥V)") {
                         scopeState.recordVideo()
                     }
+                    .keyboardShortcut("v", modifiers: .option)
                 }
             }
             ToolbarItem(placement: .secondaryAction) {

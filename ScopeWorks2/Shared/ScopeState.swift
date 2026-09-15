@@ -872,6 +872,7 @@ class ScopeState: ObservableObject, Codable {
             }
         }
     }
+    // This is the security-scoped URL
     @Published var imageURL: URL? = nil {
         didSet {
             if let imageURL {
@@ -1090,8 +1091,6 @@ class ScopeState: ObservableObject, Codable {
 
         let adjusted  = adjustTrianglePoints(trianglePoints: changed)
         trianglePoints = adjusted.points
-
-        // TODO: Edit trianglePoints
     }
     
     func selectNextFullScreenDisplay() {
@@ -1529,7 +1528,6 @@ class ScopeState: ObservableObject, Codable {
                 print("Renderer not available for off-screen rendering")
                 return nil
             }
-            // TODO: Check to see if  the selectedAspectRatio is cropForTiling and the kaleidoscope type is anything but polygon grid. If so, force the crop rect to square.
             let multiplier = selectedAspectRatio.activeMultipler ?? selectedAspectRatio.defaultMultiplier
             guard let image = renderer.renderOffscreenImage(
                 width: Int(selectedAspectRatio.width * Double(multiplier)),
@@ -1632,9 +1630,11 @@ class ScopeState: ObservableObject, Codable {
         }
         
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
+        formatter.dateFormat = "MM-dd-yyyy'@'HH.mm.ss"
         let timestamp = formatter.string(from: Date())
-        let defaultFilename = "ScopeWorks snapshot \(timestamp)"
+        // Get image filename as part of the snapshot name
+        let filenamePrefix = imageSourceInfo.fullURL?.deletingPathExtension().lastPathComponent ?? "ScopeWorks snapshot"
+        let defaultFilename = "\(filenamePrefix) \(timestamp)"
         let fileExtension = filetype.preferredFilenameExtension ?? "png"
         let filename = "\(defaultFilename).\(fileExtension)"
         
@@ -1882,7 +1882,7 @@ class ScopeState: ObservableObject, Codable {
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             defaultFileType:  .JPEG, //Ignored for video
-            isEightWayScope:  !template.isCircular)
+            scopeType:  selectedScopeType)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: true))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 170)
 
@@ -1940,7 +1940,7 @@ class ScopeState: ObservableObject, Codable {
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             defaultFileType: defaultFileFormat,
-            isEightWayScope: !template.isCircular)
+            scopeType:  selectedScopeType)
         showRecordVideoSheet = true
         #endif
     }
@@ -1969,7 +1969,7 @@ class ScopeState: ObservableObject, Codable {
         let settings = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             defaultFileType: defaultFileFormat,
-            isEightWayScope: !template.isCircular)
+            scopeType: selectedScopeType)
         let accessoryView = NSHostingView(rootView: ExportSettingsView(settings: settings, isForVideo: false))
         accessoryView.frame = NSRect(x: 0, y: 0, width: 350, height: 210)
 
@@ -1985,9 +1985,11 @@ class ScopeState: ObservableObject, Codable {
         savePanel.delegate = sizeValidator
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd-yyyy'@'hh.mm.ss a"
+        formatter.dateFormat = "MM-dd-yyyy'@'HH.mm.ss"
         let timestamp = formatter.string(from: Date())
-        savePanel.nameFieldStringValue = "ScopeWorks image \(timestamp)"
+        let filenamePrefix = imageSourceInfo.fullURL?.deletingPathExtension().lastPathComponent ?? ""
+
+        savePanel.nameFieldStringValue = "ScopeWorks image \(filenamePrefix) \(timestamp)"
 
         // Keep allowed content types in sync with the format picker
         var formatCancellable: AnyCancellable?
@@ -2033,7 +2035,7 @@ class ScopeState: ObservableObject, Codable {
         exportSettingsState = ExportSettingsState(
             defaultAspectRatio: selectedAspectRatio,
             defaultFileType: defaultFileFormat,
-            isEightWayScope: !template.isCircular)
+            scopeType:  selectedScopeType)
         showExportImageSheet = true
         #endif
     }

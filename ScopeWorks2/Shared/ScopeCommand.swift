@@ -377,6 +377,22 @@ struct ScopeCommandButtons: View {
 
     var body: some View {
         VStack {
+            Button("Save Image as... (^S)") {
+                scopeState.saveImageAs()
+            }
+            .keyboardShortcut("s", modifiers: .control)
+            Button("Create Video... (⌥V)") {
+                scopeState.recordVideo()
+            }
+            .keyboardShortcut("v", modifiers: .option)
+
+//            Button("New Kaleidoscope from Image Metadata…") {
+//                print("New Kaleidoscope from Image Metadata shortcut entered.")
+//                //MetadataImport.prepareDocument()
+//                      
+////                MetadataImport.promptAndCreateKaleidoscope()
+//            }
+            .keyboardShortcut("n", modifiers: .control)
             ForEach(ScopeCommand.viewCommands + ScopeCommand.editCommands) { command in
                 
                 if !alternateShortcutCommandsOnly {

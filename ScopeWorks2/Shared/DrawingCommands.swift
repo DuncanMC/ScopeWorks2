@@ -58,18 +58,21 @@ struct ScopeWorksCommands: Commands {
             Button("Save Image as") {
                 scopeState?.saveImageAs()
             }
-            .keyboardShortcut("s", modifiers: .option)
+            .keyboardShortcut("s", modifiers: .control)
             .disabled(scopeState == nil)
             Button("Record Video") {
                 scopeState?.recordVideo()
             }
             .disabled(scopeState == nil)
+            .keyboardShortcut("v", modifiers: .option)
             #if os(macOS)
             // On iOS this action lives on the document launch screen, where
             // NewDocumentButton can open the prepared document directly.
-            Button("Create Kaleidoscope from Image Metadata…") {
+            Button("New Kaleidoscope from Image Metadata…") {
                 MetadataImport.promptAndCreateKaleidoscope()
             }
+            .keyboardShortcut("n", modifiers: .control)
+            
             #endif
         }
         CommandGroup(before: .toolbar) {
@@ -114,8 +117,6 @@ struct ScopeWorksCommands: Commands {
     }
 }
 
-// MARK: - Create Kaleidoscope from Image Metadata
-
 /// Errors surfaced to the user when importing kaleidoscope info from an image.
 enum MetadataImportError: LocalizedError {
     case noMetadata(imageName: String)
@@ -141,7 +142,7 @@ enum MetadataImportError: LocalizedError {
     }
 }
 
-/// The "Create Kaleidoscope from Image Data" implementation, shared by every
+/// The "New Kaleidoscope from Image Data" implementation, shared by every
 /// entry point: the macOS File menu command and Finder "Open With"/dock
 /// drag-and-drop, and the iOS launch-screen button and Files "Open in".
 /// Also converts legacy flat .ksp2 documents arriving through the same entry
